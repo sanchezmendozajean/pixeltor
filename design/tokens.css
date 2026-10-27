@@ -1,0 +1,228 @@
+/* =====================================================================
+   Pixeltor · tokens.css
+   Fuente: design/21-design-tokens.md (+ ajustes documentados en notas-de-diseno.md §2)
+   Uso: <html data-theme="oscuro|gris|claro">. Sin atributo = oscuro.
+   Los valores marcados [AJUSTE] o [NUEVO] no estaban en la spec.
+   ===================================================================== */
+
+/* ---------- Tokens independientes del tema ---------- */
+:root {
+  /* Tipografía */
+  --font-ui: "Inter", "Segoe UI Variable", "Segoe UI", "Cantarell", "Noto Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", "DejaVu Sans Mono", monospace;
+  --fs-xs: 10px;   /* etiquetas de guías inteligentes, badges */
+  --fs-sm: 11px;   /* texto base de paneles, campos */
+  --fs-md: 12px;   /* menús, pestañas, barra de control */
+  --fs-lg: 13px;   /* títulos de diálogo */
+  --fs-xl: 18px;   /* pantalla de inicio */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --lh-ui: 1.3;
+  --panel-header-tracking: .04em;
+
+  /* Espaciado (unidad 4 px) */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+
+  /* Tamaños */
+  --control-h: 22px;
+  --control-h-dialog: 26px;
+  --row-h: 28px;
+  --row-h-thumb: 36px;
+  --row-h-appearance: 26px;
+  --panel-pad-x: 8px;
+  --panel-pad-y: 6px;
+  --tool-btn: 32px;
+  --tool-icon: 20px;
+  --icon-btn: 22px;
+  --panel-icon: 16px;
+  --dock-w: 260px;
+  --dock-w-min: 220px;
+  --dock-w-max: 400px;
+  --dock-iconcol-w: 36px;
+  --toolbar-w: 40px;
+  --titlebar-h: 32px;
+  --controlbar-h: 36px;
+  --doctabs-h: 28px;
+  --viewer-header-h: 24px;
+  --statusbar-h: 24px;
+  --frames-strip-h: 32px;
+  --panel-header-h: 26px;   /* [NUEVO] */
+  --splitter: 4px;
+  --layer-thumb: 32px;      /* [AJUSTE] spec: 28 px — ver notas §2 */
+  --frame-thumb-strip: 48px;
+  --frame-thumb-grid: 96px;
+
+  /* Radios */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+
+  /* Movimiento */
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --dur-fast: 90ms;
+  --dur-base: 140ms;
+  --dur-slow: 220ms;
+
+  /* Colores de capa (rotación al crear capas) — iguales en todos los temas */
+  --layer-1: #4F9DFF; /* azul */
+  --layer-2: #FF5A5A; /* rojo */
+  --layer-3: #3FD07F; /* verde */
+  --layer-4: #D46BFF; /* violeta */
+  --layer-5: #2FD3E0; /* cian */
+  --layer-6: #FF9F43; /* naranja */
+  --layer-7: #F5D547; /* amarillo */
+  --layer-8: #FF6FB5; /* rosa */
+
+  /* Overlays del lienzo (fijos: deben leerse sobre cualquier pixel art) */
+  --overlay-handle-fill: #FFFFFF;
+  --overlay-handle-size: 7px;
+  --overlay-anchor-size: 6px;
+  --overlay-tangent-dot: 5px;
+  --tile-grid: rgba(61, 139, 255, .35);
+  --onion-prev: #FF4D4D;
+  --onion-next: #4D8DFF;
+  --brand-warm: #FF9F43;    /* segundo color del icono de la app */
+}
+
+/* ---------- Tema OSCURO (por defecto) ---------- */
+:root,
+[data-theme="oscuro"] {
+  color-scheme: dark;
+  --bg-app: #1F1F1F;
+  --bg-panel: #2A2A2A;
+  --bg-panel-header: #262626;
+  --bg-panel-raised: #323232;
+  --bg-input: #1B1B1B;
+  --bg-hover: #363636;
+  --bg-active: #404040;
+  --bg-selected: #24344D;
+  --canvas-bg: #161616;
+  --border: #3A3A3A;
+  --border-subtle: #2F2F2F;
+  --border-input: #444444;
+  --border-input-hover: #585858;      /* [NUEVO] */
+  --text-primary: #E6E6E6;
+  --text-secondary: #A8A8A8;
+  --text-disabled: #6B6B6B;
+  --icon: #C8C8C8;
+  --icon-active: #FFFFFF;
+  --accent: #3D8BFF;
+  --accent-hover: #5A9DFF;
+  --accent-muted: rgba(61, 139, 255, .18);
+  --accent-solid: #2A6DD9;            /* [NUEVO] fondo de botón primario con texto blanco (4.9:1) */
+  --accent-solid-hover: #2361C4;      /* [NUEVO] */
+  --accent-text: #5A9DFF;             /* [NUEVO] acento usado como TEXTO (enlaces, valores conmutados) */
+  --on-accent: #FFFFFF;               /* [NUEVO] */
+  --danger: #F0524F;
+  --warning: #F2B13A;
+  --success: #3DBE7A;
+  --smart-guide: #FF3EA5;
+  --guide: #2FD3E0;
+  --checker-a: #3A3A3A;
+  --checker-b: #2E2E2E;
+  --pixel-grid: rgba(255, 255, 255, .07);
+  --tooltip-bg: #111111;
+  --viewer-header: rgba(42, 42, 42, .85);  /* --bg-panel al 85 % */
+  --shadow-popover: 0 4px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.5);
+  --shadow-dialog: 0 12px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.6);
+  --shadow-canvas: 0 2px 12px rgba(0,0,0,.45);
+  --scrim: rgba(0, 0, 0, .55);        /* [NUEVO] velo bajo diálogos modales */
+}
+
+/* ---------- Tema GRIS MEDIO ---------- */
+[data-theme="gris"] {
+  color-scheme: dark;
+  --bg-app: #3A3A3A;
+  --bg-panel: #464646;
+  --bg-panel-header: #414141;         /* [NUEVO] derivado */
+  --bg-panel-raised: #505050;
+  --bg-input: #333333;
+  --bg-hover: #525252;                /* [NUEVO] derivado */
+  --bg-active: #5C5C5C;               /* [NUEVO] derivado */
+  --bg-selected: #2E4566;             /* [NUEVO] derivado */
+  --canvas-bg: #2C2C2C;
+  --border: #555555;
+  --border-subtle: #4C4C4C;           /* [NUEVO] derivado */
+  --border-input: #5E5E5E;            /* [NUEVO] derivado */
+  --border-input-hover: #707070;
+  --text-primary: #EDEDED;
+  --text-secondary: #BDBDBD;
+  --text-disabled: #858585;
+  --icon: #DADADA;
+  --icon-active: #FFFFFF;
+  --accent: #3D8BFF;
+  --accent-hover: #5A9DFF;
+  --accent-muted: rgba(61, 139, 255, .22);
+  --accent-solid: #2A6DD9;
+  --accent-solid-hover: #2361C4;
+  --accent-text: #8DBBFF;             /* 4.75:1 sobre #464646 */
+  --on-accent: #FFFFFF;
+  --danger: #FF6B68;
+  --warning: #F2B13A;
+  --success: #4CCB88;
+  --smart-guide: #FF3EA5;
+  --guide: #2FD3E0;
+  --checker-a: #4A4A4A;
+  --checker-b: #404040;
+  --pixel-grid: rgba(255, 255, 255, .08);
+  --tooltip-bg: #111111;
+  --viewer-header: rgba(70, 70, 70, .85);
+  --shadow-popover: 0 4px 16px rgba(0,0,0,.4), 0 0 0 1px rgba(0,0,0,.45);
+  --shadow-dialog: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.55);
+  --shadow-canvas: 0 2px 12px rgba(0,0,0,.4);
+  --scrim: rgba(0, 0, 0, .5);
+}
+
+/* ---------- Tema CLARO ---------- */
+[data-theme="claro"] {
+  color-scheme: light;
+  --bg-app: #E4E4E4;
+  --bg-panel: #F2F2F2;
+  --bg-panel-header: #EAEAEA;
+  --bg-panel-raised: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --bg-hover: #E6E6E6;
+  --bg-active: #D6D6D6;
+  --bg-selected: #D7E6FF;
+  --canvas-bg: #CFCFCF;
+  --border: #C9C9C9;
+  --border-subtle: #DDDDDD;           /* [NUEVO] derivado */
+  --border-input: #BDBDBD;            /* [NUEVO] derivado */
+  --border-input-hover: #9E9E9E;
+  --text-primary: #1E1E1E;
+  --text-secondary: #5C5C5C;
+  --text-disabled: #9A9A9A;           /* [NUEVO] derivado */
+  --icon: #3A3A3A;
+  --icon-active: #000000;
+  --accent: #1F6FEB;
+  --accent-hover: #3B82F0;
+  --accent-muted: rgba(31, 111, 235, .14);
+  --accent-solid: #1A64D6;            /* [AJUSTE] #1F6FEB con blanco ≈ 4.6:1 justo; se oscurece */
+  --accent-solid-hover: #1557BD;
+  --accent-text: #1A64D6;             /* [AJUSTE] #1F6FEB sobre #F2F2F2 = 4.3:1 (falla); este da 4.9:1 */
+  --on-accent: #FFFFFF;
+  --danger: #D93A37;
+  --warning: #B97800;                 /* [AJUSTE] el ámbar oscuro no se lee sobre claro */
+  --success: #1E8E54;
+  --smart-guide: #E6178C;             /* [AJUSTE] magenta algo más profundo para leerse sobre #CFCFCF */
+  --guide: #0FA9B8;
+  --checker-a: #FFFFFF;
+  --checker-b: #E6E6E6;
+  --pixel-grid: rgba(0, 0, 0, .09);
+  --tooltip-bg: #111111;
+  --viewer-header: rgba(242, 242, 242, .85);
+  --shadow-popover: 0 4px 16px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.12);
+  --shadow-dialog: 0 12px 40px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.14);
+  --shadow-canvas: 0 2px 12px rgba(0,0,0,.2);
+  --scrim: rgba(40, 40, 40, .35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; --dur-slow: 0ms; }
+}

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Editor de efecto</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./compartido/pt.css">
+<script src="./compartido/pt-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="pt-root pt-oscuro pt-app">
+
+  <header class="pt-titlebar">
+    <div class="pt-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="display: block; shape-rendering: crispEdges">
+        <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+        <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+      </svg>
+    </div>
+    <nav aria-label="Menú principal" style="display: flex"><sc-for list="{{menus}}" as="m" hint-placeholder-count="10"><button class="{{m.cls}}">{{m.name}}</button></sc-for></nav>
+    <div class="pt-spacer"></div>
+    <button class="pt-select" style="width: 118px; margin-right: 8px; background: var(--bg-panel)" aria-label="Espacio de trabajo"><span>Esenciales</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+    <button class="pt-select" style="width: 200px; margin-right: 10px; color: var(--text-secondary); justify-content: flex-start; gap: 6px" aria-label="Buscar comandos"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.search.d}}"></path></svg><span style="flex: 1; text-align: left">Buscar comandos</span><span class="pt-mono" style="font-size: 10px; padding-right: 4px">Ctrl+K</span></button>
+    <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+    <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+    <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+  </header>
+
+  <div class="pt-cbar" role="toolbar" aria-label="Barra de control">
+    <div class="pt-ctl__kind"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.layers.d}}"></path></svg>Capa <span class="pt-swatchdot" style="background: #3FD07F"></span>Cuerpo</div>
+    <span class="pt-sep pt-sep--inset"></span>
+    <div class="pt-ctl"><span class="pt-ctl__lbl">Modo</span><button class="pt-select" style="width: 96px"><span>Normal</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button></div>
+    <label class="pt-num" style="width: 112px"><span class="pt-num__lbl">Opacidad</span><span class="pt-numbox"><input class="pt-input" value="100" aria-label="Opacidad"><span class="pt-unit">%</span></span></label>
+    <span class="pt-sep pt-sep--inset"></span>
+    <div class="pt-ctl"><span class="pt-fx">fx</span><span class="pt-ctl__lbl">1 efecto de capa</span></div>
+    <div class="pt-spacer"></div>
+    <button class="pt-btn pt-btn--secondary" title="Rasterizar efectos de capa  Ctrl+Alt+E">Rasterizar efectos…</button>
+  </div>
+
+  <div class="pt-body">
+    <aside class="pt-toolbar" aria-label="Herramientas">
+      <sc-for list="{{tools}}" as="t" hint-placeholder-count="22">
+        <sc-if value="{{t.sep}}" hint-placeholder-val="{{ false }}"><div class="pt-tooldiv"></div></sc-if>
+        <sc-if value="{{t.btn}}" hint-placeholder-val="{{ true }}"><button class="{{t.cls}}" aria-label="{{t.label}}" title="{{t.tip}}"><svg class="i20" viewBox="0 0 20 20"><path d="{{t.d}}"></path><path class="f" d="{{t.f}}"></path></svg></button></sc-if>
+      </sc-for>
+      <div class="pt-spacer"></div>
+      <div class="pt-fswidget"><button class="pt-fswidget__fill" aria-label="Relleno #2F9E74" style="background: #2F9E74"></button><button class="pt-fswidget__stroke" aria-label="Contorno #1B1526" style="border-color: #1B1526"></button></div>
+      <div class="pt-modes"><button aria-label="Color" style="background: #2F9E74; box-shadow: 0 0 0 1px var(--accent)"></button><button aria-label="Degradado" style="background: linear-gradient(90deg,#fff,#000)"></button><button aria-label="Ninguno" class="pt-sw--none"></button></div>
+    </aside>
+
+    <main class="pt-center">
+      <div class="pt-doctabs" role="tablist" aria-label="Documentos">
+        <button class="pt-doctab is-active" role="tab" aria-selected="true">caballero.pixeltor <span class="pt-doctab__zoom">@ 1200 %</span><span class="pt-dirty"></span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+        <button class="pt-doctab" role="tab" aria-selected="false">icono-app.pixeltor <span class="pt-doctab__zoom">@ 1200 %</span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+      </div>
+      <div class="pt-viewports">
+        <section class="pt-viewport" aria-label="Visor 1">
+          <div class="pt-vhead pt-vhead--overlay">
+            <span class="pt-vhead__lbl">Imagen</span>
+            <button class="pt-select" style="width: 178px"><span>Sigue la activa · 1 Caminar_01</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 5px 2px"></span>
+            <button class="pt-select" style="width: 74px"><span class="pt-mono">1200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 5px 2px"></span>
+            <button class="pt-iconbtn is-on" aria-label="Cuadrícula de píxeles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Trazados"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.paths.d}}"></path><path class="f" d="{{ic.paths.f}}"></path></svg></button>
+            <div class="pt-spacer"></div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 18px; padding: 0 8px; border-radius: 9px; background: var(--accent-muted); color: var(--accent-text); font-size: 10.5px"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent)"></span>Vista previa en vivo</span>
+          </div>
+          <div class="pt-stage" style="padding-right: 312px">
+            <div class="pt-canvas" role="img" aria-label="Caballero con sombra paralela en vivo" style="width: 384px; height: 384px">
+              <div class="pt-art" style="left: -12px; top: -12px; width: 12px; height: 12px; box-shadow: {{art}}"></div>
+              <div class="pt-pxgrid" style="background-size: 12px 12px"></div>
+            </div>
+          </div>
+
+          <!-- Editor de efecto (popover, 300 px) -->
+          <div class="pt-popover" role="dialog" aria-label="Sombra paralela — Capa Cuerpo" style="position: absolute; right: 12px; top: 40px; width: 300px; z-index: 6">
+            <span class="pt-popover__arrow" style="right: -5px; top: 254px; box-shadow: 1px -1px 0 rgba(0,0,0,.25)"></span>
+            <div class="pt-popover__head" style="min-height: 38px">
+              <span class="pt-fx" style="padding: 0">fx</span>
+              <span style="font-weight: 600">Sombra paralela</span><span class="pt-sec2">— Capa Cuerpo</span>
+              <div class="pt-spacer"></div>
+              <button class="pt-iconbtn is-on" aria-label="Efecto activo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button>
+            </div>
+            <div class="pt-popover__sec">
+              <div class="pt-popover__sectitle"><svg class="i16" viewBox="0 0 16 16" style="color: var(--text-secondary)"><path d="{{ic.chevDown.d}}"></path></svg>Sombra</div>
+              <div class="pt-row">
+                <label class="pt-num" style="flex: 1"><span class="pt-num__lbl" style="width: 16px">dx</span><span class="pt-numbox"><input class="pt-input" value="1" aria-label="Desplazamiento X"><span class="pt-unit">px</span></span></label>
+                <label class="pt-num" style="flex: 1"><span class="pt-num__lbl is-scrub" style="width: 16px">dy</span><span class="pt-numbox"><input class="pt-input is-focus" value="1" aria-label="Desplazamiento Y"><span class="pt-unit">px</span></span></label>
+              </div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Color</span><button class="pt-swbtn" aria-label="Color de sombra"><span class="pt-sw" style="background: #1B1526"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button><span class="pt-mono" style="font-size: 10.5px">#1B1526</span><span class="pt-hint" style="margin-left: auto">de la paleta</span></div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Opacidad</span><div class="pt-slider"><span class="pt-slider__fill" style="width: 60%"></span><span class="pt-slider__head" style="left: 60%"></span></div><label class="pt-num" style="width: 58px"><span class="pt-numbox"><input class="pt-input" value="60" aria-label="Opacidad"><span class="pt-unit">%</span></span></label></div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Desenfoque</span><div class="pt-slider"><span class="pt-slider__fill" style="width: 0%"></span><span class="pt-slider__head" style="left: 0%"></span></div><label class="pt-num" style="width: 58px"><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Desenfoque"><span class="pt-unit">px</span></span></label></div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Expansión</span><div class="pt-slider"><span class="pt-slider__fill" style="width: 0%"></span><span class="pt-slider__head" style="left: 0%"></span></div><label class="pt-num" style="width: 58px"><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Expansión"><span class="pt-unit">px</span></span></label></div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Fusión</span><button class="pt-select" style="flex: 1"><span>Multiplicar</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button></div>
+              <label class="pt-choice"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Solo fuera de la forma</label>
+            </div>
+            <div class="pt-popover__sec">
+              <div class="pt-popover__sectitle"><svg class="i16" viewBox="0 0 16 16" style="color: var(--text-secondary)"><path d="{{ic.chevDown.d}}"></path></svg>Salida</div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Alfa</span><div class="pt-segctl" role="group" aria-label="Salida de alfa"><button>Conservar</button><button class="is-on">Umbral</button><button>Tramado</button></div></div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">Umbral</span><div class="pt-slider"><span class="pt-slider__fill" style="width: 50%"></span><span class="pt-slider__head" style="left: 50%"></span></div><label class="pt-num" style="width: 58px"><span class="pt-numbox"><input class="pt-input" value="128" aria-label="Umbral de alfa"></span></label></div>
+              <div class="pt-row"><span class="pt-rowlbl" style="width: 70px">A paleta</span><span class="pt-toggle"></span><button class="pt-select is-disabled" style="flex: 1"><span>Caballero 16</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button></div>
+            </div>
+            <div class="pt-popover__foot">
+              <button class="pt-btn pt-btn--ghost" aria-label="Presets" style="padding: 0 6px">Presets<svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.more.f}}"></path></svg></button>
+              <button class="pt-btn pt-btn--ghost">Restablecer</button>
+              <div class="pt-spacer"></div>
+              <button class="pt-btn pt-btn--secondary">Cancelar</button>
+              <button class="pt-btn pt-btn--primary">Aceptar</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <section class="pt-strip" aria-label="Imágenes">
+        <button class="pt-iconbtn" aria-label="Expandir panel Imágenes"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevUp.d}}"></path></svg></button>
+        <span class="pt-strip__title">Imágenes</span>
+        <span class="pt-sep" style="margin: 7px 2px"></span>
+        <div style="display: flex; align-items: center; gap: 4px"><sc-for list="{{frames}}" as="fr" hint-placeholder-count="8"><button class="{{fr.cls}}" aria-label="Imagen {{fr.n}}"><span class="pt-thumbart" style="box-shadow: {{fr.sh}}"></span><span class="pt-fnum">{{fr.n}}</span></button></sc-for></div>
+        <div class="pt-spacer"></div>
+        <span class="pt-sec2">Los efectos de capa se aplican en las 8 imágenes que tengan una capa «Cuerpo»</span>
+      </section>
+    </main>
+
+    <aside class="pt-dock" aria-label="Paneles">
+      <section class="pt-panel" aria-label="Propiedades (contraído)" style="flex: none">
+        <div class="pt-phead" style="border-bottom: 0"><button class="pt-ptab is-active">Propiedades</button><div class="pt-phead__tools"><button class="pt-iconbtn pt-iconbtn--20" aria-label="Expandir"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></button></div></div>
+      </section>
+      <section class="pt-panel" aria-label="Apariencia" style="flex: none">
+        <div class="pt-phead"><button class="pt-ptab">Capas</button><button class="pt-ptab is-active">Apariencia</button><div class="pt-phead__tools"><button class="pt-iconbtn pt-iconbtn--20" aria-label="Opciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button></div></div>
+        <div class="pt-objhead" style="border-bottom: 1px solid var(--border-subtle)">
+          <svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.layers.d}}"></path></svg>
+          <span style="font-weight: 600">Capa Cuerpo</span><span class="pt-sec2">· imagen 1</span>
+        </div>
+        <div class="pt-arow"><span class="pt-arow__name">Contenido</span><span class="pt-arow__desc">Píxeles + 2 formas</span></div>
+        <div class="pt-arow"><span class="pt-arow__name">Opacidad</span><span class="pt-arow__desc">100 % · Normal</span></div>
+        <div class="pt-arow is-selected"><span class="pt-arow__grip"></span><span class="pt-arow__fx"><i>fx</i><span style="text-decoration: underline">Sombra paralela</span></span><span class="pt-sec2" style="font-size: 10.5px">1, 1 · 60 %</span><button class="pt-iconbtn" aria-label="Visible"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button></div>
+        <div class="pt-pfoot">
+          <button class="pt-iconbtn" aria-label="Añadir efecto"><span class="pt-fx" style="padding: 0">fx</span></button>
+          <div class="pt-spacer"></div>
+          <button class="pt-iconbtn" aria-label="Duplicar efecto"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.duplicate.d}}"></path></svg></button>
+          <button class="pt-iconbtn" aria-label="Eliminar efecto"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.trash.d}}"></path></svg></button>
+        </div>
+      </section>
+      <section class="pt-panel" aria-label="Capas" style="flex: 1">
+        <div class="pt-phead"><button class="pt-ptab is-active">Capas</button><div class="pt-phead__tools"><button class="pt-iconbtn pt-iconbtn--20" aria-label="Opciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button></div></div>
+        <div role="tree" aria-label="Capas" style="flex: 1; min-height: 0; overflow: hidden">
+          <sc-for list="{{layerRows}}" as="r" hint-placeholder-count="5">
+            <div class="{{r.cls}}" role="treeitem" aria-label="Capa {{r.name}}">
+              <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.eye}}"></path></svg></button>
+              <span class="pt-lcol pt-lcol--lock"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.lock}}"></path></svg></span>
+              <span class="pt-lchev"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.chev}}"></path></svg></span>
+              <span class="pt-lbar" style="background: {{r.color}}"></span>
+              <span class="pt-thumb"><span class="pt-thumbart" style="box-shadow: {{r.thumb}}"></span></span>
+              <span class="pt-lname">{{r.name}}</span>
+              <sc-if value="{{r.fx}}" hint-placeholder-val="{{ false }}"><span class="pt-fx">fx</span></sc-if>
+              <span class="{{r.target}}"></span><span class="{{r.selsq}}" style="background: {{r.color}}"></span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      <section class="pt-panel" aria-label="Muestras" style="flex: none; border-bottom: 0">
+        <div class="pt-phead"><button class="pt-ptab">Color</button><button class="pt-ptab is-active">Muestras</button></div>
+        <div class="pt-pbody"><div class="pt-swgrid"><sc-for list="{{swatches}}" as="s" hint-placeholder-count="17"><button class="{{s.cls}}" aria-label="{{s.hex}}" style="background: {{s.hex}}"></button></sc-for></div></div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="pt-status" aria-label="Barra de estado">
+    <div class="pt-seg" style="padding-left: 6px"><span class="pt-zoomfield"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.zoomPx.d}}"></path><path class="f" d="{{ic.zoomPx.f}}"></path></svg><span class="pt-mono" style="font-size: 10.5px; min-width: 40px; text-align: right">1200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></span></div>
+    <div class="pt-seg"><span class="pt-mono"><b>32 × 32</b> px</span></div>
+    <div class="pt-seg"><svg class="i12" viewBox="0 0 16 16"><path d="{{ic.cursor.d}}"></path></svg><span class="pt-mono">x <b>—</b>  y <b>—</b></span></div>
+    <div class="pt-seg"><span class="pt-swatchdot" style="background: #3FD07F"></span>Capa: <b>Cuerpo</b></div>
+    <div class="pt-seg">Editando efecto · Esc cancela, Intro acepta</div>
+    <div class="pt-spacer"></div>
+    <div class="pt-seg pt-seg--r" style="border-right: 0; gap: 8px"><span class="pt-progress"><span></span></span>Calculando sombra…</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = window.PT;
+    var K = P.knight('A');
+    var drop = P.shift(K.cuerpo, 1, 1, 'q');
+    var comp = P.compose([K.sombra, drop, K.cuerpo, K.contorno, K.luz]);
+    var rows = P.layerRows({expanded: '', sel: 'layer', cuerpoFx: true});
+    return {
+      ic: P.icons(),
+      menus: P.menus(),
+      tools: P.tools('sel', 'ellipse'),
+      art: P.sh(comp, 12),
+      frames: P.frames(0, {small: true}),
+      layerRows: rows,
+      swatches: P.swatches('k')
+    };
+  }
+}
+</script>
+</body>
+</html>

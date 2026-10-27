@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Exportar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./compartido/pt.css">
+<script src="./compartido/pt-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ex-fmt{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid var(--border-input);border-radius:4px;background:var(--bg-input);color:var(--text-primary);font-size:11px;cursor:default;text-align:left}
+.ex-fmt:hover{border-color:var(--border-input-hover)}
+.ex-fmt.is-on{border-color:var(--accent);background:var(--accent-muted)}
+.ex-fmt small{margin-left:auto;color:var(--text-secondary);font-size:10px}
+.ex-chip{height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 9px 0 7px;border-radius:12px;border:1px solid var(--border-input);font-size:11px;color:var(--text-primary);background:transparent;cursor:default}
+.ex-chip.is-on{border-color:var(--accent);background:var(--accent-muted)}
+.ex-sec{display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-subtle)}
+.ex-sec__t{font-weight:600;font-size:11px}
+.bd{background:var(--bg-panel);border-radius:2px}
+</style>
+</helmet>
+<div class="pt-root pt-oscuro pt-app">
+
+  <!-- Fondo: ventana principal atenuada -->
+  <header class="pt-titlebar">
+    <div class="pt-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="display: block; shape-rendering: crispEdges">
+        <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+        <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+      </svg>
+    </div>
+    <nav aria-label="Menú principal" style="display: flex"><sc-for list="{{menus}}" as="m" hint-placeholder-count="10"><button class="{{m.cls}}">{{m.name}}</button></sc-for></nav>
+    <div class="pt-spacer"></div>
+    <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+    <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+    <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+  </header>
+  <div aria-hidden="true" style="height: 36px; background: var(--bg-panel); border-bottom: 1px solid var(--border)"></div>
+  <div class="pt-body" aria-hidden="true">
+    <div style="width: 40px; background: var(--bg-panel); border-right: 1px solid var(--border)"></div>
+    <div style="flex: 1; background: var(--canvas-bg); display: flex; align-items: center; justify-content: center">
+      <div class="pt-canvas" style="width: 384px; height: 384px"><div class="pt-art" style="left: -12px; top: -12px; width: 12px; height: 12px; box-shadow: {{bgArt}}"></div></div>
+    </div>
+    <div style="width: 296px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 1px"><div class="bd" style="height: 300px"></div><div class="bd" style="flex: 1"></div></div>
+  </div>
+  <footer class="pt-status"><div class="pt-seg">caballero.pixeltor</div></footer>
+
+  <!-- Diálogo Exportar -->
+  <div class="pt-scrim">
+    <div class="pt-dialog" role="dialog" aria-modal="true" aria-labelledby="ex-title" style="width: 1120px; height: 720px">
+      <div class="pt-dialog__head"><span id="ex-title">Exportar como…</span><span class="pt-sec2" style="font-weight: 400; font-size: 12px; margin-left: 8px">caballero.pixeltor</span><div class="pt-spacer"></div><span class="pt-mono pt-sec2" style="font-size: 10.5px; margin-right: 8px">Ctrl+Alt+S</span><button class="pt-iconbtn" aria-label="Cerrar (Esc)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button></div>
+      <div class="pt-dialog__body">
+
+        <!-- Vista previa -->
+        <section aria-label="Vista previa" style="flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--border-subtle)">
+          <div style="height: 40px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--border-subtle)">
+            <span class="pt-paneltitle">Vista previa</span>
+            <div class="pt-spacer"></div>
+            <div class="pt-segctl" role="group" aria-label="Escala mostrada"><button class="is-on">×1</button><button>×4</button></div>
+            <button class="pt-select" style="width: 92px" aria-label="Zoom de la vista previa"><span>Zoom 200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <button class="pt-iconbtn is-on" aria-label="Mostrar celdas"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.tiles.d}}"></path></svg></button>
+          </div>
+          <div style="flex: 1; min-height: 0; background: var(--canvas-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px">
+            <div style="position: relative; width: 548px; height: 72px; background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/8px 8px; box-shadow: var(--shadow-canvas)">
+              <div class="pt-art" style="left: -2px; top: -2px; width: 2px; height: 2px; box-shadow: {{sheet}}"></div>
+              <sc-for list="{{cells}}" as="c" hint-placeholder-count="8"><span style="position: absolute; top: 4px; left: {{c.x}}px; width: 64px; height: 64px; box-shadow: inset 0 0 0 1px rgba(61,139,255,.45); pointer-events: none"></span></sc-for>
+            </div>
+            <span class="pt-mono pt-sec2" style="font-size: 10.5px">274 × 36 px · 8 celdas de 32 × 32 · relleno 2 px</span>
+          </div>
+          <div style="flex: none; border-top: 1px solid var(--border-subtle); padding: 10px 12px; display: flex; gap: 12px; align-items: flex-start">
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+              <span class="pt-paneltitle">caballero.json <span style="text-transform: none; letter-spacing: 0; font-weight: 400">· formato hash</span></span>
+              <pre class="pt-mono" style="margin: 0; padding: 8px 10px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 2px; font-size: 10.5px; line-height: 1.5; color: var(--text-secondary); white-space: pre; overflow: hidden">{
+  "frames": {
+    "caballero_0": { "frame": { "x": 2, "y": 2, "w": 32, "h": 32 }, "duration": 100,
+                     "sourceSize": { "w": 32, "h": 32 } },
+    "caballero_1": { "frame": { "x": 36, "y": 2, "w": 32, "h": 32 }, "duration": 100, … },
+    …
+  },
+  "meta": { "app": "Pixeltor 0.3", "image": "caballero.png", "size": { "w": 274, "h": 36 }, "scale": "1" }
+}</pre>
+            </div>
+            <div style="width: 200px; flex: none; display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 11px; padding-top: 20px">
+              <span class="pt-sec2">Colores</span><span>16 · indexable</span>
+              <span class="pt-sec2">×1</span><span class="pt-mono" style="font-size: 10.5px">274 × 36 · ≈ 2 KB</span>
+              <span class="pt-sec2">×4</span><span class="pt-mono" style="font-size: 10.5px">1096 × 144 · ≈ 9 KB</span>
+              <span class="pt-sec2">Duración</span><span class="pt-mono" style="font-size: 10.5px">900 ms</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Opciones -->
+        <section aria-label="Opciones de exportación" style="width: 400px; flex: none; display: flex; flex-direction: column; overflow: hidden">
+          <div class="ex-sec">
+            <span class="ex-sec__t">Formato</span>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px" role="radiogroup" aria-label="Formato">
+              <sc-for list="{{formats}}" as="f" hint-placeholder-count="6"><button class="{{f.cls}}" role="radio" aria-checked="{{f.on}}"><span class="{{f.radio}}"></span>{{f.name}}<small>{{f.meta}}</small></button></sc-for>
+            </div>
+          </div>
+          <div class="ex-sec">
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Imágenes</span><button class="pt-select" style="flex: 1"><span>Todas (8) · en orden</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button></div>
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Disposición</span><div class="pt-segctl" role="group" aria-label="Disposición"><button class="is-on">Horizontal</button><button>Vertical</button><button>Rejilla</button><button>Empaquetada</button></div></div>
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Relleno</span>
+              <label class="pt-num" style="width: 72px"><span class="pt-numbox"><input class="pt-input" value="2" aria-label="Relleno"><span class="pt-unit">px</span></span></label>
+              <label class="pt-num" style="width: 120px; margin-left: 8px"><span class="pt-num__lbl">Extrusión</span><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Extrusión de bordes"><span class="pt-unit">px</span></span></label>
+            </div>
+          </div>
+          <div class="ex-sec">
+            <span class="ex-sec__t">Escalas <span class="pt-sec2" style="font-weight: 400">· vecino más cercano</span></span>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px">
+              <sc-for list="{{scales}}" as="s" hint-placeholder-count="6"><button class="{{s.cls}}" role="checkbox" aria-checked="{{s.on}}"><span class="{{s.check}}"><svg class="i16" viewBox="0 0 16 16"><path d="{{s.mark}}"></path></svg></span>{{s.label}}</button></sc-for>
+            </div>
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Sufijo</span><input class="pt-input pt-mono" value="@{escala}x" aria-label="Sufijo de escala" style="width: 120px; font-size: 11px"><span class="pt-hint">sin sufijo en ×1</span></div>
+          </div>
+          <div class="ex-sec">
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Nombre</span><input class="pt-input pt-mono" value="{doc}{scale}" aria-label="Plantilla de nombre" style="flex: 1; font-size: 11px"></div>
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Fondo</span><div class="pt-segctl" role="group" aria-label="Fondo"><button class="is-on">Transparente</button><button>Color</button></div><label class="pt-choice" style="margin-left: 10px"><span class="pt-check"></span>Recortar al contenido</label></div>
+          </div>
+          <div class="ex-sec">
+            <div class="pt-row"><span class="ex-sec__t" style="flex: 1">Metadatos JSON</span><span class="pt-toggle is-on" role="switch" aria-checked="true" aria-label="Exportar JSON"></span></div>
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Formato</span><div class="pt-segctl" role="group" aria-label="Formato JSON"><button class="is-on">Hash</button><button>Array</button></div><span class="pt-hint">compatible con TexturePacker y Aseprite</span></div>
+            <div style="display: flex; gap: 14px; padding-left: 90px">
+              <label class="pt-choice"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Duraciones</label>
+              <label class="pt-choice"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>sourceSize</label>
+              <label class="pt-choice"><span class="pt-check"></span>Nombres</label>
+            </div>
+          </div>
+          <div class="ex-sec" style="border-bottom: 0">
+            <div class="pt-row"><span class="pt-rowlbl" style="width: 84px">Destino</span><input class="pt-input pt-mono" value="C:\Proyectos\juego\export\" aria-label="Carpeta de destino" style="flex: 1; font-size: 11px"><button class="pt-btn pt-btn--secondary">Examinar…</button></div>
+          </div>
+        </section>
+      </div>
+      <div class="pt-dialog__foot">
+        <div style="margin-right: auto; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 11px">Se crearán <b style="font-weight: 600">4 archivos</b></span>
+          <span class="pt-mono pt-sec2" style="font-size: 10.5px">caballero.png · caballero@4x.png · caballero.json · caballero@4x.json</span>
+        </div>
+        <label class="pt-choice pt-sec2" style="margin-right: 8px"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Recordar para «Exportar de nuevo»</label>
+        <button class="pt-btn pt-btn--secondary pt-btn--lg">Cancelar</button>
+        <button class="pt-btn pt-btn--primary pt-btn--lg" style="min-width: 96px">Exportar</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = window.PT;
+    var ic = P.icons();
+    // Hoja de sprites 8×1, celdas de 32 px con 2 px de relleno → 274 × 36 px
+    var W = 274, H = 36, sheet = P.blank(W, H);
+    P.POSES.forEach(function(p, i){ var g = P.knight(p).comp, ox = 2 + i * 34; for (var y = 0; y < 32; y++) for (var x = 0; x < 32; x++) if (g[y][x] !== '.') sheet[y + 2][x + ox] = g[y][x]; });
+    var cells = P.POSES.map(function(p, i){ return {x: 4 + i * 68}; });
+    var F = function(name, meta, on){ return {name: name, meta: meta, on: on ? 'true' : 'false', cls: 'ex-fmt' + (on ? ' is-on' : ''), radio: 'pt-radio' + (on ? ' is-on' : '')}; };
+    var formats = [F('PNG', 'imagen actual'), F('Secuencia PNG', '1 archivo/imagen'), F('Hoja de sprites', '+ JSON', true), F('GIF animado', 'paleta ≤ 256'), F('APNG', 'alfa completo'), F('ICO', 'Windows')];
+    var S = function(label, on){ return {label: label, on: on ? 'true' : 'false', cls: 'ex-chip' + (on ? ' is-on' : ''), check: 'pt-check' + (on ? ' is-on' : ''), mark: on ? ic.check.d : ''}; };
+    var scales = [S('×1', true), S('×2'), S('×3'), S('×4', true), S('×8'), S('×16')];
+    return { ic: ic, menus: P.menus(), bgArt: P.sh(P.knight('A').comp, 12), sheet: P.sh(sheet, 2), cells: cells, formats: formats, scales: scales };
+  }
+}
+</script>
+</body>
+</html>

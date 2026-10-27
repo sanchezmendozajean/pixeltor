@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Ventana principal</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ---------- tokens (copia de tokens.css) ---------- */
+.pt-root{--font-ui:"Inter","Segoe UI Variable","Segoe UI","Cantarell","Noto Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono","Cascadia Mono","DejaVu Sans Mono",monospace;--fs-xs:10px;--fs-sm:11px;--fs-md:12px;--fs-lg:13px;--fs-xl:18px;--radius-sm:2px;--radius-md:4px;--radius-lg:6px;--ease-standard:cubic-bezier(.2,0,0,1);--dur-fast:90ms;--dur-base:140ms;--dur-slow:220ms;font-family:var(--font-ui);font-size:var(--fs-sm);line-height:1.3;color:var(--text-primary);-webkit-font-smoothing:antialiased}
+.pt-oscuro{--bg-app:#1F1F1F;--bg-panel:#2A2A2A;--bg-panel-header:#262626;--bg-panel-raised:#323232;--bg-input:#1B1B1B;--bg-hover:#363636;--bg-active:#404040;--bg-selected:#24344D;--canvas-bg:#161616;--border:#3A3A3A;--border-subtle:#2F2F2F;--border-input:#444444;--border-input-hover:#585858;--text-primary:#E6E6E6;--text-secondary:#A8A8A8;--text-disabled:#6B6B6B;--icon:#C8C8C8;--icon-active:#FFFFFF;--accent:#3D8BFF;--accent-hover:#5A9DFF;--accent-muted:rgba(61,139,255,.18);--accent-solid:#2A6DD9;--accent-solid-hover:#2361C4;--accent-text:#5A9DFF;--on-accent:#FFFFFF;--danger:#F0524F;--warning:#F2B13A;--success:#3DBE7A;--smart-guide:#FF3EA5;--guide:#2FD3E0;--checker-a:#3A3A3A;--checker-b:#2E2E2E;--pixel-grid:rgba(255,255,255,.07);--tooltip-bg:#111111;--shadow-popover:0 4px 16px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.5);--shadow-dialog:0 12px 40px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.6);--shadow-canvas:0 2px 12px rgba(0,0,0,.45);--viewer-header:rgba(42,42,42,.85);color-scheme:dark}
+.pt-gris{--bg-app:#3A3A3A;--bg-panel:#464646;--bg-panel-header:#414141;--bg-panel-raised:#505050;--bg-input:#333333;--bg-hover:#525252;--bg-active:#5C5C5C;--bg-selected:#2E4566;--canvas-bg:#2C2C2C;--border:#555555;--border-subtle:#4C4C4C;--border-input:#5E5E5E;--border-input-hover:#707070;--text-primary:#EDEDED;--text-secondary:#BDBDBD;--text-disabled:#858585;--icon:#DADADA;--icon-active:#FFFFFF;--accent:#3D8BFF;--accent-hover:#5A9DFF;--accent-muted:rgba(61,139,255,.22);--accent-solid:#2A6DD9;--accent-solid-hover:#2361C4;--accent-text:#8DBBFF;--on-accent:#FFFFFF;--danger:#FF6B68;--warning:#F2B13A;--success:#4CCB88;--smart-guide:#FF3EA5;--guide:#2FD3E0;--checker-a:#4A4A4A;--checker-b:#404040;--pixel-grid:rgba(255,255,255,.08);--tooltip-bg:#111111;--shadow-popover:0 4px 16px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.45);--shadow-dialog:0 12px 40px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.55);--shadow-canvas:0 2px 12px rgba(0,0,0,.4);--viewer-header:rgba(70,70,70,.85);color-scheme:dark}
+.pt-claro{--bg-app:#E4E4E4;--bg-panel:#F2F2F2;--bg-panel-header:#EAEAEA;--bg-panel-raised:#FFFFFF;--bg-input:#FFFFFF;--bg-hover:#E6E6E6;--bg-active:#D6D6D6;--bg-selected:#D7E6FF;--canvas-bg:#CFCFCF;--border:#C9C9C9;--border-subtle:#DDDDDD;--border-input:#BDBDBD;--border-input-hover:#9E9E9E;--text-primary:#1E1E1E;--text-secondary:#5C5C5C;--text-disabled:#9A9A9A;--icon:#3A3A3A;--icon-active:#000000;--accent:#1F6FEB;--accent-hover:#3B82F0;--accent-muted:rgba(31,111,235,.14);--accent-solid:#1A64D6;--accent-solid-hover:#1557BD;--accent-text:#1A64D6;--on-accent:#FFFFFF;--danger:#D93A37;--warning:#B97800;--success:#1E8E54;--smart-guide:#E6178C;--guide:#0FA9B8;--checker-a:#FFFFFF;--checker-b:#E6E6E6;--pixel-grid:rgba(0,0,0,.09);--tooltip-bg:#111111;--shadow-popover:0 4px 16px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.12);--shadow-dialog:0 12px 40px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.14);--shadow-canvas:0 2px 12px rgba(0,0,0,.2);--viewer-header:rgba(242,242,242,.85);color-scheme:light}
+/* ---------- base ---------- */
+.pt-root *{box-sizing:border-box}
+.pt-root button{font:inherit;color:inherit;margin:0}
+.pt-root :focus-visible,.pt-root .is-focus{outline:2px solid var(--accent);outline-offset:1px}
+.i16{width:16px;height:16px;flex:none;display:block}
+.i20{width:20px;height:20px;flex:none;display:block}
+.i16 path,.i20 path{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+.i16 path{stroke-width:1.25}.i20 path{stroke-width:1.5}
+.i16 path.f,.i20 path.f{fill:currentColor;stroke:none}
+.pt-mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.pt-sep{width:1px;align-self:stretch;background:var(--border);flex:none}
+.pt-sep--inset{margin:7px 2px}
+/* IconButton */
+.pt-iconbtn{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex:none;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--icon);padding:0;cursor:default;transition:background-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard)}
+.pt-iconbtn:hover,.pt-iconbtn.is-hover{background:var(--bg-hover);color:var(--icon-active)}
+.pt-iconbtn.is-active{background:var(--bg-active);color:var(--icon-active)}
+.pt-iconbtn.is-off{color:var(--text-disabled)}
+/* ToolButton */
+.pt-toolbtn{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--radius-md);background:transparent;color:var(--icon);padding:0;cursor:default;transition:background-color var(--dur-fast) var(--ease-standard)}
+.pt-toolbtn:hover,.pt-toolbtn.is-hover{background:var(--bg-hover);color:var(--icon-active)}
+.pt-toolbtn.is-active{background:var(--bg-active);color:var(--icon-active)}
+.pt-toolbtn.is-active::before{content:"";position:absolute;left:-4px;top:7px;bottom:7px;width:2px;border-radius:1px;background:var(--accent)}
+.pt-toolbtn.has-fly::after{content:"";position:absolute;right:3px;bottom:3px;width:0;height:0;border-left:3px solid transparent;border-bottom:3px solid currentColor;opacity:.75}
+.pt-tooldiv{height:1px;background:var(--border);margin:4px 6px;flex:none}
+/* Button */
+.pt-btn{height:22px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-md);border:1px solid transparent;background:transparent;font-size:var(--fs-sm);white-space:nowrap;cursor:default;transition:background-color var(--dur-fast) var(--ease-standard)}
+.pt-btn--primary{background:var(--accent-solid);color:var(--on-accent)!important;font-weight:500}
+.pt-btn--primary:hover{background:var(--accent-solid-hover)}
+.pt-btn--secondary{border-color:var(--border-input);color:var(--text-primary)}
+.pt-btn--secondary:hover{background:var(--bg-hover)}
+.pt-btn--ghost{color:var(--text-primary)}
+.pt-btn--ghost:hover{background:var(--bg-hover)}
+/* Inputs */
+.pt-input{height:22px;width:100%;min-width:0;background:var(--bg-input);border:1px solid var(--border-input);border-radius:var(--radius-sm);color:var(--text-primary);font:inherit;font-variant-numeric:tabular-nums;padding:0 6px;outline:none}
+.pt-input:hover{border-color:var(--border-input-hover)}
+.pt-input:focus{border-color:var(--accent)}
+.pt-num{display:flex;align-items:center;gap:5px;height:22px;min-width:0}
+.pt-num__lbl{color:var(--text-secondary);cursor:ew-resize;flex:none;user-select:none}
+.pt-numbox{position:relative;flex:1;min-width:0}
+.pt-numbox .pt-input{padding-right:24px}
+.pt-unit{position:absolute;right:6px;top:0;line-height:22px;color:var(--text-secondary);pointer-events:none}
+.pt-select{height:22px;display:inline-flex;align-items:center;justify-content:space-between;gap:4px;padding:0 3px 0 6px;background:var(--bg-input);border:1px solid var(--border-input);border-radius:var(--radius-sm);color:var(--text-primary);font-size:var(--fs-sm);cursor:default;min-width:0}
+.pt-select:hover{border-color:var(--border-input-hover)}
+.pt-select span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt-select .i16{color:var(--text-secondary)}
+/* Swatches */
+.pt-sw{width:16px;height:16px;border-radius:var(--radius-sm);flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.12)}
+.pt-sw--stroke{background:transparent!important;border:4px solid;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.pt-swbtn{display:inline-flex;align-items:center;gap:2px;height:22px;padding:0 1px 0 3px;border:0;border-radius:var(--radius-sm);background:transparent;cursor:default}
+.pt-swbtn:hover{background:var(--bg-hover)}
+.pt-swbtn .i16{color:var(--text-secondary);width:12px;height:12px}
+/* Title bar */
+.pt-menuitem{height:24px;padding:0 7px;display:flex;align-items:center;border:0;border-radius:var(--radius-sm);background:transparent;font-size:var(--fs-md);color:var(--text-primary);cursor:default}
+.pt-menuitem:hover{background:var(--bg-hover)}
+.pt-winbtn{width:46px;height:32px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--icon);cursor:default}
+.pt-winbtn:hover{background:var(--bg-hover)}
+.pt-winbtn--close:hover{background:#C42B1C;color:#fff}
+/* Control bar */
+.pt-ctl{display:flex;align-items:center;gap:6px;flex:none;white-space:nowrap}
+.pt-ctl__lbl{color:var(--text-secondary);font-size:var(--fs-md)}
+.pt-cbar .pt-num__lbl,.pt-cbar .pt-input,.pt-cbar .pt-select{font-size:var(--fs-md)}
+/* Doc tabs */
+.pt-doctab{height:28px;display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border:0;border-right:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:var(--fs-md);cursor:default}
+.pt-doctab:hover{background:var(--bg-hover);color:var(--text-primary)}
+.pt-doctab.is-active{background:var(--bg-panel-raised);color:var(--text-primary);font-weight:500;box-shadow:inset 0 2px 0 var(--accent)}
+.pt-doctab .pt-iconbtn{width:18px;height:18px;visibility:hidden}
+.pt-doctab.is-active .pt-iconbtn,.pt-doctab:hover .pt-iconbtn{visibility:visible}
+.pt-dirty{width:6px;height:6px;border-radius:50%;background:var(--text-secondary);flex:none}
+/* Panels */
+.pt-panel{background:var(--bg-panel);display:flex;flex-direction:column;min-height:0;border-bottom:1px solid var(--border)}
+.pt-phead{height:26px;flex:none;display:flex;align-items:stretch;background:var(--bg-panel-header);border-bottom:1px solid var(--border-subtle)}
+.pt-ptab{display:flex;align-items:center;padding:0 10px;border:0;background:transparent;font-size:var(--fs-sm);font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);cursor:default}
+.pt-ptab:hover{color:var(--text-primary)}
+.pt-ptab.is-active{background:var(--bg-panel);color:var(--text-primary);box-shadow:inset 1px 0 0 var(--border-subtle),inset -1px 0 0 var(--border-subtle)}
+.pt-phead__tools{margin-left:auto;display:flex;align-items:center;gap:1px;padding-right:3px}
+.pt-pfoot{height:28px;flex:none;display:flex;align-items:center;gap:2px;padding:0 6px;border-top:1px solid var(--border-subtle)}
+.pt-sec{padding:7px 8px 8px;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:5px}
+.pt-sectitle{font-weight:600;display:flex;align-items:center;justify-content:space-between;height:16px}
+.pt-row{display:flex;align-items:center;gap:6px;min-height:22px}
+.pt-link{color:var(--accent-text);text-decoration:none;font-size:var(--fs-sm)}
+.pt-link:hover{text-decoration:underline}
+.pt-check{width:12px;height:12px;border-radius:var(--radius-sm);border:1px solid var(--border-input);background:var(--bg-input);flex:none;display:inline-flex;align-items:center;justify-content:center}
+.pt-check.is-on{background:var(--accent-solid);border-color:var(--accent-solid);color:var(--on-accent)}
+.pt-check .i16{width:10px;height:10px}
+.pt-check .i16 path{stroke-width:2}
+/* Ref point */
+.pt-ref{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;width:18px;height:18px;padding:1px;flex:none}
+.pt-ref span{width:4px;height:4px;border:1px solid var(--text-secondary);border-radius:1px}
+.pt-ref span.is-on{background:var(--accent);border-color:var(--accent)}
+/* Layers */
+.pt-lrow{height:36px;display:flex;align-items:center;gap:2px;padding-right:6px;border-bottom:1px solid var(--border-subtle);cursor:default;position:relative}
+.pt-lrow:hover{background:var(--bg-hover)}
+.pt-lrow.is-current{background:var(--bg-panel-raised)}
+.pt-lrow.is-hidden .pt-lname,.pt-lrow.is-hidden .pt-thumb{opacity:.45}
+.pt-srow{height:28px}
+.pt-srow.is-selected{background:var(--accent-muted)}
+.pt-lcol{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--icon)}
+.pt-lcol--lock{border-right:1px solid var(--border-subtle);height:36px;width:20px}
+.pt-srow .pt-lcol--lock{height:28px}
+.pt-lchev{width:16px;flex:none;display:flex;justify-content:center;color:var(--text-secondary)}
+.pt-lbar{width:3px;height:28px;border-radius:1px;flex:none}
+.pt-thumb{width:32px;height:32px;flex:none;position:relative;overflow:hidden;border-radius:1px;background:repeating-conic-gradient(var(--checker-a) 0 25%,var(--checker-b) 0 50%) 0 0/8px 8px;box-shadow:0 0 0 1px var(--border)}
+.pt-thumbart{position:absolute;left:-1px;top:-1px;width:1px;height:1px}
+.pt-lname{flex:1;min-width:0;padding-left:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt-lname em{font-style:normal;color:var(--text-secondary)}
+.pt-fx{font-style:italic;font-weight:600;font-size:var(--fs-sm);color:var(--text-secondary);font-family:Georgia,"Times New Roman",serif;padding:0 3px}
+.pt-target{width:10px;height:10px;border-radius:50%;border:1px solid var(--text-secondary);flex:none;margin-left:4px}
+.pt-target.is-sel{border-color:var(--icon-active);box-shadow:inset 0 0 0 2px var(--bg-panel),inset 0 0 0 6px var(--icon-active)}
+.pt-selsq{width:6px;height:6px;flex:none;margin-left:5px}
+.pt-selsq--empty{background:transparent!important}
+/* Frames strip */
+.pt-frame{position:relative;width:28px;height:28px;flex:none;padding:0;border:0;border-radius:2px;overflow:hidden;background:repeating-conic-gradient(var(--checker-a) 0 25%,var(--checker-b) 0 50%) 0 0/6px 6px;cursor:default}
+.pt-frame .pt-thumbart{left:-3px;top:-2px}
+.pt-frame.is-active{box-shadow:0 0 0 2px var(--accent)}
+.pt-frame:hover{box-shadow:0 0 0 1px var(--border-input-hover)}
+.pt-frame.is-active:hover{box-shadow:0 0 0 2px var(--accent)}
+.pt-fnum{position:absolute;left:0;top:0;padding:0 2px;font-size:9px;line-height:11px;background:rgba(0,0,0,.6);color:#fff;border-bottom-right-radius:2px;font-variant-numeric:tabular-nums}
+/* Status bar */
+.pt-seg{height:24px;display:flex;align-items:center;gap:6px;padding:0 10px;border-right:1px solid var(--border);white-space:nowrap;color:var(--text-secondary);flex:none}
+.pt-seg b{font-weight:500;color:var(--text-primary)}
+.pt-zoomfield{height:18px;display:flex;align-items:center;gap:2px;padding:0 2px 0 5px;border:1px solid var(--border-input);background:var(--bg-input);border-radius:var(--radius-sm);color:var(--text-primary)}
+.pt-zoomfield .i16{width:12px;height:12px;color:var(--text-secondary)}
+.pt-snap{width:20px;height:20px;border:0;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:transparent;color:var(--text-disabled);cursor:default}
+.pt-snap.is-on{color:var(--accent-text);background:var(--accent-muted)}
+.pt-snap:hover{background:var(--bg-hover)}
+.pt-progress{width:56px;height:2px;border-radius:1px;background:var(--border);overflow:hidden;position:relative}
+.pt-progress span{position:absolute;top:0;bottom:0;left:18%;width:38%;background:var(--accent);border-radius:1px}
+/* Swatch grid */
+.pt-swgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px}
+.pt-swcell{height:16px;border:0;padding:0;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);cursor:default}
+.pt-swcell.is-on{box-shadow:0 0 0 1px var(--bg-panel),0 0 0 2px var(--accent)}
+/* Viewer header */
+.pt-vhead{position:absolute;left:0;right:0;top:0;height:24px;display:flex;align-items:center;gap:4px;padding:0 6px;background:var(--viewer-header);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--border-subtle);z-index:2}
+.pt-vhead .pt-select{height:18px;font-size:var(--fs-sm);background:transparent;border-color:transparent}
+.pt-vhead .pt-select:hover{border-color:var(--border-input)}
+.pt-vhead .pt-iconbtn{width:20px;height:20px}
+.pt-vhead .pt-iconbtn.is-on{color:var(--accent-text);background:var(--accent-muted)}
+</style>
+</helmet>
+<div class="pt-root pt-{{tema}}" style="width: 1440px; height: 900px; display: flex; flex-direction: column; background: var(--bg-app); overflow: hidden; position: relative">
+
+<!-- ================= BARRA DE TÍTULO + MENÚ (32) ================= -->
+<header style="height: 32px; flex: none; display: flex; align-items: center; background: var(--bg-app); border-bottom: 1px solid var(--border)">
+  <div style="width: 40px; height: 32px; display: flex; align-items: center; justify-content: center; flex: none">
+    <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="shape-rendering: crispEdges; display: block">
+      <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+      <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+    </svg>
+  </div>
+  <nav aria-label="Menú principal" style="display: flex; align-items: center; gap: 0">
+    <button class="pt-menuitem">Archivo</button>
+    <button class="pt-menuitem">Editar</button>
+    <button class="pt-menuitem">Objeto</button>
+    <button class="pt-menuitem">Capa</button>
+    <button class="pt-menuitem">Efecto</button>
+    <button class="pt-menuitem">Imagen</button>
+    <button class="pt-menuitem">Seleccionar</button>
+    <button class="pt-menuitem">Ver</button>
+    <button class="pt-menuitem">Ventana</button>
+    <button class="pt-menuitem">Ayuda</button>
+  </nav>
+  <div style="flex: 1"></div>
+  <button class="pt-select" style="height: 22px; width: 118px; margin-right: 8px; background: var(--bg-panel)" aria-label="Espacio de trabajo"><span>Esenciales</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+  <button class="pt-select" style="height: 22px; width: 200px; margin-right: 10px; background: var(--bg-input); color: var(--text-secondary); justify-content: flex-start; gap: 6px" aria-label="Buscar comandos"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.search.d}}"></path></svg><span style="flex: 1; text-align: left">Buscar comandos</span><span class="pt-mono" style="font-size: 10px; padding-right: 4px">Ctrl+K</span></button>
+  <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+  <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+  <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+</header>
+
+<!-- ================= BARRA DE CONTROL (36) — forma seleccionada con V ================= -->
+<div class="pt-cbar" role="toolbar" aria-label="Barra de control" style="height: 36px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--bg-panel); border-bottom: 1px solid var(--border); font-size: 12px">
+  <div class="pt-ctl" style="gap: 6px; padding-right: 2px">
+    <svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.ellipse16.d}}"></path></svg>
+    <span style="font-weight: 500">Elipse</span>
+  </div>
+  <span class="pt-sep pt-sep--inset"></span>
+  <div class="pt-ctl">
+    <span class="pt-ctl__lbl">Relleno</span>
+    <button class="pt-swbtn" aria-label="Color de relleno"><span class="pt-sw" style="background: #2F9E74"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+  </div>
+  <div class="pt-ctl">
+    <span class="pt-ctl__lbl">Contorno</span>
+    <button class="pt-swbtn" aria-label="Color de contorno"><span class="pt-sw pt-sw--stroke" style="border-color: #1B1526"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+    <button class="pt-select" style="width: 58px" aria-label="Grosor de contorno"><span>1 px</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+    <button class="pt-select" style="width: 76px" aria-label="Alineación de contorno"><span>Interior</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+  </div>
+  <span class="pt-sep pt-sep--inset"></span>
+  <label class="pt-num" style="width: 112px"><span class="pt-num__lbl">Opacidad</span><span class="pt-numbox"><input class="pt-input" value="100" aria-label="Opacidad"><span class="pt-unit">%</span></span></label>
+  <span class="pt-sep pt-sep--inset"></span>
+  <div class="pt-ctl" style="gap: 8px">
+    <div class="pt-ref" aria-label="Punto de referencia: superior izquierda"><span class="is-on"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <label class="pt-num" style="width: 62px"><span class="pt-num__lbl">X</span><span class="pt-numbox"><input class="pt-input" value="3" aria-label="X"><span class="pt-unit">px</span></span></label>
+    <label class="pt-num" style="width: 62px"><span class="pt-num__lbl">Y</span><span class="pt-numbox"><input class="pt-input" value="14" aria-label="Y"><span class="pt-unit">px</span></span></label>
+    <label class="pt-num" style="width: 64px"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input" value="8" aria-label="Ancho"><span class="pt-unit">px</span></span></label>
+    <button class="pt-iconbtn is-active" aria-label="Mantener proporciones" title="Mantener proporciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.link.d}}"></path></svg></button>
+    <label class="pt-num" style="width: 64px"><span class="pt-num__lbl">Al</span><span class="pt-numbox"><input class="pt-input" value="10" aria-label="Alto"><span class="pt-unit">px</span></span></label>
+    <label class="pt-num" style="width: 56px"><span class="pt-num__lbl"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.rotate.d}}"></path></svg></span><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Ángulo"><span class="pt-unit">°</span></span></label>
+  </div>
+  <span class="pt-sep pt-sep--inset"></span>
+  <div class="pt-ctl" style="gap: 1px" role="group" aria-label="Alinear">
+    <button class="pt-iconbtn" aria-label="Alinear a la izquierda" title="Alinear a la izquierda"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.alL.d}}"></path></svg></button>
+    <button class="pt-iconbtn" aria-label="Centrar horizontalmente" title="Centrar horizontalmente"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.alCH.d}}"></path></svg></button>
+    <button class="pt-iconbtn" aria-label="Alinear a la derecha" title="Alinear a la derecha"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.alR.d}}"></path></svg></button>
+    <button class="pt-iconbtn" aria-label="Alinear arriba" title="Alinear arriba"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.alT.d}}"></path></svg></button>
+    <button class="pt-iconbtn" aria-label="Centrar verticalmente" title="Centrar verticalmente"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.alCV.d}}"></path></svg></button>
+    <button class="pt-iconbtn" aria-label="Alinear abajo" title="Alinear abajo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.alB.d}}"></path></svg></button>
+  </div>
+  <div style="flex: 1"></div>
+  <button class="pt-btn pt-btn--secondary" title="Estampar (Ctrl+E)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.stamp.d}}"></path></svg>Estampar</button>
+  <button class="pt-iconbtn" aria-label="Opciones de la barra de control"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button>
+</div>
+
+<!-- ================= CUERPO ================= -->
+<div style="flex: 1; min-height: 0; display: flex">
+
+  <!-- Barra de herramientas (40) -->
+  <aside aria-label="Herramientas" style="width: 40px; flex: none; display: flex; flex-direction: column; align-items: center; padding: 6px 0 4px; background: var(--bg-panel); border-right: 1px solid var(--border)">
+    <sc-for list="{{tools}}" as="t" hint-placeholder-count="22">
+      <sc-if value="{{t.sep}}" hint-placeholder-val="{{ false }}"><div class="pt-tooldiv" style="width: 28px"></div></sc-if>
+      <sc-if value="{{t.btn}}" hint-placeholder-val="{{ true }}">
+        <button class="{{t.cls}}" aria-label="{{t.label}}" title="{{t.tip}}" style="margin: 1px 0"><svg class="i20" viewBox="0 0 20 20"><path d="{{t.d}}"></path><path class="f" d="{{t.f}}"></path></svg></button>
+      </sc-if>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <!-- FillStrokeWidget -->
+    <div style="position: relative; width: 34px; height: 34px; margin-bottom: 4px" aria-label="Relleno y contorno">
+      <button aria-label="Relleno #2F9E74" style="position: absolute; left: 2px; top: 2px; width: 20px; height: 20px; border: 0; padding: 0; border-radius: 2px; background: #2F9E74; box-shadow: 0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.15); z-index: 2"></button>
+      <button aria-label="Contorno #1B1526" style="position: absolute; left: 12px; top: 12px; width: 20px; height: 20px; padding: 0; border-radius: 2px; background: transparent; border: 5px solid #1B1526; box-shadow: 0 0 0 1px rgba(255,255,255,.28); z-index: 1"></button>
+    </div>
+    <div style="display: flex; gap: 2px; margin-bottom: 4px">
+      <button class="pt-iconbtn" style="width: 16px; height: 16px" aria-label="Intercambiar relleno y contorno (Mayús+X)" title="Intercambiar  Mayús+X"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.swap.d}}"></path></svg></button>
+      <button class="pt-iconbtn" style="width: 16px; height: 16px" aria-label="Relleno y contorno por defecto (D)" title="Por defecto  D"><span style="position: relative; width: 10px; height: 10px; display: block"><span style="position: absolute; left: 0; top: 0; width: 6px; height: 6px; background: #fff; box-shadow: 0 0 0 1px #000"></span><span style="position: absolute; right: 0; bottom: 0; width: 6px; height: 6px; border: 2px solid #000; box-shadow: 0 0 0 1px #888"></span></span></button>
+    </div>
+    <div style="display: flex; gap: 1px; margin-bottom: 6px">
+      <button aria-label="Color" title="Color  &lt;" style="width: 10px; height: 10px; padding: 0; border: 0; background: #2F9E74; box-shadow: 0 0 0 1px var(--accent)"></button>
+      <button aria-label="Degradado" title="Degradado  &gt;" style="width: 10px; height: 10px; padding: 0; border: 0; background: linear-gradient(90deg,#fff,#000); box-shadow: 0 0 0 1px var(--border-input)"></button>
+      <button aria-label="Ninguno" title="Ninguno  /" style="width: 10px; height: 10px; padding: 0; border: 0; background: linear-gradient(45deg,#fff 42%,#F0524F 42% 58%,#fff 58%); box-shadow: 0 0 0 1px var(--border-input)"></button>
+    </div>
+    <div class="pt-tooldiv" style="width: 28px"></div>
+    <button class="pt-toolbtn has-fly" aria-label="Modo de pantalla (F)" title="Modo de pantalla  F"><svg class="i20" viewBox="0 0 20 20"><path d="M3.5 4.5h13v11h-13z M3.5 7.5h13"></path></svg></button>
+  </aside>
+
+  <!-- Centro: pestañas + visor + tira de imágenes -->
+  <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--canvas-bg)">
+    <div role="tablist" aria-label="Documentos" style="height: 28px; flex: none; display: flex; background: var(--bg-panel-header); border-bottom: 1px solid var(--border)">
+      <button class="pt-doctab is-active" role="tab" aria-selected="true">caballero.pixeltor <span style="color: var(--text-secondary); font-weight: 400">@ 1200 %</span><span class="pt-dirty" title="Cambios sin guardar"></span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+      <button class="pt-doctab" role="tab" aria-selected="false">icono-app.pixeltor <span style="color: var(--text-secondary)">@ 800 %</span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+    </div>
+
+    <!-- Visor -->
+    <section aria-label="Visor 1" style="flex: 1; min-height: 0; position: relative; overflow: hidden; background: var(--canvas-bg)">
+      <div class="pt-vhead">
+        <span style="color: var(--text-secondary); padding-left: 2px">Imagen</span>
+        <button class="pt-select" style="width: 178px" aria-label="Imagen del visor"><span>Sigue la activa · 1 Caminar_01</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        <span class="pt-sep" style="margin: 5px 2px"></span>
+        <button class="pt-select" style="width: 74px" aria-label="Zoom del visor"><span class="pt-mono">1200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        <span class="pt-sep" style="margin: 5px 2px"></span>
+        <button class="pt-iconbtn is-on" aria-label="Cuadrícula de píxeles" title="Cuadrícula de píxeles  Ctrl+'"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Cuadrícula de tiles" title="Cuadrícula de tiles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.tiles.d}}"></path></svg></button>
+        <button class="pt-iconbtn is-on" aria-label="Trazados" title="Mostrar trazados  Ctrl+H"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.paths.d}}"></path><path class="f" d="{{ic.paths.f}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Papel cebolla" title="Papel cebolla  O"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.onion.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Modo mosaico" title="Modo mosaico"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.mosaic.d}}"></path></svg></button>
+        <span class="pt-sep" style="margin: 5px 2px"></span>
+        <button class="pt-iconbtn" aria-label="Reproducir en este visor" title="Reproducir en este visor"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.play.f}}"></path></svg></button>
+        <div style="flex: 1"></div>
+        <button class="pt-iconbtn" aria-label="Más opciones del visor" title="Dividir, sincronizar…"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.more.f}}"></path></svg></button>
+      </div>
+
+      <!-- lienzo centrado -->
+      <div style="position: absolute; left: 0; right: 0; top: 24px; bottom: 0; display: flex; align-items: center; justify-content: center">
+        <div aria-label="Lienzo 32 × 32 px al 1200 %" role="img" style="position: relative; width: 384px; height: 384px; box-shadow: var(--shadow-canvas); background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/16px 16px">
+          <div style="position: absolute; left: -12px; top: -12px; width: 12px; height: 12px; box-shadow: {{art}}"></div>
+          <sc-if value="{{showGrid}}" hint-placeholder-val="{{ true }}">
+            <div style="position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, var(--pixel-grid) 1px, transparent 1px), linear-gradient(to bottom, var(--pixel-grid) 1px, transparent 1px); background-size: 12px 12px"></div>
+          </sc-if>
+          <sc-if value="{{showOverlays}}" hint-placeholder-val="{{ true }}">
+            <svg width="384" height="384" viewBox="0 0 384 384" aria-hidden="true" style="position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none">
+              <!-- trazado de la elipse "Escudo" en el color de la capa Cuerpo -->
+              <ellipse cx="84" cy="228" rx="48" ry="60" fill="none" stroke="#3FD07F" stroke-width="1"></ellipse>
+              <!-- caja delimitadora -->
+              <rect x="36.5" y="168.5" width="96" height="120" fill="none" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <!-- anclas (V: sin rellenar) -->
+              <rect x="81" y="165" width="6" height="6" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <rect x="129" y="225" width="6" height="6" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <rect x="81" y="285" width="6" height="6" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <rect x="33" y="225" width="6" height="6" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <!-- tiradores de la caja (esquinas) -->
+              <rect x="33" y="165" width="7" height="7" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <rect x="129" y="165" width="7" height="7" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <rect x="129" y="285" width="7" height="7" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <rect x="33" y="285" width="7" height="7" fill="#fff" stroke="#3FD07F" stroke-width="1" style="shape-rendering: crispEdges"></rect>
+              <!-- tiradores medios (contienen el ancla) -->
+              <rect x="80.5" y="164.5" width="7" height="7" fill="none" stroke="#3FD07F" stroke-width="1"></rect>
+              <rect x="128.5" y="224.5" width="7" height="7" fill="none" stroke="#3FD07F" stroke-width="1"></rect>
+              <rect x="80.5" y="284.5" width="7" height="7" fill="none" stroke="#3FD07F" stroke-width="1"></rect>
+              <rect x="32.5" y="224.5" width="7" height="7" fill="none" stroke="#3FD07F" stroke-width="1"></rect>
+              <!-- punto central -->
+              <path d="M81 228h7 M84.5 224.5v7" stroke="#3FD07F" stroke-width="1"></path>
+            </svg>
+          </sc-if>
+          <!-- cursor de selección sobre (14, 9) -->
+          <svg width="16" height="20" viewBox="0 0 16 20" aria-hidden="true" style="position: absolute; left: 174px; top: 114px; overflow: visible">
+            <path d="M1 1v14l3.6-3.4 2.4 5.4 2.2-1-2.4-5.3h5.1z" fill="#111" stroke="#fff" stroke-width="1" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tira de imágenes (colapsada, 32) -->
+    <section aria-label="Imágenes" style="height: 32px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px; background: var(--bg-panel); border-top: 1px solid var(--border)">
+      <button class="pt-iconbtn" aria-label="Expandir panel Imágenes" title="Expandir panel Imágenes"><svg class="i16" viewBox="0 0 16 16"><path d="M4.5 9.5L8 6l3.5 3.5"></path></svg></button>
+      <span style="font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary)">Imágenes</span>
+      <button class="pt-iconbtn" aria-label="Reproducir (Ctrl+Intro)" title="Reproducir  Ctrl+Intro"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.play.f}}"></path></svg></button>
+      <span class="pt-sep" style="margin: 7px 2px"></span>
+      <div style="display: flex; align-items: center; gap: 4px; padding: 0 2px">
+        <sc-for list="{{frames}}" as="fr" hint-placeholder-count="8">
+          <button class="{{fr.cls}}" aria-label="Imagen {{fr.n}}, {{fr.ms}} ms" title="Caminar_0{{fr.n}} · {{fr.ms}} ms"><span class="pt-thumbart" style="box-shadow: {{fr.sh}}"></span><span class="pt-fnum">{{fr.n}}</span></button>
+        </sc-for>
+        <button class="pt-iconbtn" aria-label="Nueva imagen (Ctrl+Alt+N)" title="Nueva imagen  Ctrl+Alt+N" style="margin-left: 2px"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.plus.d}}"></path></svg></button>
+      </div>
+      <div style="flex: 1"></div>
+      <span style="color: var(--text-secondary)">Imagen <b style="color: var(--text-primary); font-weight: 500">1</b> de 8 · 100 ms</span>
+      <span class="pt-sep" style="margin: 7px 2px"></span>
+      <span class="pt-mono" style="color: var(--text-secondary); font-size: 10.5px">Total 900 ms</span>
+    </section>
+  </main>
+
+  <!-- Columna de iconos (paneles colapsados) -->
+  <nav aria-label="Paneles colapsados" style="width: 36px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 6px; background: var(--bg-panel-header); border-left: 1px solid var(--border)">
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Navegador" title="Navegador"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.navigator.d}}"></path></svg></button>
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Alinear" title="Alinear  Mayús+F7"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.align.d}}"></path></svg></button>
+    <div class="pt-tooldiv" style="width: 20px"></div>
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Contorno" title="Contorno  Ctrl+F10"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.stroke.d}}"></path><path class="f" d="{{ic.stroke.f}}"></path></svg></button>
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Degradado" title="Degradado  Ctrl+F9"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gradientp.d}}"></path><path class="f" d="{{ic.gradientp.f}}"></path></svg></button>
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Estilos gráficos" title="Estilos gráficos  Mayús+F5"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.styles.d}}"></path></svg></button>
+    <div class="pt-tooldiv" style="width: 20px"></div>
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Vista previa" title="Vista previa"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.preview.d}}"></path><path class="f" d="{{ic.preview.f}}"></path></svg></button>
+    <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Buscatrazos" title="Buscatrazos  Mayús+Ctrl+F9"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.pathfinder.d}}"></path></svg></button>
+  </nav>
+
+  <!-- Dock derecho (260) -->
+  <aside aria-label="Paneles" style="width: 260px; flex: none; display: flex; flex-direction: column; background: var(--bg-panel); border-left: 1px solid var(--border)">
+
+    <!-- PROPIEDADES -->
+    <section class="pt-panel" aria-label="Propiedades" style="flex: none">
+      <div class="pt-phead">
+        <button class="pt-ptab is-active">Propiedades</button>
+        <div class="pt-phead__tools">
+          <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Opciones del panel"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button>
+          <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Contraer panel"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        </div>
+      </div>
+      <div style="height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 8px">
+        <svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.ellipse16.d}}"></path></svg>
+        <span style="font-weight: 600">Escudo</span>
+        <span style="color: var(--text-secondary)">Elipse</span>
+        <div style="flex: 1"></div>
+        <span style="display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary)"><span style="width: 8px; height: 8px; border-radius: 1px; background: #3FD07F"></span>Cuerpo</span>
+      </div>
+      <div class="pt-sec">
+        <div class="pt-sectitle">Transformar</div>
+        <div class="pt-row">
+          <div class="pt-ref" aria-label="Punto de referencia"><span class="is-on"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <label class="pt-num" style="flex: 1"><span class="pt-num__lbl" style="width: 14px">X</span><span class="pt-numbox"><input class="pt-input" value="3" aria-label="X"><span class="pt-unit">px</span></span></label>
+          <label class="pt-num" style="flex: 1"><span class="pt-num__lbl" style="width: 14px">Y</span><span class="pt-numbox"><input class="pt-input" value="14" aria-label="Y"><span class="pt-unit">px</span></span></label>
+          <span style="width: 22px; flex: none"></span>
+        </div>
+        <div class="pt-row">
+          <span style="width: 18px; flex: none"></span>
+          <label class="pt-num" style="flex: 1"><span class="pt-num__lbl" style="width: 14px">An</span><span class="pt-numbox"><input class="pt-input" value="8" aria-label="Ancho"><span class="pt-unit">px</span></span></label>
+          <label class="pt-num" style="flex: 1"><span class="pt-num__lbl" style="width: 14px">Al</span><span class="pt-numbox"><input class="pt-input" value="10" aria-label="Alto"><span class="pt-unit">px</span></span></label>
+          <button class="pt-iconbtn is-active" aria-label="Mantener proporciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.link.d}}"></path></svg></button>
+        </div>
+        <div class="pt-row">
+          <span style="width: 18px; flex: none"></span>
+          <label class="pt-num" style="flex: 1"><span class="pt-num__lbl" style="width: 14px"><svg class="i16" viewBox="0 0 16 16" style="width: 13px; height: 13px"><path d="{{ic.rotate.d}}"></path></svg></span><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Ángulo"><span class="pt-unit">°</span></span></label>
+          <div style="flex: 1; display: flex; justify-content: flex-end; gap: 2px">
+            <button class="pt-iconbtn" aria-label="Voltear horizontal" title="Voltear horizontal"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.flipH.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Voltear vertical" title="Voltear vertical"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.flipV.d}}"></path></svg></button>
+          </div>
+          <span style="width: 22px; flex: none"></span>
+        </div>
+      </div>
+      <div class="pt-sec">
+        <div class="pt-sectitle">Apariencia</div>
+        <div class="pt-row">
+          <span style="width: 58px; color: var(--text-secondary)">Relleno</span>
+          <button class="pt-swbtn" aria-label="Color de relleno"><span class="pt-sw" style="background: #2F9E74"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          <span class="pt-mono" style="color: var(--text-secondary); font-size: 10.5px">#2F9E74</span>
+        </div>
+        <div class="pt-row">
+          <span style="width: 58px; color: var(--text-secondary)">Contorno</span>
+          <button class="pt-swbtn" aria-label="Color de contorno"><span class="pt-sw pt-sw--stroke" style="border-color: #1B1526"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          <button class="pt-select" style="width: 58px" aria-label="Grosor"><span>1 px</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          <span style="color: var(--text-secondary); font-size: 10.5px">+1 más</span>
+        </div>
+        <div class="pt-row">
+          <span style="width: 58px; color: var(--text-secondary)">Opacidad</span>
+          <label class="pt-num" style="width: 70px"><span class="pt-numbox"><input class="pt-input" value="100" aria-label="Opacidad"><span class="pt-unit">%</span></span></label>
+          <div style="flex: 1"></div>
+          <span class="pt-fx" title="1 efecto">fx</span>
+        </div>
+        <a class="pt-link" href="#apariencia" style="align-self: flex-start">Más opciones…</a>
+      </div>
+      <div class="pt-sec" style="padding-bottom: 9px">
+        <div class="pt-sectitle">Acciones rápidas</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px">
+          <button class="pt-btn pt-btn--secondary">Estampar</button>
+          <button class="pt-btn pt-btn--secondary">Convertir en trazado</button>
+          <button class="pt-btn pt-btn--secondary">Agrupar</button>
+          <button class="pt-btn pt-btn--secondary" style="justify-content: space-between; padding-right: 4px">Organizar<svg class="i16" viewBox="0 0 16 16" style="color: var(--text-secondary)"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAPAS / APARIENCIA -->
+    <section class="pt-panel" aria-label="Capas" style="flex: 1">
+      <div class="pt-phead">
+        <button class="pt-ptab is-active">Capas</button>
+        <button class="pt-ptab">Apariencia</button>
+        <div class="pt-phead__tools">
+          <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Opciones del panel"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button>
+          <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Contraer panel"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        </div>
+      </div>
+      <div style="height: 32px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-bottom: 1px solid var(--border-subtle)">
+        <button class="pt-select" style="width: 92px" aria-label="Modo de fusión"><span>Normal</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        <label class="pt-num" style="flex: 1"><span class="pt-num__lbl">Opac.</span><span class="pt-numbox"><input class="pt-input" value="100" aria-label="Opacidad de capa"><span class="pt-unit">%</span></span></label>
+        <button class="pt-iconbtn" aria-label="Bloquear transparencia" title="Bloquear transparencia  /"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.lockAlpha.d}}"></path><path class="f" d="{{ic.lockAlpha.f}}"></path></svg></button>
+      </div>
+      <div role="tree" aria-label="Capas de la imagen 1" style="flex: 1; min-height: 0; overflow: hidden">
+        <sc-for list="{{layerRows}}" as="r" hint-placeholder-count="8">
+          <sc-if value="{{r.isLayer}}" hint-placeholder-val="{{ true }}">
+            <div class="{{r.cls}}" role="treeitem" aria-label="Capa {{r.name}}">
+              <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.eye}}"></path></svg></button>
+              <span class="pt-lcol pt-lcol--lock"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{r.lock}}"></path></svg></span>
+              <span class="pt-lchev"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.chev}}"></path></svg></span>
+              <span class="pt-lbar" style="background: {{r.color}}"></span>
+              <span class="pt-thumb"><span class="pt-thumbart" style="box-shadow: {{r.thumb}}"></span></span>
+              <span class="pt-lname">{{r.name}}</span>
+              <sc-if value="{{r.fx}}" hint-placeholder-val="{{ false }}"><span class="pt-fx">fx</span></sc-if>
+              <span class="{{r.target}}" title="Objetivo"></span>
+              <span class="{{r.selsq}}" style="background: {{r.color}}"></span>
+            </div>
+          </sc-if>
+          <sc-if value="{{r.isSub}}" hint-placeholder-val="{{ false }}">
+            <div class="{{r.cls}}" role="treeitem" aria-label="{{r.kind}} {{r.name}}">
+              <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.eye}}"></path></svg></button>
+              <span class="pt-lcol pt-lcol--lock"></span>
+              <span style="width: 22px; flex: none"></span>
+              <span class="pt-lchev" style="color: var(--icon)"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.iconD}}"></path><path class="f" d="{{r.iconF}}"></path></svg></span>
+              <span class="pt-lname">{{r.name}} <em>{{r.kind}}</em></span>
+              <sc-if value="{{r.fx}}" hint-placeholder-val="{{ false }}"><span class="pt-fx">fx</span></sc-if>
+              <span class="{{r.target}}" title="Objetivo"></span>
+              <span class="{{r.selsq}}" style="background: {{r.color}}"></span>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div class="pt-pfoot">
+        <span style="color: var(--text-secondary); flex: 1">5 capas</span>
+        <button class="pt-iconbtn" aria-label="Nueva capa desde selección" title="Nueva capa desde selección"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.fromSel.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Agrupar" title="Agrupar  Ctrl+G"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.folder.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Añadir efecto" title="Añadir efecto de capa"><span class="pt-fx" style="padding: 0">fx</span></button>
+        <button class="pt-iconbtn" aria-label="Estampar formas" title="Estampar formas  Ctrl+E"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.stamp.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Nueva capa" title="Nueva capa  Ctrl+Mayús+N"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.newLayer.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Eliminar" title="Eliminar  Supr"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.trash.d}}"></path></svg></button>
+      </div>
+    </section>
+
+    <!-- COLOR / MUESTRAS -->
+    <section class="pt-panel" aria-label="Muestras" style="flex: none; border-bottom: 0">
+      <div class="pt-phead">
+        <button class="pt-ptab">Color</button>
+        <button class="pt-ptab is-active">Muestras</button>
+        <div class="pt-phead__tools">
+          <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Opciones del panel"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button>
+        </div>
+      </div>
+      <div style="padding: 7px 8px 8px; display: flex; flex-direction: column; gap: 7px">
+        <div class="pt-row">
+          <button class="pt-select" style="flex: 1" aria-label="Paleta del documento"><span>Caballero 16 · documento</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          <button class="pt-iconbtn" aria-label="Nueva muestra"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.plus.d}}"></path></svg></button>
+        </div>
+        <div class="pt-swgrid">
+          <button class="pt-swcell" aria-label="Ninguno" style="background: linear-gradient(45deg,#fff 42%,#F0524F 42% 58%,#fff 58%)"></button>
+          <sc-for list="{{swatches}}" as="s" hint-placeholder-count="15">
+            <button class="{{s.cls}}" aria-label="{{s.hex}}" title="{{s.hex}}" style="background: {{s.hex}}"></button>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<!-- ================= BARRA DE ESTADO (24) ================= -->
+<footer aria-label="Barra de estado" style="height: 24px; flex: none; display: flex; align-items: center; background: var(--bg-app); border-top: 1px solid var(--border); font-size: 11px">
+  <div class="pt-seg" style="padding-left: 6px">
+    <button class="pt-zoomfield" aria-label="Zoom 1200 %"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.zoomPx.d}}"></path><path class="f" d="{{ic.zoomPx.f}}"></path></svg><span class="pt-mono" style="font-size: 10.5px; min-width: 40px; text-align: right">1200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+  </div>
+  <div class="pt-seg"><span class="pt-mono" style="font-size: 10.5px"><b>32 × 32</b> px</span></div>
+  <div class="pt-seg"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.cursor.d}}"></path></svg><span class="pt-mono" style="font-size: 10.5px">x <b>14</b>  y <b>9</b></span></div>
+  <div class="pt-seg"><span class="pt-sw" style="width: 12px; height: 12px; background: {{cursorHex}}"></span><span class="pt-mono" style="font-size: 10.5px"><b>{{cursorHex}}</b>  100 %</span></div>
+  <div class="pt-seg"><span style="width: 8px; height: 8px; border-radius: 1px; background: #3FD07F"></span>Capa: <b>Cuerpo</b></div>
+  <div class="pt-seg">Imagen <b>1</b>/8</div>
+  <div style="flex: 1"></div>
+  <div class="pt-seg" style="border-left: 1px solid var(--border); gap: 2px; padding: 0 6px" role="group" aria-label="Ajustar a">
+    <button class="pt-snap is-on" aria-label="Ajustar a rejilla de píxeles" title="Ajustar a rejilla de píxeles"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.gridPx.d}}"></path></svg></button>
+    <button class="pt-snap is-on" aria-label="Ajustar a anclas y centros" title="Ajustar a anclas y centros"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.snapAnchor.d}}"></path></svg></button>
+    <button class="pt-snap" aria-label="Ajustar a trazados" title="Ajustar a trazados"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.paths.d}}"></path><path class="f" d="{{ic.paths.f}}"></path></svg></button>
+    <button class="pt-snap is-on" aria-label="Ajustar a guías y tiles" title="Ajustar a guías y tiles"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.snapGuide.d}}"></path></svg></button>
+    <button class="pt-snap" aria-label="Ajustar a bordes y centro del lienzo" title="Ajustar a bordes y centro del lienzo"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.snapCanvas.d}}"></path></svg></button>
+    <button class="pt-snap is-on" aria-label="Guías inteligentes (Ctrl+U)" title="Guías inteligentes  Ctrl+U" style="color: var(--smart-guide); background: rgba(255,62,165,.14)"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.magnet.d}}"></path></svg></button>
+  </div>
+  <div class="pt-seg" style="border-right: 0; gap: 8px">
+    <span class="pt-progress" aria-hidden="true"><span></span></span>
+    <span>Calculando efectos…</span>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["oscuro","gris","claro"],"default":"oscuro"},"overlays":{"editor":"boolean","default":true},"cuadricula":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":900}}'>
+/*ICONS-BEGIN*/
+var ICONS = {
+  // Herramientas — rejilla 20, trazo 1.5
+  sel:{g:20,d:'M5.5 3.5v12.5l3.4-3.3 2.4 5 2.1-1-2.4-4.9h4.6z'},
+  dsel:{g:20,d:'M4.5 3.5v11l3-2.9 2.1 4.4 1.8-.9-2.1-4.3h4.2z M13.5 13.5h4v4h-4z'},
+  wand:{g:20,d:'M3.5 16.5l8-8 M10.5 7.5l2 2 M15 2.5v3 M13.5 4h3',f:'M14 9h2v2h-2z M9 3h2v2H9z'},
+  lasso:{g:20,d:'M10 3.5c4.1 0 7 1.9 7 4.5s-2.9 4.5-7 4.5-7-1.9-7-4.5 2.9-4.5 7-4.5z M6.2 11.8c-.9 1.2-.6 2.6.8 3.1 1.3.5 1.4 1.8-.3 2.6'},
+  marquee:{g:20,d:'M3.5 7V4.5H6 M9 4.5h2 M14 4.5h2.5V7 M16.5 10v1 M16.5 13v2.5H14 M11 15.5H9 M6 15.5H3.5V13 M3.5 10v1'},
+  pen:{g:20,d:'M10 2.5l5 7-2.5 5.5h-5L5 9.5z M10 2.5v6 M7 17.5h6 M11.2 9.8a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z'},
+  vpencil:{g:20,d:'M4.5 14.5c2.5-5 5-1 7.5-5 1.4-2.3 2.4-3.6 3.5-4.5 M2.5 13.5h3v3h-3z M14.5 3h3v3h-3z'},
+  rect:{g:20,d:'M3.5 5.5h13v9h-13z'},
+  ellipse:{g:20,d:'M17 10c0 3-3.1 5.5-7 5.5S3 13 3 10s3.1-5.5 7-5.5 7 2.5 7 5.5z'},
+  polygon:{g:20,d:'M10 3l6 3.5v7L10 17l-6-3.5v-7z'},
+  star:{g:20,d:'M10 3l2 5 5.2.2-4.1 3.3 1.5 5.1-4.6-3-4.6 3 1.5-5.1-4.1-3.3L8 8z'},
+  line:{g:20,d:'M4.5 15.5l11-11'},
+  pencil:{g:20,d:'M7.5 12.5l7-7 2.5 2.5-7 7z M12.5 7.5l2.5 2.5',f:'M3.5 15.5h2v2h-2z M5.5 13.5h2v2h-2z'},
+  brush:{g:20,d:'M17 3.5l-6.5 6.5 M10.5 10l1.5 1.5c-.3 2.4-2.2 4.5-6 4.5.3-3.6 2-5.7 4.5-6z',f:'M3 15h2v2H3z'},
+  eraser:{g:20,d:'M3.5 12.5l7-7 5.5 5.5-5 5h-4z M7 9l5.5 5.5 M11.5 16h5'},
+  bucket:{g:20,d:'M3.5 9.5l6-6 6 6-6 6z M3.5 9.5h12 M7 6L4.5 3.5',f:'M16.5 12h2v2h-2z M16.5 15h2v2h-2z'},
+  gradient:{g:20,d:'M3.5 4.5h13v11h-13z',f:'M5 6h2v2H5zM5 8h2v2H5zM5 10h2v2H5zM5 12h2v2H5zM7 6h2v2H7zM7 10h2v2H7zM9 8h2v2H9zM9 12h2v2H9zM11 6h2v2h-2zM13 10h2v2h-2z'},
+  eyedrop:{g:20,d:'M12.5 4.5l1.8-1.8a1.9 1.9 0 0 1 2.7 2.7l-1.8 1.8 M11 4l5 5 M13.5 7.5l-7.5 7.5-2.5.5.5-2.5 7.5-7.5'},
+  hand:{g:20,d:'M7 10.5V5a1.2 1.2 0 0 1 2.4 0v4.5 M9.4 9V3.8a1.2 1.2 0 0 1 2.4 0V9 M11.8 9V4.8a1.2 1.2 0 0 1 2.4 0V10 M14.2 10V7a1.2 1.2 0 0 1 2.4 0v5c0 3.3-2.4 5.5-5.4 5.5h-1.1c-1.6 0-2.8-.7-3.7-1.9L3.6 12.1a1.3 1.3 0 0 1 2-1.6L7 12'},
+  zoom:{g:20,d:'M14 8.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z M12.4 12.4L17 17'},
+  // Paneles — rejilla 16, trazo 1.25
+  props:{g:16,d:'M2.5 4.5h3 M9.5 4.5h4 M2.5 11.5h7 M12.5 11.5h1 M7.5 3v3 M11 10v3'},
+  layers:{g:16,d:'M8 2.5l5.5 3-5.5 3-5.5-3z M2.5 8.5l5.5 3 5.5-3 M2.5 11l5.5 3 5.5-3'},
+  appearance:{g:16,d:'M2.5 3h3v3h-3z M2.5 10h3v3h-3z M8 4.5h5.5 M8 8h5.5 M8 11.5h5.5'},
+  color:{g:16,d:'M8 2.5a5.5 5.5 0 0 0 0 11c1 0 1.5-.6 1.5-1.3 0-1-.8-1.2-.8-2 0-.7.6-1.2 1.3-1.2h1.3c1.4 0 2.2-1 2.2-2.3C13.5 4.4 11.2 2.5 8 2.5z',f:'M4.5 6.5H6V8H4.5z M7 4h1.5v1.5H7z M5 9.5h1.5V11H5z'},
+  swatches:{g:16,d:'M2.5 2.5h4.5v4.5H2.5z M9 2.5h4.5v4.5H9z M2.5 9h4.5v4.5H2.5z M9 9h4.5v4.5H9z'},
+  navigator:{g:16,d:'M2.5 3.5h11v9h-11z M6 6h4.5v3.5H6z'},
+  align:{g:16,d:'M2.5 2v12 M5 4.5h8V7H5z M5 9h5v2.5H5z'},
+  stroke:{g:16,d:'M2.5 3.5h11 M2.5 7h11',f:'M2 10h12v2.5H2z'},
+  gradientp:{g:16,d:'M2.5 2.5h11v11h-11z',f:'M4 4h2v2H4zM4 6h2v2H4zM4 8h2v2H4zM4 10h2v2H4zM6 4h2v2H6zM6 8h2v2H6zM8 6h2v2H8zM8 10h2v2H8zM10 4h2v2h-2z'},
+  frames:{g:16,d:'M2.5 3.5h11v9h-11z M6.2 3.5v9 M9.8 3.5v9'},
+  preview:{g:16,d:'M2.5 3.5h11v9h-11z',f:'M6.5 5.8v4.4L10.2 8z'},
+  styles:{g:16,d:'M8 2.5l1.4 3.6 3.6 1.4-3.6 1.4L8 12.5 6.6 8.9 3 7.5l3.6-1.4z M12.5 11v3 M11 12.5h3'},
+  pathfinder:{g:16,d:'M2.5 2.5h7v7h-7z M6.5 6.5h7v7h-7z'},
+  history:{g:16,d:'M2.5 8a5.5 5.5 0 1 0 1.6-3.9 M2.5 2.5v2.5H5 M8 5v3l2 1.5'},
+  // Interfaz — rejilla 16, trazo 1.25
+  eye:{g:16,d:'M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'},
+  eyeOff:{g:16,d:'M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z M2.5 13.5l11-11'},
+  lock:{g:16,d:'M4 7.5h8v6H4z M5.5 7.5v-2a2.5 2.5 0 0 1 5 0v2'},
+  unlock:{g:16,d:'M4 7.5h8v6H4z M5.5 7.5v-2a2.5 2.5 0 0 1 4.9-.7'},
+  plus:{g:16,d:'M8 3.5v9 M3.5 8h9'},
+  trash:{g:16,d:'M3 4.5h10 M6.5 4.5V3h3v1.5 M4.5 4.5l.7 9h5.6l.7-9 M7 7v4 M9 7v4'},
+  menu:{g:16,d:'M3 4.5h10 M3 8h10 M3 11.5h10'},
+  chevDown:{g:16,d:'M4.5 6.5L8 10l3.5-3.5'},
+  chevRight:{g:16,d:'M6.5 4.5L10 8l-3.5 3.5'},
+  close:{g:16,d:'M4.5 4.5l7 7 M11.5 4.5l-7 7'},
+  link:{g:16,d:'M7 9a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 9 3.5l-.8.8 M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5l.8-.8'},
+  newLayer:{g:16,d:'M2.5 5.5h8v8h-8z M5.5 2.5h8v8 M6.5 7.5v4 M4.5 9.5h4'},
+  fromSel:{g:16,d:'M2.5 4.5v-2h2 M6.5 2.5h2 M10.5 2.5V4 M2.5 6.5v2 M2.5 10.5h2 M12 8.5v5 M9.5 11h5'},
+  folder:{g:16,d:'M2 4h4l1.5 1.5h6.5v7H2z'},
+  stamp:{g:16,d:'M6.5 2.5h3V6L12 7.5V10H4V7.5L6.5 6z M3 12.5h10'},
+  flipH:{g:16,d:'M8 2v12 M6 4.5l-3.5 7H6z M10 4.5l3.5 7H10z'},
+  flipV:{g:16,d:'M2 8h12 M4.5 6l7-3.5V6z M4.5 10l7 3.5V10z'},
+  rotate:{g:16,d:'M12.5 8a4.5 4.5 0 1 1-1.3-3.2 M11.5 2v3h-3'},
+  alL:{g:16,d:'M2.5 2v12 M5 4.5h8V7H5z M5 9h5v2.5H5z'},
+  alCH:{g:16,d:'M8 2v12 M3.5 4.5h9V7h-9z M5.5 9h5v2.5h-5z'},
+  alR:{g:16,d:'M13.5 2v12 M3 4.5h8V7H3z M6 9h5v2.5H6z'},
+  alT:{g:16,d:'M2 2.5h12 M4.5 5H7v8H4.5z M9 5h2.5v5H9z'},
+  alCV:{g:16,d:'M2 8h12 M4.5 3.5H7v9H4.5z M9 5.5h2.5v5H9z'},
+  alB:{g:16,d:'M2 13.5h12 M4.5 3H7v8H4.5z M9 6h2.5v5H9z'},
+  gridPx:{g:16,d:'M2 5.5h12 M2 10.5h12 M5.5 2v12 M10.5 2v12'},
+  tiles:{g:16,d:'M2.5 2.5h11v11h-11z M8 2.5v11 M2.5 8h11'},
+  paths:{g:16,d:'M3.5 12C5 6 10 10 12.5 4',f:'M2.5 11h2v2h-2z M11.5 3h2v2h-2z'},
+  onion:{g:16,d:'M9.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z M8 4.6a3.5 3.5 0 1 1 0 6.8'},
+  mosaic:{g:16,d:'M2.5 2.5h11v11h-11z M6.2 2.5v11 M9.8 2.5v11 M2.5 6.2h11 M2.5 9.8h11'},
+  play:{g:16,d:'M5 3.5v9l7-4.5z',f:'M5 3.5v9l7-4.5z'},
+  pause:{g:16,f:'M4.5 3.5H7v9H4.5z M9 3.5h2.5v9H9z'},
+  first:{g:16,d:'M4 3.5v9',f:'M12.5 3.5v9L6 8z'},
+  last:{g:16,d:'M12 3.5v9',f:'M3.5 3.5v9L10 8z'},
+  prevF:{g:16,d:'M10.5 4L6.5 8l4 4'},
+  nextF:{g:16,d:'M5.5 4l4 4-4 4'},
+  loop:{g:16,d:'M3 8.5V7a2.5 2.5 0 0 1 2.5-2.5H12 M10.5 3L12 4.5 10.5 6 M13 7.5V9a2.5 2.5 0 0 1-2.5 2.5H4 M5.5 13L4 11.5 5.5 10'},
+  more:{g:16,f:'M3 7h2v2H3z M7 7h2v2H7z M11 7h2v2h-2z'},
+  search:{g:16,d:'M10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z M9.6 9.6l3.9 3.9'},
+  magnet:{g:16,d:'M3.5 2.5h3v5a1.5 1.5 0 0 0 3 0v-5h3v5a4.5 4.5 0 0 1-9 0z M3.5 5h3 M9.5 5h3'},
+  snapAnchor:{g:16,d:'M5.5 5.5h5v5h-5z M2 8h3.5 M10.5 8H14'},
+  snapGuide:{g:16,d:'M5.5 2v12 M2 10.5h12'},
+  snapCanvas:{g:16,d:'M2.5 2.5h11v11h-11z M8 6v4 M6 8h4'},
+  swap:{g:16,d:'M4.5 11V7.5a3 3 0 0 1 3-3H11 M9.5 3L11 4.5 9.5 6 M3 9.5L4.5 11 6 9.5'},
+  check:{g:16,d:'M3.5 8.5l3 3 6-6.5'},
+  spinner:{g:16,d:'M13.5 8A5.5 5.5 0 1 1 8 2.5'},
+  zoomPx:{g:16,d:'M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z M10 10l3.5 3.5',f:'M5 5h2v2H5z M7 7h2v2H7z'},
+  minimize:{g:16,d:'M3.5 8h9'},
+  maximize:{g:16,d:'M3.5 3.5h9v9h-9z'},
+  ellipse16:{g:16,d:'M13.5 8c0 2.5-2.5 4.5-5.5 4.5S2.5 10.5 2.5 8 5 3.5 8 3.5s5.5 2 5.5 4.5z'},
+  rect16:{g:16,d:'M2.5 4.5h11v7h-11z'},
+  polygon16:{g:16,d:'M8 2.5l5 3v5l-5 3-5-3v-5z'},
+  star16:{g:16,d:'M8 2.5l1.6 3.6 3.9.3-3 2.6.9 3.8L8 10.8l-3.4 2 .9-3.8-3-2.6 3.9-.3z'},
+  line16:{g:16,d:'M3.5 12.5l9-9'},
+  path16:{g:16,d:'M3.5 12C5 6 10 10 12.5 4',f:'M2.5 11h2v2h-2z M11.5 3h2v2h-2z'},
+  group16:{g:16,d:'M2.5 2.5h7v7h-7z M6.5 6.5h7v7h-7z'},
+  pixels16:{g:16,f:'M2.5 2.5h3v3h-3z M10.5 2.5h3v3h-3z M6.5 6.5h3v3h-3z M2.5 10.5h3v3h-3z M10.5 10.5h3v3h-3z'},
+  lockAlpha:{g:16,d:'M2.5 2.5h8v8h-8z M10 10.5h4V14h-4z M11 10.5v-1a1 1 0 0 1 2 0v1',f:'M2.5 2.5h4v4h-4z M6.5 6.5h4v4h-4z'},
+  cursor:{g:16,d:'M4 2.5v10l2.6-2.4 1.7 3.9 1.6-.7-1.7-3.8h3.6z'},
+  warning:{g:16,d:'M8 2.5l6 10.5H2z M8 6.5v3 M8 11.2v.1'},
+  info:{g:16,d:'M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z M8 7.5V11 M8 5v.1'},
+  eyedrop16:{g:16,d:'M10 3.5l1.3-1.3a1.6 1.6 0 0 1 2.3 2.3L12.3 5.8 M9 3l4 4 M11 5.3l-6.3 6.3-2.2.4.4-2.2 6.3-6.3'},
+  anchorCorner:{g:16,d:'M2.5 13.5L8 5l5.5 8.5 M6.5 3.5h3v3h-3z'},
+  anchorSmooth:{g:16,d:'M2.5 12.5C4 7 6 5 8 5s4 2 5.5 7.5 M2 5h12 M6.5 3.5h3v3h-3z'},
+  scissors:{g:16,d:'M6 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z M6 11a2 2 0 1 1-4 0 2 2 0 0 1 4 0z M5.6 6.2L14 12 M5.6 9.8L14 4'},
+  join:{g:16,d:'M2.5 11.5C4 6 6 6 7 8 M9 8c1-2 3-2 4.5 3.5 M6.5 6.5h3v3h-3z'},
+  dither:{g:16,f:'M2 2h2v2H2zM6 2h2v2H6zM10 2h2v2h-2zM4 4h2v2H4zM8 4h2v2H8zM12 4h2v2h-2zM2 6h2v2H2zM6 6h2v2H6zM10 6h2v2h-2zM4 10h2v2H4zM10 10h2v2h-2zM2 12h2v2H2zM8 12h2v2H8z'}
+};
+/*ICONS-END*/
+
+var PAL = {k:'#1B1526',v:'#0E0B14',d:'#4F5D75',H:'#8796AB',h:'#C7D0DC',w:'#EEF3F8',p:'#E04B55',P:'#8F2638',c:'#3D6BD1',C:'#263F86',b:'#7A4A2B',l:'#5A3A2A',g:'#F2C14E',e:'#2F9E74',z:'rgba(12,8,20,.38)',F:'#22314A',G:'#5BAE3A',D:'#3C7A2A'};
+var SWATCH_ORDER = ['k','v','d','H','h','w','p','P','c','C','b','l','g','e','G','D','F'];
+
+var TOP = [
+'',
+'......kkk',
+'.....kpppk',
+'....kppPppk',
+'....kpPPk..kkkkkkk',
+'.....kPk..khhhhhhhk',
+'......kPkkhhhhhhhhhk',
+'.......kkkhhhhhhhhHk',
+'.........kHhhhhvvvvk',
+'.........kHHhhhhHHHk',
+'.........kHHHhhvvvvk',
+'.........kdHHHHHHHdk',
+'..........kddHHHHddk',
+'..........kkddddddkk',
+'........kHHkccccccckHHk',
+'.......kHhhkcCccccckhhHk',
+'.......kHHHkcccccCckHHHk',
+'........kdkkccccccckllk',
+'........kdkbbbbgbbbkllk',
+'........kkcccCccccCck',
+'.........kcCcccccCcck',
+'.........kkkkkkkkkkkk'
+];
+var LEGS = {
+  A:['..........kHdk..kHdk','..........kHdk..kHdk','..........kHdk..kHdk','..........kHdk..kHdk','.........kllllk.kllllk','.........kllllk.kllllk','.........kkkkkk.kkkkkk'],
+  B:['..........kHdk...kHdk','.........kHdk.....kHdk','........kHdk.......kHdk','........kHdk.......kHdk','.......kllllk......kllllk','.......kkkkkk......kkkkkk',''],
+  C:['..........kHdkkHdk','..........kHdkkHdk','..........kHdkkllllk','..........kHdkkkkkkk','.........kllllk','.........kllllk','.........kkkkkk'],
+  D:['...........kHdk.kHdk','..........kHdk...kHdk','.........kHdk.....kHdk','.........kHdk.....kHdk','........kllllk.....kllllk','........kkkkkk.....kkkkkk','']
+};
+
+function blank(){ var g=[]; for(var y=0;y<32;y++){ var r=[]; for(var x=0;x<32;x++) r.push('.'); g.push(r);} return g; }
+function put(g,rows,y0){ rows.forEach(function(row,i){ for(var x=0;x<32&&x<row.length;x++){ if(row[x]!=='.') g[y0+i][x]=row[x]; } }); }
+function over(dst,src){ for(var y=0;y<32;y++) for(var x=0;x<32;x++) if(src[y][x]!=='.') dst[y][x]=src[y][x]; }
+
+function buildLayers(pose){
+  var sombra=blank();
+  for(var y=26;y<32;y++) for(var x=0;x<32;x++){ var dx=(x+.5-15.5)/7, dy=(y+.5-29.5)/1.6; if(dx*dx+dy*dy<=1) sombra[y][x]='z'; }
+  var cuerpo=blank(); put(cuerpo,TOP,0); put(cuerpo,LEGS[pose],22);
+  // Forma "Escudo": elipse c(7,19) r(4,5) rasterizada
+  var inE=function(x,y){ var dx=(x+.5-7)/4, dy=(y+.5-19)/5; return dx*dx+dy*dy<=1; };
+  for(var y2=12;y2<26;y2++) for(var x2=1;x2<13;x2++){
+    if(!inE(x2,y2)) continue;
+    var edge=!inE(x2-1,y2)||!inE(x2+1,y2)||!inE(x2,y2-1)||!inE(x2,y2+1);
+    var ring=!edge&&(!inE(x2-2,y2)||!inE(x2+2,y2)||!inE(x2,y2-2)||!inE(x2,y2+2));
+    var cross=((x2===6||x2===7)&&y2>=16&&y2<=21)||(y2===18&&x2>=5&&x2<=8);
+    cuerpo[y2][x2]=edge?'k':ring?'H':cross?'g':'e';
+  }
+  // Forma "Espada": trazado diagonal 1:1
+  cuerpo[17][22]='l'; cuerpo[18][22]='l';
+  cuerpo[17][23]='b'; cuerpo[16][23]='g'; cuerpo[17][24]='g';
+  for(var i=0;i<7;i++){ cuerpo[16-i][24+i]='w'; if(i>0) cuerpo[17-i][24+i]='H'; }
+  cuerpo[9][31]='w';
+  // Efecto "Contorno de píxel" (capa Contorno)
+  var contorno=blank();
+  var solid=function(x,y){ if(x<0||y<0||x>31||y>31) return false; var c=cuerpo[y][x]; return c!=='.'&&c!=='k'; };
+  for(var y3=0;y3<32;y3++) for(var x3=0;x3<32;x3++){
+    if(cuerpo[y3][x3]!=='.') continue;
+    if(solid(x3-1,y3)||solid(x3+1,y3)||solid(x3,y3-1)||solid(x3,y3+1)) contorno[y3][x3]='k';
+  }
+  // Efecto "Iluminación direccional" (capa Luz)
+  var luz=blank();
+  [[12,6],[13,6],[11,7],[12,7],[9,15],[20,15],[13,15],[11,8]].forEach(function(p){ if(cuerpo[p[1]][p[0]]!=='.' && cuerpo[p[1]][p[0]]!=='k') luz[p[1]][p[0]]='w'; });
+  var comp=blank(); over(comp,sombra); over(comp,cuerpo); over(comp,contorno); over(comp,luz);
+  return {sombra:sombra,cuerpo:cuerpo,contorno:contorno,luz:luz,comp:comp};
+}
+function shadowOf(g,s){
+  var out=[];
+  for(var y=0;y<32;y++) for(var x=0;x<32;x++){ var c=g[y][x]; if(c!=='.') out.push(((x+1)*s)+'px '+((y+1)*s)+'px 0 0 '+PAL[c]); }
+  return out.length?out.join(','):'none';
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    var ic = {};
+    Object.keys(ICONS).forEach(function(k){ ic[k]={d:ICONS[k].d||'',f:ICONS[k].f||''}; });
+    var poses=['A','B','C','D','A','D','C','B'];
+    var ms=[100,100,150,100,100,100,150,100];
+    var built=poses.map(buildLayers);
+    var L=built[0];
+    var fondo=blank(); for(var y=0;y<32;y++) for(var x=0;x<32;x++) fondo[y][x]='F';
+
+    var T=function(k,label,key,o){ o=o||{}; var cls='pt-toolbtn'+(o.fly?' has-fly':'')+(o.active?' is-active':''); return {btn:true,sep:false,cls:cls,label:label+' ('+key+')',tip:label+'  '+key,d:ICONS[k].d||'',f:ICONS[k].f||''}; };
+    var SEP={btn:false,sep:true};
+    var tools=[
+      T('sel','Selección','V',{active:1}), T('dsel','Selección directa','A',{fly:1}),
+      SEP,
+      T('marquee','Marco rectangular','S',{fly:1}), T('lasso','Lazo','Q',{fly:1}), T('wand','Varita mágica','W'),
+      SEP,
+      T('pen','Pluma','P',{fly:1}), T('vpencil','Lápiz vectorial','Mayús+N'), T('ellipse','Elipse','L',{fly:1}),
+      SEP,
+      T('pencil','Lápiz','N'), T('brush','Pincel','B',{fly:1}), T('eraser','Borrador','E'), T('bucket','Bote de pintura','K',{fly:1}), T('gradient','Degradado','G'), T('eyedrop','Cuentagotas','I'),
+      SEP,
+      T('hand','Mano','H'), T('zoom','Zoom','Z')
+    ];
+
+    var layerRows=[
+      {isLayer:true,isSub:false,cls:'pt-lrow',name:'Luz',color:'#2FD3E0',eye:ic.eye.d,lock:'',chev:ic.chevRight.d,thumb:shadowOf(L.luz,1),fx:true,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow',name:'Contorno',color:'#D46BFF',eye:ic.eye.d,lock:ic.lock.d,chev:ic.chevRight.d,thumb:shadowOf(L.contorno,1),fx:true,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow is-current',name:'Cuerpo',color:'#3FD07F',eye:ic.eye.d,lock:'',chev:ic.chevDown.d,thumb:shadowOf(L.cuerpo,1),fx:false,target:'pt-target is-sel',selsq:'pt-selsq'},
+      {isLayer:false,isSub:true,cls:'pt-lrow pt-srow',name:'Espada',kind:'Trazado',color:'#3FD07F',eye:ic.eye.d,iconD:ic.path16.d,iconF:ic.path16.f,fx:false,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:false,isSub:true,cls:'pt-lrow pt-srow is-selected',name:'Escudo',kind:'Elipse',color:'#3FD07F',eye:ic.eye.d,iconD:ic.ellipse16.d,iconF:'',fx:false,target:'pt-target is-sel',selsq:'pt-selsq'},
+      {isLayer:false,isSub:true,cls:'pt-lrow pt-srow',name:'Píxeles',kind:'Ráster base',color:'#3FD07F',eye:ic.eye.d,iconD:'',iconF:ic.pixels16.f,fx:false,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow',name:'Sombra',color:'#FF5A5A',eye:ic.eye.d,lock:'',chev:ic.chevRight.d,thumb:shadowOf(L.sombra,1),fx:true,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow is-hidden',name:'Fondo',color:'#4F9DFF',eye:ic.eyeOff.d,lock:ic.lock.d,chev:ic.chevRight.d,thumb:shadowOf(fondo,1),fx:false,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'}
+    ];
+
+    var frames=built.map(function(b,i){ return {n:i+1,ms:ms[i],sh:shadowOf(b.comp,1),cls:'pt-frame'+(i===0?' is-active':'')}; });
+    var swatches=SWATCH_ORDER.map(function(k){ return {hex:PAL[k],cls:'pt-swcell'+(k==='e'?' is-on':'')}; });
+    var cc=L.comp[9][14];
+
+    return {
+      tema: this.props.tema ?? 'oscuro',
+      showOverlays: this.props.overlays ?? true,
+      showGrid: this.props.cuadricula ?? true,
+      ic: ic,
+      tools: tools,
+      art: shadowOf(L.comp,12),
+      layerRows: layerRows,
+      frames: frames,
+      swatches: swatches,
+      cursorHex: cc==='.'?'—':PAL[cc]
+    };
+  }
+}
+</script>
+</body>
+</html>

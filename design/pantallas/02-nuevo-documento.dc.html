@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Nuevo documento</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./compartido/pt.css">
+<script src="./compartido/pt-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.bd-block{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px}
+</style>
+</helmet>
+<div class="pt-root pt-oscuro pt-app">
+
+  <!-- Fondo: pantalla de inicio -->
+  <header class="pt-titlebar">
+    <div class="pt-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="display: block; shape-rendering: crispEdges">
+        <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+        <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+      </svg>
+    </div>
+    <nav aria-label="Menú principal" style="display: flex">
+      <sc-for list="{{menus}}" as="m" hint-placeholder-count="10"><button class="{{m.cls}}">{{m.name}}</button></sc-for>
+    </nav>
+    <div class="pt-spacer"></div>
+    <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+    <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+    <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+  </header>
+  <div class="pt-body" aria-hidden="true" style="background: var(--canvas-bg); padding: 40px 364px 32px 64px; flex-direction: column; gap: 32px">
+    <div style="display: flex; align-items: center; gap: 20px">
+      <div style="width: 64px; height: 64px; border-radius: 6px; background: var(--bg-panel)"></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="width: 320px; height: 14px; border-radius: 3px; background: var(--bg-panel-raised)"></div><div style="width: 480px; height: 10px; border-radius: 3px; background: var(--bg-panel)"></div></div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px"><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div><div class="bd-block" style="height: 132px"></div></div>
+    <div class="bd-block" style="flex: 1"></div>
+  </div>
+  <footer class="pt-status"><div class="pt-seg">Sin documentos abiertos</div></footer>
+
+  <!-- Diálogo -->
+  <div class="pt-scrim">
+    <div class="pt-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title" style="width: 860px; height: 580px">
+      <div class="pt-dialog__head"><span id="dlg-title">Nuevo documento</span><div class="pt-spacer"></div><button class="pt-iconbtn" aria-label="Cerrar (Esc)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button></div>
+      <div class="pt-dialog__body">
+
+        <!-- Presets -->
+        <nav aria-label="Ajustes preestablecidos" style="width: 220px; flex: none; background: var(--bg-panel-header); border-right: 1px solid var(--border-subtle); padding: 8px; display: flex; flex-direction: column; overflow: hidden">
+          <sc-for list="{{presets}}" as="p" hint-placeholder-count="18">
+            <sc-if value="{{p.head}}" hint-placeholder-val="{{ false }}"><div class="pt-listhead">{{p.label}}</div></sc-if>
+            <sc-if value="{{p.item}}" hint-placeholder-val="{{ true }}"><button class="{{p.cls}}">{{p.label}}<small>{{p.meta}}</small></button></sc-if>
+          </sc-for>
+        </nav>
+
+        <!-- Formulario -->
+        <div class="pt-form" style="flex: 1; min-width: 0; padding: 18px 20px">
+          <div class="pt-formrow"><label for="nd-nombre">Nombre</label><input id="nd-nombre" class="pt-input pt-input--lg is-focus" value="caballero"></div>
+          <div class="pt-formrow"><span class="pt-formlbl">Tamaño</span>
+            <div style="display: flex; align-items: center; gap: 6px">
+              <label class="pt-num" style="width: 112px; height: 26px"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input pt-input--lg" value="32" aria-label="Ancho"><span class="pt-unit" style="line-height: 26px">px</span></span></label>
+              <button class="pt-iconbtn is-active" aria-label="Mantener proporciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.link.d}}"></path></svg></button>
+              <label class="pt-num" style="width: 112px; height: 26px"><span class="pt-num__lbl">Al</span><span class="pt-numbox"><input class="pt-input pt-input--lg" value="32" aria-label="Alto"><span class="pt-unit" style="line-height: 26px">px</span></span></label>
+              <div class="pt-segctl" role="group" aria-label="Orientación" style="height: 26px; margin-left: 4px"><button class="is-on" aria-label="Cuadrado"><svg class="i16" viewBox="0 0 16 16"><path d="M4 4h8v8H4z"></path></svg></button><button aria-label="Horizontal"><svg class="i16" viewBox="0 0 16 16"><path d="M2.5 5h11v6h-11z"></path></svg></button><button aria-label="Vertical"><svg class="i16" viewBox="0 0 16 16"><path d="M5 2.5h6v11H5z"></path></svg></button></div>
+            </div>
+          </div>
+          <div class="pt-formrow"><span></span><span class="pt-hint">De 1 a 2048 px por lado; recomendado hasta 1024 × 1024. Acepta expresiones: 16*2.</span></div>
+          <div class="pt-hsep" style="margin: 4px 0"></div>
+          <div class="pt-formrow"><span class="pt-formlbl">Imágenes</span>
+            <div style="display: flex; align-items: center; gap: 16px">
+              <label class="pt-num" style="width: 90px; height: 26px"><span class="pt-numbox pt-numbox--step"><input class="pt-input pt-input--lg" value="8" aria-label="Número de imágenes"><span class="pt-stepper" aria-hidden="true"><span></span><span></span></span></span></label>
+              <label class="pt-num" style="width: 190px; height: 26px"><span class="pt-num__lbl">Duración por defecto</span><span class="pt-numbox"><input class="pt-input pt-input--lg" value="100" aria-label="Duración por defecto"><span class="pt-unit" style="line-height: 26px">ms</span></span></label>
+            </div>
+          </div>
+          <div class="pt-formrow"><span class="pt-formlbl">Fondo</span>
+            <div style="display: flex; align-items: center; gap: 18px">
+              <label class="pt-choice"><span class="pt-radio is-on"></span>Transparente</label>
+              <label class="pt-choice"><span class="pt-radio"></span>Color</label>
+              <span class="pt-sw is-disabled" style="background: #22314A"></span>
+            </div>
+          </div>
+          <div class="pt-formrow"><label>Paleta inicial</label>
+            <button class="pt-select pt-select--lg" style="width: 100%"><span style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; gap: 1px">
+              <sc-for list="{{palStrip}}" as="c" hint-placeholder-count="16"><span style="width: 8px; height: 12px; background: {{c}}"></span></sc-for>
+            </span>Caballero 16 · 16 colores</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          </div>
+          <div class="pt-formrow"><span></span><label class="pt-choice"><span class="pt-check"></span>Restringir a la paleta (selector y efectos solo usan sus colores)</label></div>
+          <div class="pt-hsep" style="margin: 4px 0"></div>
+          <div class="pt-formrow"><span class="pt-formlbl">Cuadrícula de tiles</span>
+            <div style="display: flex; align-items: center; gap: 10px">
+              <label class="pt-choice"><span class="pt-toggle"></span></label>
+              <label class="pt-num is-disabled" style="width: 92px; height: 26px"><span class="pt-numbox"><input class="pt-input pt-input--lg" value="16" aria-label="Ancho de tile"><span class="pt-unit" style="line-height: 26px">px</span></span></label>
+              <span class="pt-sec2">×</span>
+              <label class="pt-num is-disabled" style="width: 92px; height: 26px"><span class="pt-numbox"><input class="pt-input pt-input--lg" value="16" aria-label="Alto de tile"><span class="pt-unit" style="line-height: 26px">px</span></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista previa -->
+        <aside aria-label="Vista previa del tamaño" style="width: 230px; flex: none; border-left: 1px solid var(--border-subtle); padding: 18px 16px; display: flex; flex-direction: column; gap: 12px">
+          <span class="pt-paneltitle">Vista previa a escala</span>
+          <div style="height: 236px; border-radius: 4px; background: var(--canvas-bg); display: flex; align-items: center; justify-content: center; gap: 18px">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+              <span style="width: 32px; height: 32px; background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/4px 4px; box-shadow: var(--shadow-canvas)"></span>
+              <span class="pt-mono pt-sec2" style="font-size: 10px">100 %</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+              <span style="position: relative; width: 128px; height: 128px; background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/16px 16px; box-shadow: var(--shadow-canvas)"><span style="position: absolute; inset: 0; background-image: linear-gradient(to right, var(--pixel-grid) 1px, transparent 1px), linear-gradient(to bottom, var(--pixel-grid) 1px, transparent 1px); background-size: 4px 4px"></span></span>
+              <span class="pt-mono pt-sec2" style="font-size: 10px">400 %</span>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px">
+            <span class="pt-sec2">Lienzo</span><span class="pt-mono" style="font-size: 10.5px">32 × 32 px</span>
+            <span class="pt-sec2">Imágenes</span><span class="pt-mono" style="font-size: 10.5px">8 · 800 ms en total</span>
+            <span class="pt-sec2">Zoom inicial</span><span class="pt-mono" style="font-size: 10.5px">1200 % (encajar)</span>
+            <span class="pt-sec2">Capas</span><span>Capa 1</span>
+          </div>
+        </aside>
+      </div>
+      <div class="pt-dialog__foot">
+        <button class="pt-btn pt-btn--ghost pt-btn--lg" style="margin-right: auto"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.save.d}}"></path></svg>Guardar como plantilla…</button>
+        <button class="pt-btn pt-btn--secondary pt-btn--lg">Cancelar</button>
+        <button class="pt-btn pt-btn--primary pt-btn--lg" style="min-width: 88px">Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = window.PT;
+    var H = function(l){ return {head:true, item:false, label:l}; };
+    var I = function(l, m, on){ return {head:false, item:true, label:l, meta:m, cls:'pt-listitem'+(on?' is-active':'')}; };
+    var presets = [
+      H('Recientes'), I('Sprite 32 × 32', '8 img.'),
+      H('Iconos'), I('Icono 16', '16 px'), I('Icono 24', '24 px'), I('Icono 32', '32 px'), I('Icono 48', '48 px'), I('Icono 256', '256 px'), I('Juego de iconos (16–256)', '7 img.'),
+      H('Sprites'), I('Sprite 16 × 16', '16 px'), I('Sprite 32 × 32', '32 px', true), I('Personaje 64 × 64', '64 px'),
+      H('Tiles'), I('Tile 8 × 8', '8 px'), I('Tile 16 × 16', '16 px'), I('Tile 32 × 32', '32 px'),
+      H('Personalizado'), I('HUD 320 × 180', '320 px')
+    ];
+    var keys = ['k','v','d','H','h','w','p','P','c','C','b','l','g','e','G','D'];
+    return { ic: P.icons(), menus: P.menus(), presets: presets, palStrip: keys.map(function(k){ return P.PAL[k]; }) };
+  }
+}
+</script>
+</body>
+</html>

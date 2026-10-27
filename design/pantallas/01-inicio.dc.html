@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Inicio</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./compartido/pt.css">
+<script src="./compartido/pt-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.st-tpl{width:100%;display:flex;flex-direction:column;gap:8px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg-panel);cursor:default;text-align:left;transition:border-color var(--dur-fast) var(--ease-standard),background-color var(--dur-fast) var(--ease-standard)}
+.st-tpl:hover,.st-tpl.is-hover{border-color:var(--border-input-hover);background:var(--bg-panel-raised)}
+.st-tpl__prev{height:84px;border-radius:3px;background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.st-tpl__box{background:repeating-conic-gradient(var(--checker-a) 0 25%,var(--checker-b) 0 50%) 0 0/8px 8px;box-shadow:var(--shadow-canvas);position:relative}
+.st-tpl__name{font-size:12px;font-weight:500;color:var(--text-primary)}
+.st-tpl__meta{font-size:10.5px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.st-rec{display:grid;grid-template-columns:44px minmax(0,1.4fr) 110px 90px 120px minmax(0,1.6fr);align-items:center;gap:12px;height:48px;padding:0 12px;border-radius:4px;cursor:default}
+.st-rec:hover,.st-rec.is-hover{background:var(--bg-hover)}
+.st-rec--head{height:28px;color:var(--text-secondary);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.st-rec--head:hover{background:transparent}
+.st-thumb{width:40px;height:40px;position:relative;overflow:hidden;border-radius:3px;background:repeating-conic-gradient(var(--checker-a) 0 25%,var(--checker-b) 0 50%) 0 0/8px 8px;box-shadow:0 0 0 1px var(--border)}
+.st-h2{font-size:12px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px}
+.st-h2 span{font-weight:400;color:var(--text-secondary)}
+</style>
+</helmet>
+<div class="pt-root pt-oscuro pt-app">
+
+  <header class="pt-titlebar">
+    <div class="pt-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="display: block; shape-rendering: crispEdges">
+        <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+        <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+      </svg>
+    </div>
+    <nav aria-label="Menú principal" style="display: flex">
+      <sc-for list="{{menus}}" as="m" hint-placeholder-count="10"><button class="{{m.cls}}">{{m.name}}</button></sc-for>
+    </nav>
+    <div class="pt-spacer"></div>
+    <button class="pt-select" style="width: 200px; margin-right: 10px; color: var(--text-secondary); justify-content: flex-start; gap: 6px" aria-label="Buscar comandos"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.search.d}}"></path></svg><span style="flex: 1; text-align: left">Buscar comandos</span><span class="pt-mono" style="font-size: 10px; padding-right: 4px">Ctrl+K</span></button>
+    <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+    <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+    <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+  </header>
+
+  <div class="pt-body" style="background: var(--canvas-bg)">
+    <main style="flex: 1; min-width: 0; padding: 40px 48px 32px 64px; display: flex; flex-direction: column; gap: 32px; overflow: hidden">
+
+      <!-- Cabecera -->
+      <div style="display: flex; align-items: center; gap: 20px">
+        <div style="position: relative; width: 64px; height: 64px; flex: none" role="img" aria-label="Logotipo de Pixeltor">
+          <div class="pt-art" style="left: -4px; top: -4px; width: 4px; height: 4px; box-shadow: {{logoPx}}"></div>
+          <svg width="64" height="64" viewBox="0 0 16 16" aria-hidden="true" style="position: absolute; left: 0; top: 0">
+            <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.3" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em">Te damos la bienvenida a Pixeltor</h1>
+          <span class="pt-sec2" style="font-size: 12px">Pixel art con capas inteligentes: píxeles, formas vectoriales vivas y efectos no destructivos.</span>
+        </div>
+        <div class="pt-spacer"></div>
+        <a class="pt-btn pt-btn--primary pt-btn--xl" href="P02-NuevoDocumento.dc.html"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.newDoc.d}}"></path></svg>Nuevo…<span style="opacity: .75; font-weight: 400; font-size: 11px">Ctrl+N</span></a>
+        <button class="pt-btn pt-btn--secondary pt-btn--xl"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.folderOpen.d}}"></path></svg>Abrir…<span class="pt-sec2" style="font-size: 11px">Ctrl+O</span></button>
+      </div>
+
+      <!-- Plantillas -->
+      <section aria-labelledby="h-plantillas" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 class="st-h2" id="h-plantillas">Empezar desde una plantilla <span>Haz clic para crear; Mayús+clic abre el diálogo con la plantilla cargada</span></h2>
+        <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{templates}}" as="t" hint-placeholder-count="8">
+            <button class="{{t.cls}}" aria-label="Plantilla {{t.name}}">
+              <span class="st-tpl__prev">
+                <sc-if value="{{t.custom}}" hint-placeholder-val="{{ false }}">
+                  <span style="width: 44px; height: 44px; border: 1px dashed var(--border-input-hover); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--icon)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.plus.d}}"></path></svg></span>
+                </sc-if>
+                <sc-if value="{{t.box}}" hint-placeholder-val="{{ true }}">
+                  <span class="st-tpl__box" style="width: {{t.px}}px; height: {{t.py}}px"><span class="pt-art" style="left: {{t.ax}}px; top: {{t.ay}}px; width: {{t.as}}px; height: {{t.as}}px; box-shadow: {{t.art}}"></span></span>
+                </sc-if>
+              </span>
+              <span style="display: flex; flex-direction: column; gap: 2px; padding: 0 2px 2px">
+                <span class="st-tpl__name">{{t.name}}</span>
+                <span class="st-tpl__meta">{{t.meta}}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- Recientes -->
+      <section aria-labelledby="h-recientes" style="display: flex; flex-direction: column; gap: 8px; min-height: 0">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <h2 class="st-h2" id="h-recientes">Recientes</h2>
+          <div class="pt-spacer"></div>
+          <input class="pt-input" style="width: 220px" value="" placeholder="Filtrar recientes…" aria-label="Filtrar recientes">
+          <div class="pt-segctl" role="group" aria-label="Vista de recientes"><button class="is-on" aria-label="Lista"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button><button aria-label="Cuadrícula"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.swatches.d}}"></path></svg></button></div>
+        </div>
+        <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 4px">
+          <div class="st-rec st-rec--head"><span></span><span>Nombre</span><span>Tamaño</span><span>Imágenes</span><span>Modificado</span><span>Ubicación</span></div>
+          <sc-for list="{{recents}}" as="r" hint-placeholder-count="5">
+            <div class="{{r.cls}}">
+              <span class="st-thumb"><span class="pt-art" style="left: {{r.ax}}px; top: {{r.ay}}px; width: {{r.as}}px; height: {{r.as}}px; box-shadow: {{r.art}}"></span></span>
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 12px; font-weight: 500">{{r.name}}</span><span class="pt-sec2" style="font-size: 10.5px">{{r.desc}}</span></span>
+              <span class="pt-mono pt-sec2" style="font-size: 10.5px">{{r.size}}</span>
+              <span class="pt-sec2">{{r.frames}}</span>
+              <span class="pt-sec2">{{r.date}}</span>
+              <span class="pt-mono pt-sec2" style="font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.path}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </main>
+
+    <!-- Lateral -->
+    <aside aria-label="Novedades y ayuda" style="width: 300px; flex: none; padding: 40px 32px 32px 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 8px"><svg class="i16" viewBox="0 0 16 16" style="color: #FF9F43"><path d="{{ic.sparkle.d}}"></path></svg><span style="font-weight: 600; font-size: 12px">Novedades de la versión 0.3</span></div>
+        <ul style="margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 6px; color: var(--text-secondary); line-height: 1.45">
+          <li><span style="color: var(--text-primary)">Degradados con tramado</span> Bayer 2×2, 4×4 y 8×8 anclados a la imagen.</li>
+          <li><span style="color: var(--text-primary)">Visores divididos</span> con modo mosaico para tiles.</li>
+          <li><span style="color: var(--text-primary)">Iluminación direccional</span>: sombreado automático de sprites.</li>
+        </ul>
+        <a class="pt-link" href="#novedades">Ver todas las novedades →</a>
+      </div>
+      <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 8px; display: flex; flex-direction: column">
+        <a class="pt-listitem" href="#atajos" style="text-decoration: none"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.keyboard.d}}"></path><path class="f" d="{{ic.keyboard.f}}"></path></svg>Atajos de teclado</a>
+        <a class="pt-listitem" href="#guia" style="text-decoration: none"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.file.d}}"></path></svg>Guía de capas inteligentes</a>
+        <a class="pt-listitem" href="#importar" style="text-decoration: none"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.folderOpen.d}}"></path></svg>Importar desde Aseprite o PNG</a>
+      </div>
+      <div class="pt-spacer"></div>
+      <label class="pt-choice pt-sec2"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Mostrar al iniciar sin documentos</label>
+    </aside>
+  </div>
+
+  <footer class="pt-status">
+    <div class="pt-seg">Sin documentos abiertos</div>
+    <div class="pt-spacer"></div>
+    <div class="pt-seg pt-seg--r">Pixeltor 0.3.0 · Windows x64</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = window.PT;
+    var ic = P.icons();
+    // Logotipo 16×16 en píxeles, a ×4
+    var logo = P.blank(16,16);
+    var fill = function(x0,y0,w,h){ for(var y=y0;y<y0+h;y++) for(var x=x0;x<x0+w;x++) logo[y][x]='c'; };
+    fill(3,2,2,12); fill(5,2,6,2); fill(11,3,2,1); fill(12,4,1,4); fill(11,4,1,5); fill(5,7,6,2);
+    var K = P.knight('A').comp, A = P.appIcon(32).comp, G = P.grass(), C = P.cofre();
+    var A16 = P.appIcon(16).comp;
+    // Plantillas: la caja de vista previa mantiene la proporción relativa entre tamaños
+    var T = function(name, meta, px, art, as, ax, ay, hover){ return {name:name, meta:meta, box:true, custom:false, px:px, py:px, art:art||'none', as:as||1, ax:ax||0, ay:ay||0, cls:'st-tpl'+(hover?' is-hover':'')}; };
+    var templates = [
+      T('Icono 16', '16 × 16 px · 1 imagen', 32, P.sh(A16,2), 2, -2, -2),
+      T('Icono 32', '32 × 32 px · 1 imagen', 40, 'none'),
+      T('Icono 48', '48 × 48 px · 1 imagen', 48, 'none'),
+      T('Icono 256', '256 × 256 px · 1 imagen', 68, 'none'),
+      T('Sprite 32 × 32', '32 × 32 px · 8 imágenes', 40, P.sh(K,1), 1, 3, 3, true),
+      T('Tile 16 × 16', '16 × 16 px · rejilla de tiles', 32, P.sh(G,2), 2, -2, -2),
+      T('Personaje 64 × 64', '64 × 64 px · 4 imágenes', 56, 'none'),
+      {name:'Personalizado', meta:'Tamaño libre hasta 2048 px', box:false, custom:true, cls:'st-tpl'}
+    ];
+    var R = function(name, desc, size, frames, date, path, art, as, off, hover){ return {name:name, desc:desc, size:size, frames:frames, date:date, path:path, art:art, as:as, ax:off, ay:off, cls:'st-rec'+(hover?' is-hover':'')}; };
+    var recents = [
+      R('caballero.pixeltor', '5 capas · 2 formas · 4 efectos', '32 × 32', '8 imágenes', 'Hoy, 11:42', 'C:\\Proyectos\\juego\\sprites\\caballero.pixeltor', P.sh(K,1), 1, 3, true),
+      R('icono-app.pixeltor', 'Juego de iconos', '16 · 32 · 48', '3 imágenes', 'Hoy, 09:15', 'C:\\Proyectos\\juego\\iconos\\icono-app.pixeltor', P.sh(A,1), 1, 3),
+      R('hierba.pixeltor', 'Tile continuo · 2 formas', '16 × 16', '1 imagen', 'Ayer, 18:03', 'C:\\Proyectos\\juego\\tiles\\hierba.pixeltor', P.sh(G,2), 2, 2),
+      R('cofre.pixeltor', 'Objeto', '16 × 16', '4 imágenes', '22 oct 2026', 'C:\\Proyectos\\juego\\objetos\\cofre.pixeltor', P.sh(C,2), 2, 2)
+    ];
+    return { ic: ic, menus: P.menus(), logoPx: P.sh(logo,4), templates: templates, recents: recents };
+  }
+}
+</script>
+</body>
+</html>

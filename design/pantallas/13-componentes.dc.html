@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Hoja de componentes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+/* ---------- tokens (copia de tokens.css) ---------- */
+.pt-root{--font-ui:"Inter","Segoe UI Variable","Segoe UI","Cantarell","Noto Sans",system-ui,sans-serif;--font-mono:"JetBrains Mono","Cascadia Mono","DejaVu Sans Mono",monospace;--fs-xs:10px;--fs-sm:11px;--fs-md:12px;--fs-lg:13px;--fs-xl:18px;--radius-sm:2px;--radius-md:4px;--radius-lg:6px;--ease-standard:cubic-bezier(.2,0,0,1);--dur-fast:90ms;--dur-base:140ms;--dur-slow:220ms;font-family:var(--font-ui);font-size:var(--fs-sm);line-height:1.3;color:var(--text-primary);-webkit-font-smoothing:antialiased}
+.pt-oscuro{--bg-app:#1F1F1F;--bg-panel:#2A2A2A;--bg-panel-header:#262626;--bg-panel-raised:#323232;--bg-input:#1B1B1B;--bg-hover:#363636;--bg-active:#404040;--bg-selected:#24344D;--canvas-bg:#161616;--border:#3A3A3A;--border-subtle:#2F2F2F;--border-input:#444444;--border-input-hover:#585858;--text-primary:#E6E6E6;--text-secondary:#A8A8A8;--text-disabled:#6B6B6B;--icon:#C8C8C8;--icon-active:#FFFFFF;--accent:#3D8BFF;--accent-hover:#5A9DFF;--accent-muted:rgba(61,139,255,.18);--accent-solid:#2A6DD9;--accent-solid-hover:#2361C4;--accent-text:#5A9DFF;--on-accent:#FFFFFF;--danger:#F0524F;--warning:#F2B13A;--success:#3DBE7A;--smart-guide:#FF3EA5;--guide:#2FD3E0;--checker-a:#3A3A3A;--checker-b:#2E2E2E;--pixel-grid:rgba(255,255,255,.07);--tooltip-bg:#111111;--shadow-popover:0 4px 16px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.5);--shadow-dialog:0 12px 40px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.6);--shadow-canvas:0 2px 12px rgba(0,0,0,.45);--viewer-header:rgba(42,42,42,.85);color-scheme:dark}
+.pt-claro{--bg-app:#E4E4E4;--bg-panel:#F2F2F2;--bg-panel-header:#EAEAEA;--bg-panel-raised:#FFFFFF;--bg-input:#FFFFFF;--bg-hover:#E6E6E6;--bg-active:#D6D6D6;--bg-selected:#D7E6FF;--canvas-bg:#CFCFCF;--border:#C9C9C9;--border-subtle:#DDDDDD;--border-input:#BDBDBD;--border-input-hover:#9E9E9E;--text-primary:#1E1E1E;--text-secondary:#5C5C5C;--text-disabled:#9A9A9A;--icon:#3A3A3A;--icon-active:#000000;--accent:#1F6FEB;--accent-hover:#3B82F0;--accent-muted:rgba(31,111,235,.14);--accent-solid:#1A64D6;--accent-solid-hover:#1557BD;--accent-text:#1A64D6;--on-accent:#FFFFFF;--danger:#D93A37;--warning:#B97800;--success:#1E8E54;--smart-guide:#E6178C;--guide:#0FA9B8;--checker-a:#FFFFFF;--checker-b:#E6E6E6;--pixel-grid:rgba(0,0,0,.09);--tooltip-bg:#111111;--shadow-popover:0 4px 16px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.12);--shadow-dialog:0 12px 40px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.14);--shadow-canvas:0 2px 12px rgba(0,0,0,.2);--viewer-header:rgba(242,242,242,.85);color-scheme:light}
+/* ---------- base ---------- */
+.pt-root *{box-sizing:border-box}
+.pt-root button{font:inherit;color:inherit;margin:0}
+.pt-root :focus-visible,.pt-root .is-focus{outline:2px solid var(--accent);outline-offset:1px}
+.pt-root .is-disabled{opacity:.4;pointer-events:none}
+.i16{width:16px;height:16px;flex:none;display:block}
+.i20{width:20px;height:20px;flex:none;display:block}
+.i16 path,.i20 path{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+.i16 path{stroke-width:1.25}.i20 path{stroke-width:1.5}
+.i16 path.f,.i20 path.f{fill:currentColor;stroke:none}
+.pt-mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.pt-sep{width:1px;align-self:stretch;background:var(--border);flex:none}
+/* IconButton */
+.pt-iconbtn{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex:none;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--icon);padding:0;cursor:default;transition:background-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard)}
+.pt-iconbtn:hover,.pt-iconbtn.is-hover{background:var(--bg-hover);color:var(--icon-active)}
+.pt-iconbtn.is-active{background:var(--bg-active);color:var(--icon-active)}
+.pt-iconbtn.is-on{color:var(--accent-text);background:var(--accent-muted)}
+/* ToolButton */
+.pt-toolbtn{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex:none;border:0;border-radius:var(--radius-md);background:transparent;color:var(--icon);padding:0;cursor:default;transition:background-color var(--dur-fast) var(--ease-standard)}
+.pt-toolbtn:hover,.pt-toolbtn.is-hover{background:var(--bg-hover);color:var(--icon-active)}
+.pt-toolbtn.is-active{background:var(--bg-active);color:var(--icon-active)}
+.pt-toolbtn.is-active::before{content:"";position:absolute;left:-4px;top:7px;bottom:7px;width:2px;border-radius:1px;background:var(--accent)}
+.pt-toolbtn.has-fly::after{content:"";position:absolute;right:3px;bottom:3px;width:0;height:0;border-left:3px solid transparent;border-bottom:3px solid currentColor;opacity:.75}
+/* Button */
+.pt-btn{height:22px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-md);border:1px solid transparent;background:transparent;font-size:var(--fs-sm);white-space:nowrap;cursor:default;transition:background-color var(--dur-fast) var(--ease-standard)}
+.pt-btn--lg{height:26px;padding:0 14px}
+.pt-btn--primary{background:var(--accent-solid);color:var(--on-accent)!important;font-weight:500}
+.pt-btn--primary:hover,.pt-btn--primary.is-hover{background:var(--accent-solid-hover)}
+.pt-btn--primary.is-pressed{background:var(--accent-solid-hover);box-shadow:inset 0 0 0 100px rgba(0,0,0,.12)}
+.pt-btn--secondary{border-color:var(--border-input);color:var(--text-primary)}
+.pt-btn--secondary:hover,.pt-btn--secondary.is-hover{background:var(--bg-hover)}
+.pt-btn--secondary.is-pressed{background:var(--bg-active)}
+.pt-btn--ghost{color:var(--text-primary)}
+.pt-btn--ghost:hover,.pt-btn--ghost.is-hover{background:var(--bg-hover)}
+.pt-btn--ghost.is-pressed{background:var(--bg-active)}
+.pt-btn--danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+/* Inputs */
+.pt-input{height:22px;width:100%;min-width:0;background:var(--bg-input);border:1px solid var(--border-input);border-radius:var(--radius-sm);color:var(--text-primary);font:inherit;font-variant-numeric:tabular-nums;padding:0 6px;outline:none}
+.pt-input::placeholder{color:var(--text-disabled)}
+.pt-input:hover,.pt-input.is-hover{border-color:var(--border-input-hover)}
+.pt-input:focus,.pt-input.is-focus{border-color:var(--accent);outline:none}
+.pt-input.is-error{border-color:var(--danger)}
+.pt-num{display:flex;align-items:center;gap:5px;height:22px;min-width:0}
+.pt-num__lbl{color:var(--text-secondary);cursor:ew-resize;flex:none;user-select:none}
+.pt-num__lbl.is-scrub{color:var(--accent-text);text-decoration:underline dotted}
+.pt-numbox{position:relative;flex:1;min-width:0}
+.pt-numbox .pt-input{padding-right:24px}
+.pt-numbox--step .pt-input{padding-right:34px}
+.pt-unit{position:absolute;right:6px;top:0;line-height:22px;color:var(--text-secondary);pointer-events:none}
+.pt-numbox--step .pt-unit{right:16px}
+.pt-stepper{position:absolute;right:1px;top:1px;bottom:1px;width:12px;display:flex;flex-direction:column;border-left:1px solid var(--border-input)}
+.pt-stepper span{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-secondary)}
+.pt-stepper span::before{content:"";border-left:3px solid transparent;border-right:3px solid transparent}
+.pt-stepper span:first-child::before{border-bottom:3px solid currentColor}
+.pt-stepper span:last-child::before{border-top:3px solid currentColor}
+.pt-errmsg{font-size:10px;color:var(--danger)}
+.pt-select{height:22px;display:inline-flex;align-items:center;justify-content:space-between;gap:4px;padding:0 3px 0 6px;background:var(--bg-input);border:1px solid var(--border-input);border-radius:var(--radius-sm);color:var(--text-primary);font-size:var(--fs-sm);cursor:default;min-width:0}
+.pt-select:hover,.pt-select.is-hover{border-color:var(--border-input-hover)}
+.pt-select span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt-select .i16{color:var(--text-secondary)}
+/* Checkbox / Radio / Toggle / Segmented */
+.pt-choice{display:inline-flex;align-items:center;gap:6px;height:22px;cursor:default}
+.pt-check{width:12px;height:12px;border-radius:var(--radius-sm);border:1px solid var(--border-input);background:var(--bg-input);flex:none;display:inline-flex;align-items:center;justify-content:center;color:var(--on-accent)}
+.pt-check.is-on,.pt-check.is-mixed{background:var(--accent-solid);border-color:var(--accent-solid)}
+.pt-check .i16{width:10px;height:10px}
+.pt-check .i16 path{stroke-width:2}
+.pt-check.is-mixed::after{content:"";width:6px;height:1.5px;background:var(--on-accent)}
+.pt-check.is-hover{border-color:var(--border-input-hover)}
+.pt-radio{width:12px;height:12px;border-radius:50%;border:1px solid var(--border-input);background:var(--bg-input);flex:none;display:inline-flex;align-items:center;justify-content:center}
+.pt-radio.is-on{border-color:var(--accent-solid);background:var(--accent-solid)}
+.pt-radio.is-on::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--on-accent)}
+.pt-toggle{width:26px;height:14px;border-radius:7px;background:var(--bg-input);border:1px solid var(--border-input);position:relative;flex:none}
+.pt-toggle::after{content:"";position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:var(--text-secondary);transition:transform var(--dur-base) var(--ease-standard)}
+.pt-toggle.is-on{background:var(--accent-solid);border-color:var(--accent-solid)}
+.pt-toggle.is-on::after{transform:translateX(12px);background:var(--on-accent)}
+.pt-segctl{display:inline-flex;height:22px;padding:1px;gap:1px;background:var(--bg-input);border:1px solid var(--border-input);border-radius:var(--radius-sm)}
+.pt-segctl button{border:0;background:transparent;padding:0 9px;border-radius:1px;color:var(--text-secondary);font-size:var(--fs-sm);cursor:default;display:flex;align-items:center;gap:4px}
+.pt-segctl button:hover{color:var(--text-primary)}
+.pt-segctl button.is-on{background:var(--bg-active);color:var(--text-primary)}
+/* Slider */
+.pt-slider{position:relative;height:14px;flex:1;min-width:0}
+.pt-slider::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:1px;background:var(--border-input)}
+.pt-slider__fill{position:absolute;left:0;top:6px;height:2px;border-radius:1px;background:var(--accent)}
+.pt-slider__head{position:absolute;top:2px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--text-primary);box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.pt-slider__head.is-hover{transform:scale(1.15)}
+/* Swatches */
+.pt-sw{width:16px;height:16px;border-radius:var(--radius-sm);flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.12)}
+.pt-sw--lg{width:28px;height:28px}
+.pt-sw--alpha{background:linear-gradient(var(--c),var(--c)),repeating-conic-gradient(#bdbdbd 0 25%,#fff 0 50%) 0 0/8px 8px}
+.pt-sw--none{background:linear-gradient(45deg,#fff 44%,#F0524F 44% 56%,#fff 56%)}
+.pt-sw--stroke{background:transparent!important;border:4px solid;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.pt-sw.is-sel{box-shadow:0 0 0 1px var(--bg-panel),0 0 0 2px var(--accent)}
+.pt-swbtn{display:inline-flex;align-items:center;gap:2px;height:22px;padding:0 1px 0 3px;border:0;border-radius:var(--radius-sm);background:transparent;cursor:default}
+.pt-swbtn:hover{background:var(--bg-hover)}
+.pt-swbtn .i16{color:var(--text-secondary);width:12px;height:12px}
+/* Panels / tabs */
+.pt-panel{background:var(--bg-panel);display:flex;flex-direction:column;min-height:0;border:1px solid var(--border)}
+.pt-phead{height:26px;flex:none;display:flex;align-items:stretch;background:var(--bg-panel-header);border-bottom:1px solid var(--border-subtle)}
+.pt-ptab{display:flex;align-items:center;padding:0 10px;border:0;background:transparent;font-size:var(--fs-sm);font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);cursor:default}
+.pt-ptab:hover,.pt-ptab.is-hover{color:var(--text-primary)}
+.pt-ptab.is-active{background:var(--bg-panel);color:var(--text-primary);box-shadow:inset 1px 0 0 var(--border-subtle),inset -1px 0 0 var(--border-subtle)}
+.pt-phead__tools{margin-left:auto;display:flex;align-items:center;gap:1px;padding-right:3px}
+.pt-pfoot{height:28px;flex:none;display:flex;align-items:center;gap:2px;padding:0 6px;border-top:1px solid var(--border-subtle)}
+.pt-doctab{height:28px;display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border:0;border-right:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:var(--fs-md);cursor:default}
+.pt-doctab:hover,.pt-doctab.is-hover{background:var(--bg-hover);color:var(--text-primary)}
+.pt-doctab.is-active{background:var(--bg-panel-raised);color:var(--text-primary);font-weight:500;box-shadow:inset 0 2px 0 var(--accent)}
+.pt-doctab .pt-iconbtn{width:18px;height:18px;visibility:hidden}
+.pt-doctab.is-active .pt-iconbtn,.pt-doctab.is-hover .pt-iconbtn,.pt-doctab:hover .pt-iconbtn{visibility:visible}
+.pt-dirty{width:6px;height:6px;border-radius:50%;background:var(--text-secondary);flex:none}
+.pt-splitter{background:var(--canvas-bg);display:flex;justify-content:center}
+.pt-splitter::after{content:"";width:1px;background:var(--border)}
+.pt-splitter.is-hover::after{width:2px;background:var(--accent)}
+/* Layers */
+.pt-lrow{height:36px;display:flex;align-items:center;gap:2px;padding-right:6px;border-bottom:1px solid var(--border-subtle);cursor:default;position:relative;background:var(--bg-panel)}
+.pt-lrow:hover,.pt-lrow.is-hover{background:var(--bg-hover)}
+.pt-lrow.is-current{background:var(--bg-panel-raised)}
+.pt-lrow.is-hidden .pt-lname,.pt-lrow.is-hidden .pt-thumb{opacity:.45}
+.pt-lrow.is-drop{box-shadow:inset 0 2px 0 var(--accent)}
+.pt-srow{height:28px}
+.pt-srow.is-selected{background:var(--accent-muted)}
+.pt-lcol{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--icon)}
+.pt-lcol--lock{border-right:1px solid var(--border-subtle);height:36px;width:20px}
+.pt-srow .pt-lcol--lock{height:28px}
+.pt-lchev{width:16px;flex:none;display:flex;justify-content:center;color:var(--text-secondary)}
+.pt-lbar{width:3px;height:28px;border-radius:1px;flex:none}
+.pt-thumb{width:32px;height:32px;flex:none;position:relative;overflow:hidden;border-radius:1px;background:repeating-conic-gradient(var(--checker-a) 0 25%,var(--checker-b) 0 50%) 0 0/8px 8px;box-shadow:0 0 0 1px var(--border)}
+.pt-thumbart{position:absolute;left:-1px;top:-1px;width:1px;height:1px}
+.pt-lname{flex:1;min-width:0;padding-left:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt-lname em{font-style:normal;color:var(--text-secondary)}
+.pt-fx{font-style:italic;font-weight:600;font-size:var(--fs-sm);color:var(--text-secondary);font-family:Georgia,"Times New Roman",serif;padding:0 3px}
+.pt-target{width:10px;height:10px;border-radius:50%;border:1px solid var(--text-secondary);flex:none;margin-left:4px}
+.pt-target.is-sel{border-color:var(--icon-active);box-shadow:inset 0 0 0 2px var(--bg-panel),inset 0 0 0 6px var(--icon-active)}
+.pt-selsq{width:6px;height:6px;flex:none;margin-left:5px}
+.pt-selsq--empty{background:transparent!important}
+/* Appearance rows */
+.pt-arow{height:26px;display:flex;align-items:center;gap:6px;padding:0 6px 0 8px;border-bottom:1px solid var(--border-subtle);cursor:default}
+.pt-arow:hover,.pt-arow.is-hover{background:var(--bg-hover)}
+.pt-arow.is-selected{background:var(--accent-muted)}
+.pt-arow__name{width:58px;flex:none;color:var(--text-primary)}
+.pt-arow__desc{flex:1;min-width:0;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-arow__fx{flex:1;color:var(--text-primary)}
+.pt-arow__fx i{font-family:Georgia,"Times New Roman",serif;font-weight:600;color:var(--text-secondary);margin-right:4px}
+.pt-arow.is-hover .pt-arow__fx span,.pt-arow__fx span:hover{text-decoration:underline}
+.pt-arow__sw{width:14px;height:14px;border-radius:1px;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+/* Frames */
+.pt-frame{position:relative;width:48px;height:48px;flex:none;padding:0;border:0;border-radius:2px;overflow:hidden;background:repeating-conic-gradient(var(--checker-a) 0 25%,var(--checker-b) 0 50%) 0 0/8px 8px;cursor:default;box-shadow:0 0 0 1px var(--border)}
+.pt-frame .pt-thumbart{left:7px;top:7px}
+.pt-frame.is-active{box-shadow:0 0 0 2px var(--accent)}
+.pt-frame.is-hover{box-shadow:0 0 0 1px var(--border-input-hover)}
+.pt-frame.is-excluded>.pt-thumbart{opacity:.4}
+.pt-fnum{position:absolute;left:0;top:0;padding:0 3px;font-size:9px;line-height:12px;background:rgba(0,0,0,.6);color:#fff;border-bottom-right-radius:2px;font-variant-numeric:tabular-nums}
+.pt-fexcl{position:absolute;right:2px;bottom:2px;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;display:flex;align-items:center;justify-content:center}
+.pt-fdur{width:48px;height:18px;margin-top:4px;text-align:center;font-size:10px;padding:0 2px}
+/* Status */
+.pt-seg{height:24px;display:flex;align-items:center;gap:6px;padding:0 10px;border-right:1px solid var(--border);white-space:nowrap;color:var(--text-secondary);flex:none}
+.pt-seg b{font-weight:500;color:var(--text-primary)}
+.pt-zoomfield{height:18px;display:flex;align-items:center;gap:2px;padding:0 2px 0 5px;border:1px solid var(--border-input);background:var(--bg-input);border-radius:var(--radius-sm);color:var(--text-primary)}
+.pt-zoomfield .i16{width:12px;height:12px;color:var(--text-secondary)}
+.pt-snap{width:20px;height:20px;border:0;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;background:transparent;color:var(--text-disabled);cursor:default}
+.pt-snap.is-on{color:var(--accent-text);background:var(--accent-muted)}
+.pt-progress{width:56px;height:2px;border-radius:1px;background:var(--border);overflow:hidden;position:relative}
+.pt-progress span{position:absolute;top:0;bottom:0;left:18%;width:38%;background:var(--accent);border-radius:1px}
+/* Viewer header */
+.pt-vhead{height:24px;display:flex;align-items:center;gap:4px;padding:0 6px;background:var(--viewer-header);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--border-subtle)}
+.pt-vhead .pt-select{height:18px;background:transparent;border-color:transparent}
+.pt-vhead .pt-iconbtn{width:20px;height:20px}
+/* Menus / overlays */
+.pt-menu{min-width:220px;background:var(--bg-panel-raised);border-radius:var(--radius-md);box-shadow:var(--shadow-popover);padding:4px 0;font-size:var(--fs-md)}
+.pt-mi{position:relative;height:24px;display:flex;align-items:center;gap:8px;padding:0 10px 0 28px;color:var(--text-primary);cursor:default;white-space:nowrap}
+.pt-mi .pt-mi__ic{position:absolute;left:7px;top:4px;color:var(--icon)}
+.pt-mi .pt-mi__kbd{margin-left:auto;padding-left:24px;color:var(--text-secondary);font-size:var(--fs-sm)}
+.pt-mi .pt-mi__sub{margin-left:auto;color:var(--text-secondary)}
+.pt-mi.is-hover{background:var(--accent-solid);color:var(--on-accent)}
+.pt-mi.is-hover .pt-mi__kbd,.pt-mi.is-hover .pt-mi__sub,.pt-mi.is-hover .pt-mi__ic{color:var(--on-accent)}
+.pt-mi.is-open{background:var(--bg-hover)}
+.pt-msep{height:1px;background:var(--border);margin:4px 0}
+.pt-mhead{height:22px;display:flex;align-items:center;padding:0 10px 0 28px;font-size:var(--fs-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary)}
+.pt-tip{display:inline-flex;align-items:center;gap:8px;background:var(--tooltip-bg);color:#fff;font-size:11px;padding:4px 7px;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
+.pt-tip span{color:#9E9E9E}
+.pt-toast{display:flex;align-items:center;gap:12px;background:var(--bg-panel-raised);border-radius:var(--radius-md);box-shadow:var(--shadow-popover);padding:8px 10px 8px 12px;font-size:var(--fs-sm);min-width:280px}
+.pt-popover{position:relative;background:var(--bg-panel-raised);border-radius:var(--radius-md);box-shadow:var(--shadow-popover)}
+.pt-popover__arrow{position:absolute;width:10px;height:10px;background:var(--bg-panel-raised);transform:rotate(45deg);box-shadow:-1px -1px 0 rgba(0,0,0,.25)}
+.pt-dialog{background:var(--bg-panel);border-radius:var(--radius-lg);box-shadow:var(--shadow-dialog);overflow:hidden}
+.pt-dialog__head{height:38px;display:flex;align-items:center;padding:0 8px 0 16px;font-size:var(--fs-lg);font-weight:600;border-bottom:1px solid var(--border-subtle)}
+.pt-dialog__foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--border-subtle)}
+/* ---------- hoja ---------- */
+.cs-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.cs-title{font-size:12px;font-weight:600;display:flex;align-items:baseline;gap:8px}
+.cs-title span{font-weight:400;color:var(--text-secondary);font-size:11px}
+.cs-states{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.cs-state{display:flex;flex-direction:column;align-items:center;gap:6px}
+.cs-cap{font-size:10px;color:var(--text-secondary);white-space:nowrap}
+.cs-grid{display:grid;gap:8px 12px;align-items:center}
+.cs-rowlbl{font-size:10px;color:var(--text-secondary)}
+.cs-well{background:var(--canvas-bg);border-radius:4px;padding:16px;display:flex;align-items:flex-start;justify-content:center;gap:16px}
+</style>
+</helmet>
+<div style="width: 1440px; display: flex; flex-direction: column">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="2">
+<section class="pt-root {{th.cls}}" aria-label="{{th.label}}" style="width: 1440px; background: var(--bg-app); padding: 40px 40px 48px; display: flex; flex-direction: column; gap: 16px">
+
+  <header style="display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--border)">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary)">Pixeltor · 13 · Hoja de componentes</span>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.01em">{{th.label}}</h1>
+    </div>
+    <span style="color: var(--text-secondary)">Estados: normal · hover · activo/presionado · foco · deshabilitado · seleccionado · mixto · error</span>
+  </header>
+
+  <!-- ===== Fila 1: botones ===== -->
+  <div style="display: flex; gap: 16px">
+    <div class="cs-card" style="width: 300px">
+      <div class="cs-title">IconButton <span>22 × 22 · icono 16</span></div>
+      <div class="cs-states">
+        <div class="cs-state"><button class="pt-iconbtn" aria-label="Ojo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="cs-cap">Normal</span></div>
+        <div class="cs-state"><button class="pt-iconbtn is-hover" aria-label="Ojo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="cs-cap">Hover</span></div>
+        <div class="cs-state"><button class="pt-iconbtn is-active" aria-label="Ojo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="cs-cap">Activo</span></div>
+        <div class="cs-state"><button class="pt-iconbtn is-on" aria-label="Ojo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button><span class="cs-cap">Conmutado</span></div>
+        <div class="cs-state"><button class="pt-iconbtn is-focus" aria-label="Ojo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="cs-cap">Foco</span></div>
+        <div class="cs-state"><button class="pt-iconbtn is-disabled" aria-label="Ojo"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="cs-cap">Deshab.</span></div>
+      </div>
+    </div>
+    <div class="cs-card" style="flex: 1">
+      <div class="cs-title">ToolButton con flyout <span>32 × 32 · icono 20 · pulsación larga 300 ms o clic derecho</span></div>
+      <div style="display: flex; gap: 28px; align-items: flex-start">
+        <div class="cs-states" style="padding-left: 4px">
+          <div class="cs-state"><button class="pt-toolbtn has-fly" aria-label="Elipse"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.ellipse.d}}"></path></svg></button><span class="cs-cap">Normal</span></div>
+          <div class="cs-state"><button class="pt-toolbtn has-fly is-hover" aria-label="Elipse"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.ellipse.d}}"></path></svg></button><span class="cs-cap">Hover</span></div>
+          <div class="cs-state"><button class="pt-toolbtn has-fly is-active" aria-label="Elipse"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.ellipse.d}}"></path></svg></button><span class="cs-cap">Activa</span></div>
+          <div class="cs-state"><button class="pt-toolbtn is-focus" aria-label="Lápiz"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.pencil.d}}"></path><path class="f" d="{{ic.pencil.f}}"></path></svg></button><span class="cs-cap">Foco</span></div>
+          <div class="cs-state"><button class="pt-toolbtn is-disabled" aria-label="Lápiz"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.pencil.d}}"></path><path class="f" d="{{ic.pencil.f}}"></path></svg></button><span class="cs-cap">Deshab.</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div class="pt-popover" style="display: flex; align-items: center; gap: 2px; padding: 3px 4px 3px 3px">
+            <button class="pt-toolbtn" aria-label="Rectángulo (M)"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.rect.d}}"></path></svg></button>
+            <button class="pt-toolbtn is-active" aria-label="Elipse (L)"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.ellipse.d}}"></path></svg></button>
+            <button class="pt-toolbtn is-hover" aria-label="Polígono"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.polygon.d}}"></path></svg></button>
+            <button class="pt-toolbtn" aria-label="Estrella"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.star.d}}"></path></svg></button>
+            <button class="pt-toolbtn" aria-label="Línea"><svg class="i20" viewBox="0 0 20 20"><path d="{{ic.line.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 6px 3px"></span>
+            <button class="pt-iconbtn" aria-label="Arrancar flyout" title="Arrancar (dejar flotante)" style="width: 14px; height: 32px"><svg width="6" height="20" viewBox="0 0 6 20" aria-hidden="true"><path d="M1 2v16 M5 2v16" stroke="currentColor" stroke-width="1"></path></svg></button>
+          </div>
+          <span class="cs-cap" style="align-self: flex-start">Flyout horizontal · el activo muestra la barra de acento</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start">
+          <div class="pt-tip">Polígono <span>Sin atajo</span></div>
+          <span class="cs-cap">Tooltip · 500 ms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cs-card">
+    <div class="cs-title">Button <span>22 px compacto · 26 px en diálogos · radio 4</span></div>
+    <div class="cs-grid" style="grid-template-columns: 90px repeat(5, 150px) 1fr">
+      <span></span><span class="cs-cap">Normal</span><span class="cs-cap">Hover</span><span class="cs-cap">Presionado</span><span class="cs-cap">Foco</span><span class="cs-cap">Deshabilitado</span><span class="cs-cap">Diálogo (26)</span>
+      <span class="cs-rowlbl">Primario</span>
+      <div><button class="pt-btn pt-btn--primary">Exportar</button></div>
+      <div><button class="pt-btn pt-btn--primary is-hover">Exportar</button></div>
+      <div><button class="pt-btn pt-btn--primary is-pressed">Exportar</button></div>
+      <div><button class="pt-btn pt-btn--primary is-focus">Exportar</button></div>
+      <div><button class="pt-btn pt-btn--primary is-disabled">Exportar</button></div>
+      <div><button class="pt-btn pt-btn--primary pt-btn--lg">Aceptar</button></div>
+      <span class="cs-rowlbl">Secundario</span>
+      <div><button class="pt-btn pt-btn--secondary">Estampar</button></div>
+      <div><button class="pt-btn pt-btn--secondary is-hover">Estampar</button></div>
+      <div><button class="pt-btn pt-btn--secondary is-pressed">Estampar</button></div>
+      <div><button class="pt-btn pt-btn--secondary is-focus">Estampar</button></div>
+      <div><button class="pt-btn pt-btn--secondary is-disabled">Estampar</button></div>
+      <div><button class="pt-btn pt-btn--secondary pt-btn--lg">Cancelar</button></div>
+      <span class="cs-rowlbl">Fantasma</span>
+      <div><button class="pt-btn pt-btn--ghost">Restablecer</button></div>
+      <div><button class="pt-btn pt-btn--ghost is-hover">Restablecer</button></div>
+      <div><button class="pt-btn pt-btn--ghost is-pressed">Restablecer</button></div>
+      <div><button class="pt-btn pt-btn--ghost is-focus">Restablecer</button></div>
+      <div><button class="pt-btn pt-btn--ghost is-disabled">Restablecer</button></div>
+      <div><button class="pt-btn pt-btn--danger pt-btn--lg">Eliminar capa</button></div>
+    </div>
+  </div>
+
+  <!-- ===== Fila 2: campos ===== -->
+  <div style="display: flex; gap: 16px">
+    <div class="cs-card" style="width: 560px">
+      <div class="cs-title">NumberField <span>etiqueta con scrubbing · expresiones · unidades</span></div>
+      <div class="cs-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px">
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input" value="16" aria-label="Ancho"><span class="pt-unit">px</span></span></label><span class="cs-cap">Normal</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input is-hover" value="16" aria-label="Ancho"><span class="pt-unit">px</span></span></label><span class="cs-cap">Hover</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl is-scrub">An ↔</span><span class="pt-numbox"><input class="pt-input" value="24" aria-label="Ancho"><span class="pt-unit">px</span></span></label><span class="cs-cap">Scrubbing (cursor ↔)</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input is-focus" value="16*2" aria-label="Ancho"><span class="pt-unit">px</span></span></label><span class="cs-cap">Foco · expresión</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">Opac.</span><span class="pt-numbox"><input class="pt-input" value="" placeholder="—" aria-label="Opacidad"><span class="pt-unit">%</span></span></label><span class="cs-cap">Mixto</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input is-error" value="4096" aria-label="Ancho"><span class="pt-unit">px</span></span></label><span class="pt-errmsg">Máximo 2048 px</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">Dur.</span><span class="pt-numbox pt-numbox--step"><input class="pt-input" value="150" aria-label="Duración"><span class="pt-unit">ms</span><span class="pt-stepper" aria-hidden="true"><span></span><span></span></span></span></label><span class="cs-cap">Con flechas</span></div>
+        <div class="cs-state" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl"><svg class="i16" viewBox="0 0 16 16" style="width: 13px; height: 13px"><path d="{{ic.rotate.d}}"></path></svg></span><span class="pt-numbox"><input class="pt-input" value="45" aria-label="Ángulo"><span class="pt-unit">°</span></span></label><span class="cs-cap">Etiqueta icono</span></div>
+        <div class="cs-state is-disabled" style="align-items: stretch"><label class="pt-num"><span class="pt-num__lbl">Radio</span><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Radio"><span class="pt-unit">px</span></span></label><span class="cs-cap">Deshabilitado</span></div>
+      </div>
+    </div>
+    <div class="cs-card" style="flex: 1">
+      <div class="cs-title">TextField · Select · Checkbox · Toggle · Radio · Segmented</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <input class="pt-input" value="caballero" aria-label="Nombre">
+          <input class="pt-input is-focus" value="caballero_{imagen}_{escala}" aria-label="Plantilla de nombre">
+          <input class="pt-input" value="" placeholder="Buscar capas…" aria-label="Buscar">
+          <button class="pt-select" style="width: 100%"><span>Multiplicar</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          <button class="pt-select is-hover" style="width: 100%"><span>Bayer 4 × 4</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; gap: 14px">
+            <label class="pt-choice"><span class="pt-check"></span>No</label>
+            <label class="pt-choice"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Sí</label>
+            <label class="pt-choice"><span class="pt-check is-mixed"></span>Mixto</label>
+            <label class="pt-choice is-disabled"><span class="pt-check is-on"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Deshab.</label>
+          </div>
+          <div style="display: flex; gap: 14px">
+            <label class="pt-choice"><span class="pt-toggle"></span>Ajustar</label>
+            <label class="pt-choice"><span class="pt-toggle is-on"></span>Guías intel.</label>
+            <label class="pt-choice is-disabled"><span class="pt-toggle is-on"></span>Deshab.</label>
+          </div>
+          <div style="display: flex; gap: 14px">
+            <label class="pt-choice"><span class="pt-radio is-on"></span>Transparente</label>
+            <label class="pt-choice"><span class="pt-radio"></span>Color</label>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap">
+            <div class="pt-segctl" role="group" aria-label="Modo de color"><button class="is-on">HSV</button><button>RGB</button><button>HSL</button></div>
+            <div class="pt-segctl" role="group" aria-label="Vista"><button class="is-on" aria-label="Tira"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.frames.d}}"></path></svg></button><button aria-label="Rejilla"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.swatches.d}}"></path></svg></button></div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border-subtle)">
+        <span class="cs-cap" style="padding-top: 8px">Slider · pista 2 px · cabezal 10 px · siempre con NumberField</span>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="width: 70px; color: var(--text-secondary)">Desenfoque</span>
+          <div class="pt-slider"><span class="pt-slider__fill" style="width: 25%"></span><span class="pt-slider__head" style="left: 25%"></span></div>
+          <label class="pt-num" style="width: 64px"><span class="pt-numbox"><input class="pt-input" value="1" aria-label="Desenfoque"><span class="pt-unit">px</span></span></label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="width: 70px; color: var(--text-secondary)">Umbral</span>
+          <div class="pt-slider"><span class="pt-slider__fill" style="width: 50%"></span><span class="pt-slider__head is-hover" style="left: 50%"></span></div>
+          <label class="pt-num" style="width: 64px"><span class="pt-numbox"><input class="pt-input is-focus" value="128" aria-label="Umbral"><span class="pt-unit"></span></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Fila 3: color ===== -->
+  <div style="display: flex; gap: 16px; align-items: stretch">
+    <div class="cs-card" style="width: 300px">
+      <div class="cs-title">ColorSwatch <span>clic → popover</span></div>
+      <div class="cs-states">
+        <div class="cs-state"><span class="pt-sw pt-sw--lg" style="background: #3D6BD1"></span><span class="cs-cap">Sólido</span></div>
+        <div class="cs-state"><span class="pt-sw pt-sw--lg pt-sw--alpha" style="--c: rgba(224,75,85,.5)"></span><span class="cs-cap">Alfa 50 %</span></div>
+        <div class="cs-state"><span class="pt-sw pt-sw--lg pt-sw--none"></span><span class="cs-cap">Ninguno</span></div>
+        <div class="cs-state"><span class="pt-sw pt-sw--lg" style="background: linear-gradient(90deg,#263F86,#3D6BD1,#8DB6FF)"></span><span class="cs-cap">Degradado</span></div>
+      </div>
+      <div class="cs-states">
+        <div class="cs-state"><span class="pt-sw pt-sw--lg is-sel" style="background: #F2C14E"></span><span class="cs-cap">Seleccionado</span></div>
+        <div class="cs-state"><span class="pt-sw pt-sw--lg" style="background: repeating-linear-gradient(135deg, var(--text-disabled) 0 3px, transparent 3px 6px)"></span><span class="cs-cap">Mixto</span></div>
+      </div>
+      <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px; display: flex; flex-direction: column; gap: 10px">
+        <span class="cs-title">FillStrokeWidget</span>
+        <div class="cs-states">
+          <div class="cs-state">
+            <div style="position: relative; width: 40px; height: 40px">
+              <span style="position: absolute; left: 2px; top: 2px; width: 24px; height: 24px; border-radius: 2px; background: #2F9E74; box-shadow: 0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.15); z-index: 2"></span>
+              <span style="position: absolute; left: 14px; top: 14px; width: 24px; height: 24px; border-radius: 2px; border: 6px solid #1B1526; box-shadow: 0 0 0 1px rgba(255,255,255,.28)"></span>
+            </div>
+            <span class="cs-cap">Relleno al frente</span>
+          </div>
+          <div class="cs-state">
+            <div style="position: relative; width: 40px; height: 40px">
+              <span style="position: absolute; left: 2px; top: 2px; width: 24px; height: 24px; border-radius: 2px; background: #2F9E74; box-shadow: 0 0 0 1px rgba(0,0,0,.6)"></span>
+              <span style="position: absolute; left: 14px; top: 14px; width: 24px; height: 24px; border-radius: 2px; border: 6px solid #F2C14E; box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 0 0 2px var(--accent); z-index: 2"></span>
+            </div>
+            <span class="cs-cap">Contorno al frente</span>
+          </div>
+          <div class="cs-state">
+            <div style="position: relative; width: 40px; height: 40px">
+              <span class="pt-sw--none" style="position: absolute; left: 2px; top: 2px; width: 24px; height: 24px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.6); z-index: 2"></span>
+              <span style="position: absolute; left: 14px; top: 14px; width: 24px; height: 24px; border-radius: 2px; border: 6px solid #1B1526; box-shadow: 0 0 0 1px rgba(255,255,255,.28)"></span>
+            </div>
+            <span class="cs-cap">Relleno ninguno</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-card" style="width: 320px">
+      <div class="cs-title">ColorPicker <span>popover</span></div>
+      <div class="pt-popover" style="width: 252px; padding: 10px; display: flex; flex-direction: column; gap: 8px">
+        <div class="pt-segctl" style="align-self: flex-start" role="group" aria-label="Modelo"><button class="is-on">HSV</button><button>RGB</button><button>HSL</button></div>
+        <div style="display: flex; gap: 8px">
+          <div style="position: relative; width: 180px; height: 180px; border-radius: 2px; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(158, 100%, 50%)); box-shadow: inset 0 0 0 1px rgba(0,0,0,.3)">
+            <span style="position: absolute; left: 126px; top: 68px; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6)"></span>
+          </div>
+          <div style="position: relative; width: 14px; height: 180px; border-radius: 2px; background: linear-gradient(to bottom, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)">
+            <span style="position: absolute; left: -2px; right: -2px; top: 78px; height: 4px; border-radius: 1px; background: transparent; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0,0,0,.6)"></span>
+          </div>
+          <span style="flex: 1"></span>
+        </div>
+        <div style="position: relative; height: 12px; width: 202px; border-radius: 2px; background: linear-gradient(to right, rgba(47,158,116,0), #2F9E74), repeating-conic-gradient(#bdbdbd 0 25%, #fff 0 50%) 0 0/8px 8px">
+          <span style="position: absolute; top: -2px; bottom: -2px; right: 0; width: 4px; border-radius: 1px; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0,0,0,.6)"></span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center">
+          <span class="pt-sw" style="width: 22px; height: 22px; background: #2F9E74"></span>
+          <label class="pt-num" style="flex: 1"><span class="pt-num__lbl">HEX</span><span class="pt-numbox"><input class="pt-input pt-mono" value="2F9E74" aria-label="Hexadecimal" style="font-size: 11px"></span></label>
+          <label class="pt-num" style="width: 52px"><span class="pt-numbox"><input class="pt-input" value="100" aria-label="Alfa"><span class="pt-unit">%</span></span></label>
+          <button class="pt-iconbtn" aria-label="Cuentagotas (I)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eyedrop16.d}}"></path></svg></button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+          <label class="pt-num"><span class="pt-num__lbl">H</span><span class="pt-numbox"><input class="pt-input" value="158" aria-label="Tono"></span></label>
+          <label class="pt-num"><span class="pt-num__lbl">S</span><span class="pt-numbox"><input class="pt-input" value="70" aria-label="Saturación"></span></label>
+          <label class="pt-num"><span class="pt-num__lbl">V</span><span class="pt-numbox"><input class="pt-input" value="62" aria-label="Valor"></span></label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 3px; padding-top: 6px; border-top: 1px solid var(--border-subtle)">
+          <span class="cs-cap" style="margin-right: 4px">Recientes</span>
+          <span class="pt-sw" style="width: 14px; height: 14px; background: #2F9E74"></span>
+          <span class="pt-sw" style="width: 14px; height: 14px; background: #F2C14E"></span>
+          <span class="pt-sw" style="width: 14px; height: 14px; background: #1B1526"></span>
+          <span class="pt-sw" style="width: 14px; height: 14px; background: #E04B55"></span>
+          <span class="pt-sw" style="width: 14px; height: 14px; background: #3D6BD1"></span>
+          <span style="flex: 1"></span>
+          <a class="pt-link" href="#muestras" style="color: var(--accent-text); font-size: 11px; text-decoration: none">Muestras ›</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-card" style="flex: 1">
+      <div class="cs-title">GradientBar <span>paradas arrastrables · punto medio en rombo · vista previa del modo de píxel</span></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 8px 4px 0">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="width: 54px; color: var(--text-secondary)">Tipo</span>
+          <div class="pt-segctl" role="group" aria-label="Tipo de degradado"><button class="is-on">Lineal</button><button>Radial</button><button>Angular</button></div>
+          <label class="pt-num" style="width: 70px; margin-left: auto"><span class="pt-num__lbl"><svg class="i16" viewBox="0 0 16 16" style="width: 13px; height: 13px"><path d="{{ic.rotate.d}}"></path></svg></span><span class="pt-numbox"><input class="pt-input" value="0" aria-label="Ángulo"><span class="pt-unit">°</span></span></label>
+        </div>
+        <div style="position: relative; height: 54px; margin: 0 6px">
+          <!-- puntos medios -->
+          <span style="position: absolute; top: 0; left: 25%; width: 7px; height: 7px; margin-left: -3.5px; transform: rotate(45deg); background: var(--bg-panel); border: 1px solid var(--text-secondary)"></span>
+          <span style="position: absolute; top: 0; left: 75%; width: 7px; height: 7px; margin-left: -3.5px; transform: rotate(45deg); background: var(--accent); border: 1px solid var(--accent)"></span>
+          <!-- barra -->
+          <div style="position: absolute; left: 0; right: 0; top: 12px; height: 18px; border-radius: 2px; background: linear-gradient(90deg, #263F86 0%, #3D6BD1 50%, #8DB6FF 100%); box-shadow: inset 0 0 0 1px rgba(0,0,0,.35)"></div>
+          <!-- paradas -->
+          <span style="position: absolute; top: 34px; left: 0%; margin-left: -6px; width: 12px; height: 14px; display: flex; flex-direction: column; align-items: center"><span style="width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 4px solid var(--text-secondary)"></span><span style="width: 12px; height: 10px; border-radius: 1px; background: #263F86; box-shadow: 0 0 0 1px var(--text-secondary)"></span></span>
+          <span style="position: absolute; top: 34px; left: 50%; margin-left: -6px; width: 12px; height: 14px; display: flex; flex-direction: column; align-items: center"><span style="width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 4px solid var(--accent)"></span><span style="width: 12px; height: 10px; border-radius: 1px; background: #3D6BD1; box-shadow: 0 0 0 1px var(--bg-panel), 0 0 0 2px var(--accent)"></span></span>
+          <span style="position: absolute; top: 34px; left: 100%; margin-left: -6px; width: 12px; height: 14px; display: flex; flex-direction: column; align-items: center"><span style="width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 4px solid var(--text-secondary)"></span><span style="width: 12px; height: 10px; border-radius: 1px; background: #8DB6FF; box-shadow: 0 0 0 1px var(--text-secondary)"></span></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="width: 54px; color: var(--text-secondary)">Parada</span>
+          <span class="pt-sw" style="background: #3D6BD1"></span>
+          <label class="pt-num" style="width: 76px"><span class="pt-num__lbl">Pos.</span><span class="pt-numbox"><input class="pt-input" value="50" aria-label="Posición"><span class="pt-unit">%</span></span></label>
+          <label class="pt-num" style="width: 82px"><span class="pt-num__lbl">Opac.</span><span class="pt-numbox"><input class="pt-input" value="100" aria-label="Opacidad de parada"><span class="pt-unit">%</span></span></label>
+          <button class="pt-iconbtn" aria-label="Eliminar parada" style="margin-left: auto"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.trash.d}}"></path></svg></button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border-subtle)">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="width: 54px; color: var(--text-secondary)">Modo píxel</span>
+            <button class="pt-select" style="width: 120px"><span>Tramado Bayer 4×4</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <button class="pt-select" style="width: 104px"><span>Paleta documento</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="width: 54px; color: var(--text-secondary)">Vista previa</span>
+            <div style="position: relative; width: 256px; height: 32px; overflow: hidden; border-radius: 1px; box-shadow: 0 0 0 1px var(--border)">
+              <div style="position: absolute; left: -4px; top: -4px; width: 4px; height: 4px; box-shadow: {{bayer}}"></div>
+            </div>
+            <span class="cs-cap">64 px · ×4</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Fila 4: paneles, tabs, dock ===== -->
+  <div style="display: flex; gap: 16px">
+    <div class="cs-card" style="width: 560px">
+      <div class="cs-title">Panel · Tabs · Dock <span>cabecera con pestañas, ≡ opciones, ▾ colapsar</span></div>
+      <div style="display: flex; gap: 16px; align-items: flex-start">
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 260px">
+          <div class="pt-panel" style="border-radius: 2px">
+            <div class="pt-phead">
+              <button class="pt-ptab is-active">Capas</button>
+              <button class="pt-ptab is-hover">Apariencia</button>
+              <div class="pt-phead__tools">
+                <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Opciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button>
+                <button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Contraer"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+              </div>
+            </div>
+            <div style="height: 62px; padding: 8px; color: var(--text-secondary); display: flex; gap: 8px">
+              <span style="flex: 1">Cuerpo del panel · scroll fino de 6 px visible en hover</span>
+              <span style="width: 4px; height: 30px; border-radius: 2px; background: var(--border-input-hover)"></span>
+            </div>
+            <div class="pt-pfoot">
+              <span style="flex: 1"></span>
+              <button class="pt-iconbtn" aria-label="Nueva"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.newLayer.d}}"></path></svg></button>
+              <button class="pt-iconbtn" aria-label="Eliminar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.trash.d}}"></path></svg></button>
+            </div>
+          </div>
+          <div class="pt-panel" style="border-radius: 2px">
+            <div class="pt-phead" style="border-bottom: 0">
+              <button class="pt-ptab is-active">Color</button>
+              <button class="pt-ptab">Muestras</button>
+              <div class="pt-phead__tools"><button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Expandir"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></button></div>
+            </div>
+          </div>
+          <span class="cs-cap">Grupo colapsado a su cabecera</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: flex-start">
+          <div class="pt-popover" style="width: 210px; margin-top: 4px">
+            <span class="pt-popover__arrow" style="right: -5px; top: 14px"></span>
+            <div class="pt-phead" style="border-radius: 4px 4px 0 0"><button class="pt-ptab is-active">Navegador</button></div>
+            <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px">
+              <div style="position: relative; height: 112px; background: var(--canvas-bg); display: flex; align-items: center; justify-content: center; border-radius: 2px">
+                <div style="position: relative; width: 96px; height: 96px; background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/6px 6px">
+                  <div style="position: absolute; left: -3px; top: -3px; width: 3px; height: 3px; box-shadow: {{navArt}}"></div>
+                  <span style="position: absolute; left: 6px; top: 18px; width: 62px; height: 56px; box-shadow: inset 0 0 0 1px #FF5A5A"></span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px">
+                <svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.zoomPx.d}}"></path><path class="f" d="{{ic.zoomPx.f}}"></path></svg>
+                <div class="pt-slider"><span class="pt-slider__fill" style="width: 70%"></span><span class="pt-slider__head" style="left: 70%"></span></div>
+                <span class="pt-mono" style="font-size: 10.5px; color: var(--text-secondary)">1200 %</span>
+              </div>
+            </div>
+          </div>
+          <nav aria-label="Columna de iconos" style="width: 36px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 2px">
+            <button class="pt-iconbtn is-active" style="width: 28px; height: 28px" aria-label="Navegador"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.navigator.d}}"></path></svg></button>
+            <button class="pt-iconbtn is-hover" style="width: 28px; height: 28px" aria-label="Alinear"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.align.d}}"></path></svg></button>
+            <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Contorno"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.stroke.d}}"></path><path class="f" d="{{ic.stroke.f}}"></path></svg></button>
+            <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Degradado"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gradientp.d}}"></path><path class="f" d="{{ic.gradientp.f}}"></path></svg></button>
+            <button class="pt-iconbtn" style="width: 28px; height: 28px" aria-label="Estilos"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.styles.d}}"></path></svg></button>
+          </nav>
+        </div>
+      </div>
+      <span class="cs-cap">Dock colapsado a columna de iconos (36 px): cada icono abre su panel como flotante anclado a la izquierda</span>
+    </div>
+
+    <div class="cs-card" style="flex: 1">
+      <div class="cs-title">Tabs de documento · Splitter · Cabecera de visor</div>
+      <div style="display: flex; background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 2px; overflow: hidden">
+        <button class="pt-doctab is-active">caballero.pixeltor <span style="color: var(--text-secondary); font-weight: 400">@ 1200 %</span><span class="pt-dirty"></span><span class="pt-iconbtn" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+        <button class="pt-doctab is-hover">icono-app.pixeltor <span style="color: var(--text-secondary)">@ 800 %</span><span class="pt-iconbtn" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+        <button class="pt-doctab">hierba.pixeltor <span style="color: var(--text-secondary)">@ 300 %</span><span class="pt-iconbtn" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+      </div>
+      <div style="display: flex; gap: 18px">
+        <span class="cs-cap">Activa · cambios sin guardar (•)</span><span class="cs-cap">Hover · muestra cerrar</span><span class="cs-cap">Inactiva</span>
+      </div>
+      <div style="display: flex; height: 96px; border: 1px solid var(--border); border-radius: 2px; overflow: hidden">
+        <div style="flex: 1; background: var(--canvas-bg); position: relative; box-shadow: inset 0 0 0 1px var(--accent)">
+          <div class="pt-vhead" style="border-bottom: 0">
+            <button class="pt-select" style="width: 128px"><span>Sigue la activa · 1</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <button class="pt-select" style="width: 66px"><span class="pt-mono">1200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <button class="pt-iconbtn is-on" aria-label="Píxeles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Tiles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.tiles.d}}"></path></svg></button>
+            <button class="pt-iconbtn is-on" aria-label="Trazados"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.paths.d}}"></path><path class="f" d="{{ic.paths.f}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Cebolla"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.onion.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Mosaico"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.mosaic.d}}"></path></svg></button>
+            <span style="flex: 1"></span>
+            <button class="pt-iconbtn" aria-label="Cerrar visor"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+          </div>
+          <span class="cs-cap" style="position: absolute; left: 10px; bottom: 8px">Visor activo · borde interior 1 px acento</span>
+        </div>
+        <div class="pt-splitter is-hover" style="width: 4px"></div>
+        <div style="width: 180px; background: var(--canvas-bg); position: relative">
+          <div class="pt-vhead" style="border-bottom: 0"><button class="pt-select" style="width: 64px"><span class="pt-mono">300 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button><span style="flex: 1"></span><button class="pt-iconbtn is-on" aria-label="Mosaico"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.mosaic.d}}"></path></svg></button></div>
+          <span class="cs-cap" style="position: absolute; left: 10px; bottom: 8px">Splitter en hover</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span class="cs-cap">Barra de estado · segmentos con divisor de 1 px</span>
+        <div style="display: flex; align-items: center; background: var(--bg-app); border: 1px solid var(--border); border-radius: 2px; overflow: hidden; font-size: 11px">
+          <div class="pt-seg" style="padding-left: 6px"><span class="pt-zoomfield"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.zoomPx.d}}"></path><path class="f" d="{{ic.zoomPx.f}}"></path></svg><span class="pt-mono" style="font-size: 10.5px">1200 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></span></div>
+          <div class="pt-seg"><span class="pt-mono" style="font-size: 10.5px"><b>32 × 32</b> px</span></div>
+          <div class="pt-seg"><span class="pt-mono" style="font-size: 10.5px">x <b>14</b> y <b>9</b></span></div>
+          <div class="pt-seg"><span class="pt-sw" style="width: 12px; height: 12px; background: #C7D0DC"></span><span class="pt-mono" style="font-size: 10.5px"><b>#C7D0DC</b> 100 %</span></div>
+          <span style="flex: 1"></span>
+          <div class="pt-seg" style="border-left: 1px solid var(--border); padding: 0 6px; gap: 2px">
+            <span class="pt-snap is-on"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.gridPx.d}}"></path></svg></span>
+            <span class="pt-snap"><svg class="i16" viewBox="0 0 16 16" style="width: 14px; height: 14px"><path d="{{ic.snapAnchor.d}}"></path></svg></span>
+          </div>
+          <div class="pt-seg" style="border-right: 0"><span class="pt-progress"><span></span></span>Calculando…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Fila 5: menús y superposiciones ===== -->
+  <div class="cs-card">
+    <div class="cs-title">Menu · ContextMenu · Tooltip · Toast · Popover · Dialog</div>
+    <div class="cs-well" style="justify-content: flex-start; gap: 24px; padding: 20px">
+      <div style="display: flex; align-items: flex-start">
+        <div class="pt-menu" role="menu" aria-label="Efecto">
+          <div class="pt-mi" role="menuitem">Aplicar último efecto<span class="pt-mi__kbd">Mayús+Ctrl+E</span></div>
+          <div class="pt-mi is-disabled" role="menuitem">Rasterizar efectos de capa</div>
+          <div class="pt-msep"></div>
+          <div class="pt-mhead">Efectos de forma y capa</div>
+          <div class="pt-mi is-open" role="menuitem">Sombras e iluminación<span class="pt-mi__sub"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span></div>
+          <div class="pt-mi" role="menuitem">Contornos<span class="pt-mi__sub"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span></div>
+          <div class="pt-mi" role="menuitem">Desenfoque<span class="pt-mi__sub"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span></div>
+          <div class="pt-mi" role="menuitem">Distorsión<span class="pt-mi__sub"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span></div>
+          <div class="pt-mi" role="menuitem">Color<span class="pt-mi__sub"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span></div>
+          <div class="pt-msep"></div>
+          <div class="pt-mi" role="menuitemcheckbox" aria-checked="true"><span class="pt-mi__ic"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.check.d}}"></path></svg></span>Vista previa en vivo</div>
+        </div>
+        <div class="pt-menu" role="menu" aria-label="Sombras e iluminación" style="margin-top: 98px; margin-left: -2px; min-width: 210px">
+          <div class="pt-mi is-hover" role="menuitem">Sombra paralela…</div>
+          <div class="pt-mi" role="menuitem">Sombra interior…</div>
+          <div class="pt-mi" role="menuitem">Resplandor exterior…</div>
+          <div class="pt-mi" role="menuitem">Resplandor interior…</div>
+          <div class="pt-mi" role="menuitem">Iluminación direccional…</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 18px; align-items: flex-start">
+        <div class="pt-menu" role="menu" aria-label="Menú contextual de forma" style="min-width: 220px">
+          <div class="pt-mi" role="menuitem"><span class="pt-mi__ic"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.stamp.d}}"></path></svg></span>Estampar<span class="pt-mi__kbd">Ctrl+E</span></div>
+          <div class="pt-mi" role="menuitem">Convertir en trazado</div>
+          <div class="pt-msep"></div>
+          <div class="pt-mi" role="menuitem">Organizar<span class="pt-mi__sub"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span></div>
+          <div class="pt-mi" role="menuitem"><span class="pt-mi__ic"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.folder.d}}"></path></svg></span>Agrupar<span class="pt-mi__kbd">Ctrl+G</span></div>
+          <div class="pt-mi" role="menuitem">Mover a capa…</div>
+        </div>
+        <div class="pt-tip">Selección directa <span>A</span></div>
+        <div class="pt-tip">Estampar <span>Ctrl+E</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 18px; align-items: flex-start">
+        <div class="pt-toast" role="status">
+          <svg class="i16" viewBox="0 0 16 16" style="color: var(--success)"><path d="{{ic.check.d}}"></path></svg>
+          <span style="flex: 1">Forma «Escudo» estampada en Cuerpo</span>
+          <a href="#deshacer" style="color: var(--accent-text); text-decoration: none; font-weight: 500">Deshacer</a>
+        </div>
+        <div class="pt-toast" role="status">
+          <svg class="i16" viewBox="0 0 16 16" style="color: var(--warning)"><path d="{{ic.warning.d}}"></path></svg>
+          <span style="flex: 1">Rectángulo 3 convertido en trazado</span>
+          <a href="#deshacer" style="color: var(--accent-text); text-decoration: none; font-weight: 500">Deshacer</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; width: 280px">
+          <span class="cs-cap">ProgressIndicator · indeterminado</span>
+          <div class="pt-progress" style="width: 100%"><span></span></div>
+        </div>
+        <div class="pt-popover" style="width: 280px; margin-top: 8px">
+          <span class="pt-popover__arrow" style="left: 20px; top: -5px"></span>
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 4px">
+            <span style="font-weight: 600">Popover con flecha</span>
+            <span style="color: var(--text-secondary)">Para editores de efecto y selectores. Ancho 300 px en editores.</span>
+          </div>
+        </div>
+      </div>
+      <div class="pt-dialog" role="dialog" aria-label="Estampar forma" style="width: 360px">
+        <div class="pt-dialog__head">Estampar «Escudo»<span style="flex: 1"></span><button class="pt-iconbtn" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+          <span style="color: var(--text-secondary); line-height: 1.45">Esta forma tiene otras formas debajo. El ráster base queda bajo todas las formas de la capa, así que estamparla tal cual cambiaría el aspecto.</span>
+          <label class="pt-choice"><span class="pt-radio is-on"></span>Estampar en una nueva capa encima</label>
+          <label class="pt-choice"><span class="pt-radio"></span>Estampar también las formas inferiores superpuestas</label>
+          <label class="pt-choice" style="padding-top: 4px"><span class="pt-check"></span>No volver a preguntar</label>
+        </div>
+        <div class="pt-dialog__foot"><button class="pt-btn pt-btn--secondary pt-btn--lg">Cancelar</button><button class="pt-btn pt-btn--primary pt-btn--lg">Estampar</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Fila 6: dominio ===== -->
+  <div style="display: flex; gap: 16px; align-items: flex-start">
+    <div class="cs-card" style="width: 420px">
+      <div class="cs-title">Fila de capa <span>36 px · formas anidadas 28 px</span></div>
+      <div style="border: 1px solid var(--border); border-radius: 2px; overflow: hidden">
+        <sc-for list="{{layerRows}}" as="r" hint-placeholder-count="9">
+          <sc-if value="{{r.isLayer}}" hint-placeholder-val="{{ true }}">
+            <div class="{{r.cls}}">
+              <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.eye}}"></path></svg></button>
+              <span class="pt-lcol pt-lcol--lock"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.lock}}"></path></svg></span>
+              <span class="pt-lchev"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.chev}}"></path></svg></span>
+              <span class="pt-lbar" style="background: {{r.color}}"></span>
+              <span class="pt-thumb"><span class="pt-thumbart" style="box-shadow: {{r.thumb}}"></span></span>
+              <span class="pt-lname">{{r.name}}</span>
+              <span class="pt-fx" style="opacity: {{r.fxOp}}">fx</span>
+              <span class="{{r.target}}"></span>
+              <span class="{{r.selsq}}" style="background: {{r.color}}"></span>
+            </div>
+          </sc-if>
+          <sc-if value="{{r.isSub}}" hint-placeholder-val="{{ false }}">
+            <div class="{{r.cls}}">
+              <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.eye}}"></path></svg></button>
+              <span class="pt-lcol pt-lcol--lock"></span>
+              <span style="width: 22px; flex: none"></span>
+              <span class="pt-lchev" style="color: var(--icon)"><svg class="i16" viewBox="0 0 16 16"><path d="{{r.iconD}}"></path><path class="f" d="{{r.iconF}}"></path></svg></span>
+              <span class="pt-lname">{{r.name}} <em>{{r.kind}}</em></span>
+              <span class="pt-fx" style="opacity: {{r.fxOp}}">fx</span>
+              <span class="{{r.target}}"></span>
+              <span class="{{r.selsq}}" style="background: {{r.color}}"></span>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px">
+        <span class="cs-cap">Luz · normal con fx</span><span class="cs-cap">Contorno · hover, bloqueada</span>
+        <span class="cs-cap">Cuerpo · activa, expandida, con selección ●</span><span class="cs-cap">Escudo · forma seleccionada</span>
+        <span class="cs-cap">Píxeles · ráster base fijo al final</span><span class="cs-cap">Sombra · destino al arrastrar</span>
+        <span class="cs-cap">Fondo · oculta</span><span class="cs-cap">Barra de 3 px = color de capa</span>
+      </div>
+    </div>
+
+    <div class="cs-card" style="width: 420px">
+      <div class="cs-title">Panel Apariencia <span>filas 26 px</span></div>
+      <div class="pt-panel" style="border-radius: 2px">
+        <div class="pt-phead"><button class="pt-ptab">Capas</button><button class="pt-ptab is-active">Apariencia</button><div class="pt-phead__tools"><button class="pt-iconbtn" style="width: 20px; height: 20px" aria-label="Opciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button></div></div>
+        <div style="height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-bottom: 1px solid var(--border-subtle)">
+          <svg class="i16" viewBox="0 0 16 16" style="color: var(--text-secondary)"><path d="{{ic.chevDown.d}}"></path></svg>
+          <svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.rect16.d}}"></path></svg>
+          <span style="font-weight: 600">Rectángulo 3</span>
+          <span style="color: var(--text-secondary)">· Cuerpo</span>
+        </div>
+        <div class="pt-arow"><span class="pt-arow__name">Contorno</span><span class="pt-arow__sw" style="background: #1B1526"></span><span class="pt-arow__desc">1 px · Exterior</span><button class="pt-iconbtn" aria-label="Visible"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button></div>
+        <div class="pt-arow is-selected"><span class="pt-arow__name">Contorno</span><span class="pt-arow__sw" style="background: linear-gradient(90deg,#F2C14E,#E04B55)"></span><span class="pt-arow__desc">1 px · Centro · degradado</span><button class="pt-iconbtn" aria-label="Visible"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button></div>
+        <div class="pt-arow"><span class="pt-arow__name">Relleno</span><span class="pt-arow__sw" style="background: linear-gradient(90deg,#263F86,#3D6BD1,#8DB6FF)"></span><span class="pt-arow__desc">Lineal · tramado Bayer 4</span><button class="pt-iconbtn" aria-label="Visible"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button></div>
+        <div class="pt-arow"><span class="pt-arow__name">Opacidad</span><span class="pt-arow__desc">100 % · Normal</span></div>
+        <div class="pt-arow is-hover"><span class="pt-arow__fx"><i>fx</i><span>Sombra paralela</span></span><button class="pt-iconbtn" aria-label="Visible"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button></div>
+        <div class="pt-arow"><span class="pt-arow__fx"><i>fx</i><span>Resplandor exterior</span></span><button class="pt-iconbtn is-off" aria-label="Oculto" style="color: var(--text-disabled)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eyeOff.d}}"></path></svg></button></div>
+        <div class="pt-pfoot">
+          <button class="pt-iconbtn" aria-label="Añadir contorno" title="Añadir contorno"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.addStroke.d}}"></path></svg></button>
+          <button class="pt-iconbtn" aria-label="Añadir relleno" title="Añadir relleno"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.addFill.d}}"></path><path class="f" d="{{ic.addFill.f}}"></path></svg></button>
+          <button class="pt-iconbtn" aria-label="Añadir efecto" title="Añadir efecto"><span class="pt-fx" style="padding: 0">fx</span></button>
+          <span style="flex: 1"></span>
+          <button class="pt-iconbtn" aria-label="Borrar apariencia" title="Borrar apariencia"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.clear.d}}"></path></svg></button>
+          <button class="pt-iconbtn" aria-label="Duplicar elemento" title="Duplicar elemento"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.duplicate.d}}"></path></svg></button>
+          <button class="pt-iconbtn" aria-label="Eliminar elemento" title="Eliminar elemento"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.trash.d}}"></path></svg></button>
+        </div>
+      </div>
+      <span class="cs-cap">Fila seleccionada · fx en hover subraya el nombre (clic abre el editor) · efecto oculto</span>
+    </div>
+
+    <div class="cs-card" style="flex: 1">
+      <div class="cs-title">Miniatura de imagen <span>48 px tira · factor entero</span></div>
+      <div style="display: flex; gap: 12px">
+        <sc-for list="{{frameStates}}" as="fs" hint-placeholder-count="4">
+          <div class="cs-state">
+            <button class="{{fs.cls}}" aria-label="Imagen {{fs.n}}"><span class="pt-thumbart" style="box-shadow: {{fs.sh}}"></span><span class="pt-fnum">{{fs.n}}</span><sc-if value="{{fs.excl}}" hint-placeholder-val="{{ false }}"><span class="pt-fexcl"><svg class="i16" viewBox="0 0 16 16" style="width: 10px; height: 10px"><path d="{{ic.clear.d}}"></path></svg></span></sc-if></button>
+            <input class="pt-input pt-fdur" value="{{fs.ms}}" aria-label="Duración en ms">
+            <span class="cs-cap">{{fs.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 2px; padding-top: 10px; border-top: 1px solid var(--border-subtle)">
+        <button class="pt-iconbtn" aria-label="Primera"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.first.d}}"></path><path class="f" d="{{ic.first.f}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Anterior"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.prevF.d}}"></path></svg></button>
+        <button class="pt-iconbtn is-active" aria-label="Reproducir"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.play.f}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Siguiente"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.nextF.d}}"></path></svg></button>
+        <button class="pt-iconbtn" aria-label="Última"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.last.d}}"></path><path class="f" d="{{ic.last.f}}"></path></svg></button>
+        <span class="pt-sep" style="margin: 3px 6px"></span>
+        <button class="pt-select" style="width: 84px" aria-label="Modo de reproducción"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.loop.d}}"></path></svg><span>Bucle</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        <button class="pt-select" style="width: 50px" aria-label="Velocidad"><span>1×</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+        <button class="pt-iconbtn is-on" aria-label="Papel cebolla" style="margin-left: 4px"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.onion.d}}"></path></svg></button>
+      </div>
+      <span class="cs-cap">Normal · Activa (borde 2 px acento) · Hover · Excluida (40 % + ⊘)</span>
+    </div>
+  </div>
+
+  <!-- ===== Iconografía ===== -->
+  <div class="cs-card">
+    <div class="cs-title">Iconografía propia <span>herramientas 20 px · trazo 1,5 — paneles e interfaz 16 px · trazo 1,25 — las herramientas de píxel llevan detalle pixelado</span></div>
+    <div style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 10px 8px">
+      <sc-for list="{{toolIcons}}" as="t" hint-placeholder-count="21">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; border-radius: 4px; background: var(--bg-panel-header); color: var(--icon)">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <svg class="i20" viewBox="0 0 20 20"><path d="{{t.d}}"></path><path class="f" d="{{t.f}}"></path></svg>
+            <svg class="i20" viewBox="0 0 20 20" style="width: 40px; height: 40px"><path d="{{t.d}}"></path><path class="f" d="{{t.f}}"></path></svg>
+          </div>
+          <span class="cs-cap" style="color: var(--text-secondary)">{{t.label}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 8px 6px; padding-top: 6px">
+      <sc-for list="{{uiIcons}}" as="u" hint-placeholder-count="64">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 2px 6px; border-radius: 4px; background: var(--bg-panel-header); color: var(--icon)">
+          <svg class="i16" viewBox="0 0 16 16"><path d="{{u.d}}"></path><path class="f" d="{{u.f}}"></path></svg>
+          <span style="font-size: 9.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%">{{u.k}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+</section>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":5900}}'>
+/*ICONS-BEGIN*/
+var ICONS = {
+  // Herramientas — rejilla 20, trazo 1.5
+  sel:{g:20,d:'M5.5 3.5v12.5l3.4-3.3 2.4 5 2.1-1-2.4-4.9h4.6z'},
+  dsel:{g:20,d:'M4.5 3.5v11l3-2.9 2.1 4.4 1.8-.9-2.1-4.3h4.2z M13.5 13.5h4v4h-4z'},
+  wand:{g:20,d:'M3.5 16.5l8-8 M10.5 7.5l2 2 M15 2.5v3 M13.5 4h3',f:'M14 9h2v2h-2z M9 3h2v2H9z'},
+  lasso:{g:20,d:'M10 3.5c4.1 0 7 1.9 7 4.5s-2.9 4.5-7 4.5-7-1.9-7-4.5 2.9-4.5 7-4.5z M6.2 11.8c-.9 1.2-.6 2.6.8 3.1 1.3.5 1.4 1.8-.3 2.6'},
+  marquee:{g:20,d:'M3.5 7V4.5H6 M9 4.5h2 M14 4.5h2.5V7 M16.5 10v1 M16.5 13v2.5H14 M11 15.5H9 M6 15.5H3.5V13 M3.5 10v1'},
+  pen:{g:20,d:'M10 2.5l5 7-2.5 5.5h-5L5 9.5z M10 2.5v6 M7 17.5h6 M11.2 9.8a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z'},
+  vpencil:{g:20,d:'M4.5 14.5c2.5-5 5-1 7.5-5 1.4-2.3 2.4-3.6 3.5-4.5 M2.5 13.5h3v3h-3z M14.5 3h3v3h-3z'},
+  rect:{g:20,d:'M3.5 5.5h13v9h-13z'},
+  ellipse:{g:20,d:'M17 10c0 3-3.1 5.5-7 5.5S3 13 3 10s3.1-5.5 7-5.5 7 2.5 7 5.5z'},
+  polygon:{g:20,d:'M10 3l6 3.5v7L10 17l-6-3.5v-7z'},
+  star:{g:20,d:'M10 3l2 5 5.2.2-4.1 3.3 1.5 5.1-4.6-3-4.6 3 1.5-5.1-4.1-3.3L8 8z'},
+  line:{g:20,d:'M4.5 15.5l11-11'},
+  pencil:{g:20,d:'M7.5 12.5l7-7 2.5 2.5-7 7z M12.5 7.5l2.5 2.5',f:'M3.5 15.5h2v2h-2z M5.5 13.5h2v2h-2z'},
+  brush:{g:20,d:'M17 3.5l-6.5 6.5 M10.5 10l1.5 1.5c-.3 2.4-2.2 4.5-6 4.5.3-3.6 2-5.7 4.5-6z',f:'M3 15h2v2H3z'},
+  eraser:{g:20,d:'M3.5 12.5l7-7 5.5 5.5-5 5h-4z M7 9l5.5 5.5 M11.5 16h5'},
+  bucket:{g:20,d:'M3.5 9.5l6-6 6 6-6 6z M3.5 9.5h12 M7 6L4.5 3.5',f:'M16.5 12h2v2h-2z M16.5 15h2v2h-2z'},
+  gradient:{g:20,d:'M3.5 4.5h13v11h-13z',f:'M5 6h2v2H5zM5 8h2v2H5zM5 10h2v2H5zM5 12h2v2H5zM7 6h2v2H7zM7 10h2v2H7zM9 8h2v2H9zM9 12h2v2H9zM11 6h2v2h-2zM13 10h2v2h-2z'},
+  eyedrop:{g:20,d:'M12.5 4.5l1.8-1.8a1.9 1.9 0 0 1 2.7 2.7l-1.8 1.8 M11 4l5 5 M13.5 7.5l-7.5 7.5-2.5.5.5-2.5 7.5-7.5'},
+  hand:{g:20,d:'M7 10.5V5a1.2 1.2 0 0 1 2.4 0v4.5 M9.4 9V3.8a1.2 1.2 0 0 1 2.4 0V9 M11.8 9V4.8a1.2 1.2 0 0 1 2.4 0V10 M14.2 10V7a1.2 1.2 0 0 1 2.4 0v5c0 3.3-2.4 5.5-5.4 5.5h-1.1c-1.6 0-2.8-.7-3.7-1.9L3.6 12.1a1.3 1.3 0 0 1 2-1.6L7 12'},
+  zoom:{g:20,d:'M14 8.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z M12.4 12.4L17 17'},
+  // Paneles — rejilla 16, trazo 1.25
+  props:{g:16,d:'M2.5 4.5h3 M9.5 4.5h4 M2.5 11.5h7 M12.5 11.5h1 M7.5 3v3 M11 10v3'},
+  layers:{g:16,d:'M8 2.5l5.5 3-5.5 3-5.5-3z M2.5 8.5l5.5 3 5.5-3 M2.5 11l5.5 3 5.5-3'},
+  appearance:{g:16,d:'M2.5 3h3v3h-3z M2.5 10h3v3h-3z M8 4.5h5.5 M8 8h5.5 M8 11.5h5.5'},
+  color:{g:16,d:'M8 2.5a5.5 5.5 0 0 0 0 11c1 0 1.5-.6 1.5-1.3 0-1-.8-1.2-.8-2 0-.7.6-1.2 1.3-1.2h1.3c1.4 0 2.2-1 2.2-2.3C13.5 4.4 11.2 2.5 8 2.5z',f:'M4.5 6.5H6V8H4.5z M7 4h1.5v1.5H7z M5 9.5h1.5V11H5z'},
+  swatches:{g:16,d:'M2.5 2.5h4.5v4.5H2.5z M9 2.5h4.5v4.5H9z M2.5 9h4.5v4.5H2.5z M9 9h4.5v4.5H9z'},
+  navigator:{g:16,d:'M2.5 3.5h11v9h-11z M6 6h4.5v3.5H6z'},
+  align:{g:16,d:'M2.5 2v12 M5 4.5h8V7H5z M5 9h5v2.5H5z'},
+  stroke:{g:16,d:'M2.5 3.5h11 M2.5 7h11',f:'M2 10h12v2.5H2z'},
+  gradientp:{g:16,d:'M2.5 2.5h11v11h-11z',f:'M4 4h2v2H4zM4 6h2v2H4zM4 8h2v2H4zM4 10h2v2H4zM6 4h2v2H6zM6 8h2v2H6zM8 6h2v2H8zM8 10h2v2H8zM10 4h2v2h-2z'},
+  frames:{g:16,d:'M2.5 3.5h11v9h-11z M6.2 3.5v9 M9.8 3.5v9'},
+  preview:{g:16,d:'M2.5 3.5h11v9h-11z',f:'M6.5 5.8v4.4L10.2 8z'},
+  styles:{g:16,d:'M8 2.5l1.4 3.6 3.6 1.4-3.6 1.4L8 12.5 6.6 8.9 3 7.5l3.6-1.4z M12.5 11v3 M11 12.5h3'},
+  pathfinder:{g:16,d:'M2.5 2.5h7v7h-7z M6.5 6.5h7v7h-7z'},
+  history:{g:16,d:'M2.5 8a5.5 5.5 0 1 0 1.6-3.9 M2.5 2.5v2.5H5 M8 5v3l2 1.5'},
+  // Interfaz — rejilla 16, trazo 1.25
+  eye:{g:16,d:'M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'},
+  eyeOff:{g:16,d:'M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z M2.5 13.5l11-11'},
+  lock:{g:16,d:'M4 7.5h8v6H4z M5.5 7.5v-2a2.5 2.5 0 0 1 5 0v2'},
+  unlock:{g:16,d:'M4 7.5h8v6H4z M5.5 7.5v-2a2.5 2.5 0 0 1 4.9-.7'},
+  plus:{g:16,d:'M8 3.5v9 M3.5 8h9'},
+  trash:{g:16,d:'M3 4.5h10 M6.5 4.5V3h3v1.5 M4.5 4.5l.7 9h5.6l.7-9 M7 7v4 M9 7v4'},
+  menu:{g:16,d:'M3 4.5h10 M3 8h10 M3 11.5h10'},
+  chevDown:{g:16,d:'M4.5 6.5L8 10l3.5-3.5'},
+  chevRight:{g:16,d:'M6.5 4.5L10 8l-3.5 3.5'},
+  close:{g:16,d:'M4.5 4.5l7 7 M11.5 4.5l-7 7'},
+  link:{g:16,d:'M7 9a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 9 3.5l-.8.8 M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5l.8-.8'},
+  newLayer:{g:16,d:'M2.5 5.5h8v8h-8z M5.5 2.5h8v8 M6.5 7.5v4 M4.5 9.5h4'},
+  fromSel:{g:16,d:'M2.5 4.5v-2h2 M6.5 2.5h2 M10.5 2.5V4 M2.5 6.5v2 M2.5 10.5h2 M12 8.5v5 M9.5 11h5'},
+  folder:{g:16,d:'M2 4h4l1.5 1.5h6.5v7H2z'},
+  stamp:{g:16,d:'M6.5 2.5h3V6L12 7.5V10H4V7.5L6.5 6z M3 12.5h10'},
+  flipH:{g:16,d:'M8 2v12 M6 4.5l-3.5 7H6z M10 4.5l3.5 7H10z'},
+  flipV:{g:16,d:'M2 8h12 M4.5 6l7-3.5V6z M4.5 10l7 3.5V10z'},
+  rotate:{g:16,d:'M12.5 8a4.5 4.5 0 1 1-1.3-3.2 M11.5 2v3h-3'},
+  alL:{g:16,d:'M2.5 2v12 M5 4.5h8V7H5z M5 9h5v2.5H5z'},
+  alCH:{g:16,d:'M8 2v12 M3.5 4.5h9V7h-9z M5.5 9h5v2.5h-5z'},
+  alR:{g:16,d:'M13.5 2v12 M3 4.5h8V7H3z M6 9h5v2.5H6z'},
+  alT:{g:16,d:'M2 2.5h12 M4.5 5H7v8H4.5z M9 5h2.5v5H9z'},
+  alCV:{g:16,d:'M2 8h12 M4.5 3.5H7v9H4.5z M9 5.5h2.5v5H9z'},
+  alB:{g:16,d:'M2 13.5h12 M4.5 3H7v8H4.5z M9 6h2.5v5H9z'},
+  gridPx:{g:16,d:'M2 5.5h12 M2 10.5h12 M5.5 2v12 M10.5 2v12'},
+  tiles:{g:16,d:'M2.5 2.5h11v11h-11z M8 2.5v11 M2.5 8h11'},
+  paths:{g:16,d:'M3.5 12C5 6 10 10 12.5 4',f:'M2.5 11h2v2h-2z M11.5 3h2v2h-2z'},
+  onion:{g:16,d:'M9.5 8a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z M8 4.6a3.5 3.5 0 1 1 0 6.8'},
+  mosaic:{g:16,d:'M2.5 2.5h11v11h-11z M6.2 2.5v11 M9.8 2.5v11 M2.5 6.2h11 M2.5 9.8h11'},
+  play:{g:16,d:'M5 3.5v9l7-4.5z',f:'M5 3.5v9l7-4.5z'},
+  pause:{g:16,f:'M4.5 3.5H7v9H4.5z M9 3.5h2.5v9H9z'},
+  first:{g:16,d:'M4 3.5v9',f:'M12.5 3.5v9L6 8z'},
+  last:{g:16,d:'M12 3.5v9',f:'M3.5 3.5v9L10 8z'},
+  prevF:{g:16,d:'M10.5 4L6.5 8l4 4'},
+  nextF:{g:16,d:'M5.5 4l4 4-4 4'},
+  loop:{g:16,d:'M3 8.5V7a2.5 2.5 0 0 1 2.5-2.5H12 M10.5 3L12 4.5 10.5 6 M13 7.5V9a2.5 2.5 0 0 1-2.5 2.5H4 M5.5 13L4 11.5 5.5 10'},
+  more:{g:16,f:'M3 7h2v2H3z M7 7h2v2H7z M11 7h2v2h-2z'},
+  search:{g:16,d:'M10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z M9.6 9.6l3.9 3.9'},
+  magnet:{g:16,d:'M3.5 2.5h3v5a1.5 1.5 0 0 0 3 0v-5h3v5a4.5 4.5 0 0 1-9 0z M3.5 5h3 M9.5 5h3'},
+  snapAnchor:{g:16,d:'M5.5 5.5h5v5h-5z M2 8h3.5 M10.5 8H14'},
+  snapGuide:{g:16,d:'M5.5 2v12 M2 10.5h12'},
+  snapCanvas:{g:16,d:'M2.5 2.5h11v11h-11z M8 6v4 M6 8h4'},
+  swap:{g:16,d:'M4.5 11V7.5a3 3 0 0 1 3-3H11 M9.5 3L11 4.5 9.5 6 M3 9.5L4.5 11 6 9.5'},
+  check:{g:16,d:'M3.5 8.5l3 3 6-6.5'},
+  spinner:{g:16,d:'M13.5 8A5.5 5.5 0 1 1 8 2.5'},
+  zoomPx:{g:16,d:'M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z M10 10l3.5 3.5',f:'M5 5h2v2H5z M7 7h2v2H7z'},
+  minimize:{g:16,d:'M3.5 8h9'},
+  maximize:{g:16,d:'M3.5 3.5h9v9h-9z'},
+  ellipse16:{g:16,d:'M13.5 8c0 2.5-2.5 4.5-5.5 4.5S2.5 10.5 2.5 8 5 3.5 8 3.5s5.5 2 5.5 4.5z'},
+  rect16:{g:16,d:'M2.5 4.5h11v7h-11z'},
+  polygon16:{g:16,d:'M8 2.5l5 3v5l-5 3-5-3v-5z'},
+  star16:{g:16,d:'M8 2.5l1.6 3.6 3.9.3-3 2.6.9 3.8L8 10.8l-3.4 2 .9-3.8-3-2.6 3.9-.3z'},
+  line16:{g:16,d:'M3.5 12.5l9-9'},
+  path16:{g:16,d:'M3.5 12C5 6 10 10 12.5 4',f:'M2.5 11h2v2h-2z M11.5 3h2v2h-2z'},
+  group16:{g:16,d:'M2.5 2.5h7v7h-7z M6.5 6.5h7v7h-7z'},
+  pixels16:{g:16,f:'M2.5 2.5h3v3h-3z M10.5 2.5h3v3h-3z M6.5 6.5h3v3h-3z M2.5 10.5h3v3h-3z M10.5 10.5h3v3h-3z'},
+  lockAlpha:{g:16,d:'M2.5 2.5h8v8h-8z M10 10.5h4V14h-4z M11 10.5v-1a1 1 0 0 1 2 0v1',f:'M2.5 2.5h4v4h-4z M6.5 6.5h4v4h-4z'},
+  cursor:{g:16,d:'M4 2.5v10l2.6-2.4 1.7 3.9 1.6-.7-1.7-3.8h3.6z'},
+  warning:{g:16,d:'M8 2.5l6 10.5H2z M8 6.5v3 M8 11.2v.1'},
+  info:{g:16,d:'M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z M8 7.5V11 M8 5v.1'},
+  eyedrop16:{g:16,d:'M10 3.5l1.3-1.3a1.6 1.6 0 0 1 2.3 2.3L12.3 5.8 M9 3l4 4 M11 5.3l-6.3 6.3-2.2.4.4-2.2 6.3-6.3'},
+  anchorCorner:{g:16,d:'M2.5 13.5L8 5l5.5 8.5 M6.5 3.5h3v3h-3z'},
+  anchorSmooth:{g:16,d:'M2.5 12.5C4 7 6 5 8 5s4 2 5.5 7.5 M2 5h12 M6.5 3.5h3v3h-3z'},
+  scissors:{g:16,d:'M6 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z M6 11a2 2 0 1 1-4 0 2 2 0 0 1 4 0z M5.6 6.2L14 12 M5.6 9.8L14 4'},
+  join:{g:16,d:'M2.5 11.5C4 6 6 6 7 8 M9 8c1-2 3-2 4.5 3.5 M6.5 6.5h3v3h-3z'},
+  dither:{g:16,f:'M2 2h2v2H2zM6 2h2v2H6zM10 2h2v2h-2zM4 4h2v2H4zM8 4h2v2H8zM12 4h2v2h-2zM2 6h2v2H2zM6 6h2v2H6zM10 6h2v2h-2zM4 10h2v2H4zM10 10h2v2h-2zM2 12h2v2H2zM8 12h2v2H8z'},
+  addStroke:{g:16,d:'M2.5 2.5h7v7h-7z M5 5h2v2H5z M12 9.5v5 M9.5 12h5'},
+  addFill:{g:16,d:'M12 9.5v5 M9.5 12h5',f:'M2.5 2.5h7v7h-7z'},
+  clear:{g:16,d:'M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z M4.1 11.9l7.8-7.8'},
+  duplicate:{g:16,d:'M5.5 5.5h8v8h-8z M2.5 10.5v-8h8'}
+};
+/*ICONS-END*/
+
+var PAL = {k:'#1B1526',v:'#0E0B14',d:'#4F5D75',H:'#8796AB',h:'#C7D0DC',w:'#EEF3F8',p:'#E04B55',P:'#8F2638',c:'#3D6BD1',C:'#263F86',b:'#7A4A2B',l:'#5A3A2A',g:'#F2C14E',e:'#2F9E74',z:'rgba(12,8,20,.38)',F:'#22314A',G:'#5BAE3A',D:'#3C7A2A'};
+var TOP = [
+'',
+'......kkk',
+'.....kpppk',
+'....kppPppk',
+'....kpPPk..kkkkkkk',
+'.....kPk..khhhhhhhk',
+'......kPkkhhhhhhhhhk',
+'.......kkkhhhhhhhhHk',
+'.........kHhhhhvvvvk',
+'.........kHHhhhhHHHk',
+'.........kHHHhhvvvvk',
+'.........kdHHHHHHHdk',
+'..........kddHHHHddk',
+'..........kkddddddkk',
+'........kHHkccccccckHHk',
+'.......kHhhkcCccccckhhHk',
+'.......kHHHkcccccCckHHHk',
+'........kdkkccccccckllk',
+'........kdkbbbbgbbbkllk',
+'........kkcccCccccCck',
+'.........kcCcccccCcck',
+'.........kkkkkkkkkkkk'
+];
+var LEGS = {
+  A:['..........kHdk..kHdk','..........kHdk..kHdk','..........kHdk..kHdk','..........kHdk..kHdk','.........kllllk.kllllk','.........kllllk.kllllk','.........kkkkkk.kkkkkk'],
+  B:['..........kHdk...kHdk','.........kHdk.....kHdk','........kHdk.......kHdk','........kHdk.......kHdk','.......kllllk......kllllk','.......kkkkkk......kkkkkk',''],
+  C:['..........kHdkkHdk','..........kHdkkHdk','..........kHdkkllllk','..........kHdkkkkkkk','.........kllllk','.........kllllk','.........kkkkkk'],
+  D:['...........kHdk.kHdk','..........kHdk...kHdk','.........kHdk.....kHdk','.........kHdk.....kHdk','........kllllk.....kllllk','........kkkkkk.....kkkkkk','']
+};
+function blank(){ var g=[]; for(var y=0;y<32;y++){ var r=[]; for(var x=0;x<32;x++) r.push('.'); g.push(r);} return g; }
+function put(g,rows,y0){ rows.forEach(function(row,i){ for(var x=0;x<32&&x<row.length;x++){ if(row[x]!=='.') g[y0+i][x]=row[x]; } }); }
+function over(dst,src){ for(var y=0;y<32;y++) for(var x=0;x<32;x++) if(src[y][x]!=='.') dst[y][x]=src[y][x]; }
+function buildLayers(pose){
+  var sombra=blank();
+  for(var y=26;y<32;y++) for(var x=0;x<32;x++){ var dx=(x+.5-15.5)/7, dy=(y+.5-29.5)/1.6; if(dx*dx+dy*dy<=1) sombra[y][x]='z'; }
+  var cuerpo=blank(); put(cuerpo,TOP,0); put(cuerpo,LEGS[pose],22);
+  var inE=function(x,y){ var dx=(x+.5-7)/4, dy=(y+.5-19)/5; return dx*dx+dy*dy<=1; };
+  for(var y2=12;y2<26;y2++) for(var x2=1;x2<13;x2++){
+    if(!inE(x2,y2)) continue;
+    var edge=!inE(x2-1,y2)||!inE(x2+1,y2)||!inE(x2,y2-1)||!inE(x2,y2+1);
+    var ring=!edge&&(!inE(x2-2,y2)||!inE(x2+2,y2)||!inE(x2,y2-2)||!inE(x2,y2+2));
+    var cross=((x2===6||x2===7)&&y2>=16&&y2<=21)||(y2===18&&x2>=5&&x2<=8);
+    cuerpo[y2][x2]=edge?'k':ring?'H':cross?'g':'e';
+  }
+  cuerpo[17][22]='l'; cuerpo[18][22]='l';
+  cuerpo[17][23]='b'; cuerpo[16][23]='g'; cuerpo[17][24]='g';
+  for(var i=0;i<7;i++){ cuerpo[16-i][24+i]='w'; if(i>0) cuerpo[17-i][24+i]='H'; }
+  cuerpo[9][31]='w';
+  var contorno=blank();
+  var solid=function(x,y){ if(x<0||y<0||x>31||y>31) return false; var c=cuerpo[y][x]; return c!=='.'&&c!=='k'; };
+  for(var y3=0;y3<32;y3++) for(var x3=0;x3<32;x3++){
+    if(cuerpo[y3][x3]!=='.') continue;
+    if(solid(x3-1,y3)||solid(x3+1,y3)||solid(x3,y3-1)||solid(x3,y3+1)) contorno[y3][x3]='k';
+  }
+  var luz=blank();
+  [[12,6],[13,6],[11,7],[12,7],[9,15],[20,15],[13,15],[11,8]].forEach(function(p){ if(cuerpo[p[1]][p[0]]!=='.' && cuerpo[p[1]][p[0]]!=='k') luz[p[1]][p[0]]='w'; });
+  var comp=blank(); over(comp,sombra); over(comp,cuerpo); over(comp,contorno); over(comp,luz);
+  return {sombra:sombra,cuerpo:cuerpo,contorno:contorno,luz:luz,comp:comp};
+}
+function shadowOf(g,s){
+  var out=[];
+  for(var y=0;y<32;y++) for(var x=0;x<32;x++){ var c=g[y][x]; if(c!=='.') out.push(((x+1)*s)+'px '+((y+1)*s)+'px 0 0 '+PAL[c]); }
+  return out.length?out.join(','):'none';
+}
+var TOOL_LABELS = {sel:'Selección V',dsel:'Sel. directa A',wand:'Varita W',lasso:'Lazo Q',marquee:'Marco S',pen:'Pluma P',vpencil:'Lápiz vect. ⇧N',rect:'Rectángulo M',ellipse:'Elipse L',polygon:'Polígono',star:'Estrella',line:'Línea \\',pencil:'Lápiz N',brush:'Pincel B',eraser:'Borrador E',bucket:'Bote K',gradient:'Degradado G',eyedrop:'Cuentagotas I',hand:'Mano H',zoom:'Zoom Z'};
+
+class Component extends DCLogic {
+  renderVals() {
+    var ic = {};
+    Object.keys(ICONS).forEach(function(k){ ic[k]={d:ICONS[k].d||'',f:ICONS[k].f||''}; });
+    var A=buildLayers('A'), B=buildLayers('B'), C=buildLayers('C'), D=buildLayers('D');
+    var fondo=blank(); for(var y=0;y<32;y++) for(var x=0;x<32;x++) fondo[y][x]='F';
+
+    var layerRows=[
+      {isLayer:true,isSub:false,cls:'pt-lrow',name:'Luz',color:'#2FD3E0',eye:ic.eye.d,lock:'',chev:ic.chevRight.d,thumb:shadowOf(A.luz,1),fxOp:1,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow is-hover',name:'Contorno',color:'#D46BFF',eye:ic.eye.d,lock:ic.lock.d,chev:ic.chevRight.d,thumb:shadowOf(A.contorno,1),fxOp:1,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow is-current',name:'Cuerpo',color:'#3FD07F',eye:ic.eye.d,lock:'',chev:ic.chevDown.d,thumb:shadowOf(A.cuerpo,1),fxOp:0,target:'pt-target is-sel',selsq:'pt-selsq'},
+      {isLayer:false,isSub:true,cls:'pt-lrow pt-srow',name:'Espada',kind:'Trazado',color:'#3FD07F',eye:ic.eye.d,iconD:ic.path16.d,iconF:ic.path16.f,fxOp:0,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:false,isSub:true,cls:'pt-lrow pt-srow is-selected',name:'Escudo',kind:'Elipse',color:'#3FD07F',eye:ic.eye.d,iconD:ic.ellipse16.d,iconF:'',fxOp:0,target:'pt-target is-sel',selsq:'pt-selsq'},
+      {isLayer:false,isSub:true,cls:'pt-lrow pt-srow',name:'Píxeles',kind:'Ráster base',color:'#3FD07F',eye:ic.eye.d,iconD:'',iconF:ic.pixels16.f,fxOp:0,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow is-drop',name:'Sombra',color:'#FF5A5A',eye:ic.eye.d,lock:'',chev:ic.chevRight.d,thumb:shadowOf(A.sombra,1),fxOp:1,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'},
+      {isLayer:true,isSub:false,cls:'pt-lrow is-hidden',name:'Fondo',color:'#4F9DFF',eye:ic.eyeOff.d,lock:ic.lock.d,chev:ic.chevRight.d,thumb:shadowOf(fondo,1),fxOp:0,target:'pt-target',selsq:'pt-selsq pt-selsq--empty'}
+    ];
+
+    var frameStates=[
+      {n:1,ms:'100',sh:shadowOf(A.comp,1),cls:'pt-frame',excl:false,label:'Normal'},
+      {n:2,ms:'100',sh:shadowOf(B.comp,1),cls:'pt-frame is-active',excl:false,label:'Activa'},
+      {n:3,ms:'150',sh:shadowOf(C.comp,1),cls:'pt-frame is-hover',excl:false,label:'Hover'},
+      {n:4,ms:'100',sh:shadowOf(D.comp,1),cls:'pt-frame is-excluded',excl:true,label:'Excluida'}
+    ];
+
+    // Vista previa del degradado en modo píxel: Bayer 4×4, 64×8 px a ×4
+    var BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+    var STOPS=['#263F86','#3D6BD1','#8DB6FF'];
+    var bp=[];
+    for(var by=0;by<8;by++) for(var bx=0;bx<64;bx++){
+      var t=bx/63, a, b, u;
+      if(t<.5){a=0;b=1;u=t*2;}else{a=1;b=2;u=(t-.5)*2;}
+      var th=(BAYER[by%4][bx%4]+.5)/16;
+      bp.push(((bx+1)*4)+'px '+((by+1)*4)+'px 0 0 '+STOPS[u>th?b:a]);
+    }
+
+    var toolIcons=Object.keys(ICONS).filter(function(k){return ICONS[k].g===20;}).map(function(k){ return {k:k,label:TOOL_LABELS[k]||k,d:ICONS[k].d||'',f:ICONS[k].f||''}; });
+    var uiIcons=Object.keys(ICONS).filter(function(k){return ICONS[k].g===16;}).map(function(k){ return {k:k,d:ICONS[k].d||'',f:ICONS[k].f||''}; });
+
+    return {
+      themes:[{cls:'pt-oscuro',label:'Tema oscuro'},{cls:'pt-claro',label:'Tema claro'}],
+      ic: ic,
+      layerRows: layerRows,
+      frameStates: frameStates,
+      bayer: bp.join(','),
+      navArt: shadowOf(A.comp,3),
+      toolIcons: toolIcons,
+      uiIcons: uiIcons
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Diálogo Estampar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./compartido/pt.css">
+<script src="./compartido/pt-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.es-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border-input);border-radius:4px;background:var(--bg-input);text-align:left;cursor:default;color:var(--text-primary);width:100%}
+.es-opt.is-on{border-color:var(--accent);background:var(--accent-muted)}
+.es-opt .pt-radio{margin-top:2px}
+.es-badge{display:inline-flex;align-items:center;height:16px;padding:0 6px;border-radius:8px;background:var(--accent-muted);color:var(--accent-text);font-size:10px;font-weight:500;margin-left:6px}
+.es-stack{display:flex;align-items:center;gap:8px;height:24px;padding:0 8px;border-radius:2px;font-size:11px}
+.bd{background:var(--bg-panel);border-radius:2px}
+</style>
+</helmet>
+<div class="pt-root pt-oscuro pt-app">
+
+  <header class="pt-titlebar">
+    <div class="pt-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="display: block; shape-rendering: crispEdges">
+        <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+        <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+      </svg>
+    </div>
+    <nav aria-label="Menú principal" style="display: flex"><sc-for list="{{menus}}" as="m" hint-placeholder-count="10"><button class="{{m.cls}}">{{m.name}}</button></sc-for></nav>
+    <div class="pt-spacer"></div>
+    <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+    <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+    <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+  </header>
+  <div aria-hidden="true" style="height: 36px; background: var(--bg-panel); border-bottom: 1px solid var(--border)"></div>
+  <div class="pt-body" aria-hidden="true">
+    <div style="width: 40px; background: var(--bg-panel); border-right: 1px solid var(--border)"></div>
+    <div style="flex: 1; background: var(--canvas-bg); display: flex; align-items: center; justify-content: center">
+      <div class="pt-canvas" style="width: 384px; height: 384px">
+        <div class="pt-art" style="left: -12px; top: -12px; width: 12px; height: 12px; box-shadow: {{bgArt}}"></div>
+        <svg class="pt-overlay" width="384" height="384" viewBox="0 0 384 384"><ellipse cx="156" cy="108" rx="72" ry="30" fill="none" stroke="#4F9DFF"></ellipse><rect x="84.5" y="78.5" width="144" height="60" fill="none" stroke="#4F9DFF"></rect></svg>
+      </div>
+    </div>
+    <div style="width: 296px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 1px"><div class="bd" style="height: 300px"></div><div class="bd" style="flex: 1"></div></div>
+  </div>
+  <footer class="pt-status"><div class="pt-seg">icono-app.pixeltor</div></footer>
+
+  <div class="pt-scrim">
+    <div class="pt-dialog" role="alertdialog" aria-modal="true" aria-labelledby="es-title" aria-describedby="es-desc" style="width: 600px">
+      <div class="pt-dialog__head"><span id="es-title">Estampar «Brillo»</span><div class="pt-spacer"></div><button class="pt-iconbtn" aria-label="Cerrar (Esc)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button></div>
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <span style="width: 28px; height: 28px; flex: none; border-radius: 50%; background: rgba(242,177,58,.16); color: var(--warning); display: flex; align-items: center; justify-content: center"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.warning.d}}"></path></svg></span>
+          <div id="es-desc" style="display: flex; flex-direction: column; gap: 4px; line-height: 1.45">
+            <span style="font-weight: 600; font-size: 12px">Esta forma tiene otras formas debajo.</span>
+            <span class="pt-sec2">El ráster base está por debajo de todas las formas de la capa. Si «Brillo» se estampa ahí, quedaría bajo «Placa» y la imagen cambiaría.</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: stretch">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 4px; background: var(--bg-panel-header)">
+            <span class="pt-paneltitle" style="padding: 0 0 4px 8px; font-size: 10px">Capa «Fondo del icono»</span>
+            <div class="es-stack" style="background: var(--accent-muted)"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.ellipse16.d}}"></path></svg>Brillo<span class="pt-sec2" style="margin-left: auto">a estampar</span></div>
+            <div class="es-stack"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.rrect16.d}}"></path></svg>Placa<span style="margin-left: auto; color: var(--warning)">se superpone</span></div>
+            <div class="es-stack"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path class="f" d="{{ic.pixels16.f}}"></path></svg><span class="pt-sec2">Píxeles (ráster base)</span></div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 4px; background: var(--canvas-bg)">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="position: relative; width: 64px; height: 64px; background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/8px 8px"><span class="pt-art" style="left: -2px; top: -2px; width: 2px; height: 2px; box-shadow: {{thumb}}"></span></span><span class="pt-hint">Antes</span></div>
+            <span class="pt-sec2">=</span>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="position: relative; width: 64px; height: 64px; background: repeating-conic-gradient(var(--checker-a) 0 25%, var(--checker-b) 0 50%) 0 0/8px 8px"><span class="pt-art" style="left: -2px; top: -2px; width: 2px; height: 2px; box-shadow: {{thumb}}"></span></span><span class="pt-hint">Después</span></div>
+          </div>
+        </div>
+
+        <div role="radiogroup" aria-label="Cómo estampar" style="display: flex; flex-direction: column; gap: 6px">
+          <button class="es-opt is-on" role="radio" aria-checked="true"><span class="pt-radio is-on"></span><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-weight: 500">Estampar en una nueva capa encima<span class="es-badge">Recomendado</span></span><span class="pt-sec2" style="line-height: 1.4">Crea «Brillo (estampado)» sobre «Fondo del icono». «Placa» sigue siendo editable y el aspecto es idéntico.</span></span></button>
+          <button class="es-opt" role="radio" aria-checked="false"><span class="pt-radio"></span><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-weight: 500">Estampar también las formas inferiores superpuestas</span><span class="pt-sec2" style="line-height: 1.4">«Brillo» y «Placa» pasan al ráster base de la capa. El aspecto es idéntico, pero «Placa» deja de ser una forma.</span></span></button>
+        </div>
+        <label class="pt-choice"><span class="pt-check"></span>No volver a preguntar (se usará la opción elegida; se puede cambiar en Preferencias › General)</label>
+      </div>
+      <div class="pt-dialog__foot">
+        <span class="pt-hint" style="margin-right: auto">Se puede deshacer con Ctrl+Z</span>
+        <button class="pt-btn pt-btn--secondary pt-btn--lg">Cancelar</button>
+        <button class="pt-btn pt-btn--primary pt-btn--lg is-focus" style="min-width: 96px">Estampar</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = window.PT;
+    var I = P.appIcon(32).comp;
+    // Forma «Brillo»: elipse c(13,9) r(6,2.5) sobre la placa, con relleno claro tramado
+    var g = P.compose([I]);
+    for (var y = 0; y < 32; y++) for (var x = 0; x < 32; x++) {
+      var dx = (x + .5 - 13) / 6, dy = (y + .5 - 9) / 2.5;
+      if (dx * dx + dy * dy <= 1 && g[y][x] !== '.' && g[y][x] !== 'k') g[y][x] = ((x + y) % 2 === 0) ? 'w' : 'A';
+    }
+    return { ic: P.icons(), menus: P.menus(), bgArt: P.sh(g, 12), thumb: P.sh(g, 2) };
+  }
+}
+</script>
+</body>
+</html>

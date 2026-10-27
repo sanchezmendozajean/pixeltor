@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pixeltor — Visores divididos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./compartido/pt.css">
+<script src="./compartido/pt-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="pt-root pt-oscuro pt-app">
+
+  <header class="pt-titlebar">
+    <div class="pt-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Pixeltor" style="display: block; shape-rendering: crispEdges">
+        <path d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z" fill="#3D8BFF"></path>
+        <path d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" fill="none" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round" style="shape-rendering: geometricPrecision"></path>
+      </svg>
+    </div>
+    <nav aria-label="Menú principal" style="display: flex"><sc-for list="{{menus}}" as="m" hint-placeholder-count="10"><button class="{{m.cls}}">{{m.name}}</button></sc-for></nav>
+    <div class="pt-spacer"></div>
+    <button class="pt-select" style="width: 118px; margin-right: 8px; background: var(--bg-panel)" aria-label="Espacio de trabajo"><span>Esenciales</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+    <button class="pt-select" style="width: 200px; margin-right: 10px; color: var(--text-secondary); justify-content: flex-start; gap: 6px" aria-label="Buscar comandos"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.search.d}}"></path></svg><span style="flex: 1; text-align: left">Buscar comandos</span><span class="pt-mono" style="font-size: 10px; padding-right: 4px">Ctrl+K</span></button>
+    <button class="pt-winbtn" aria-label="Minimizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.minimize.d}}"></path></svg></button>
+    <button class="pt-winbtn" aria-label="Maximizar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.maximize.d}}"></path></svg></button>
+    <button class="pt-winbtn pt-winbtn--close" aria-label="Cerrar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+  </header>
+
+  <div class="pt-cbar" role="toolbar" aria-label="Barra de control">
+    <div class="pt-ctl__kind"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.ellipse16.d}}"></path></svg>Elipse</div>
+    <span class="pt-sep pt-sep--inset"></span>
+    <div class="pt-ctl"><span class="pt-ctl__lbl">Relleno</span><button class="pt-swbtn" aria-label="Relleno"><span class="pt-sw" style="background: #8796AB"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button></div>
+    <div class="pt-ctl"><span class="pt-ctl__lbl">Contorno</span><button class="pt-swbtn" aria-label="Contorno"><span class="pt-sw pt-sw--stroke" style="border-color: #4F5D75"></span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button><button class="pt-select" style="width: 58px"><span>1 px</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button></div>
+    <span class="pt-sep pt-sep--inset"></span>
+    <div class="pt-ctl" style="gap: 8px">
+      <div class="pt-ref" aria-label="Punto de referencia"><span class="is-on"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <label class="pt-num" style="width: 62px"><span class="pt-num__lbl">X</span><span class="pt-numbox"><input class="pt-input" value="8" aria-label="X"><span class="pt-unit">px</span></span></label>
+      <label class="pt-num" style="width: 62px"><span class="pt-num__lbl">Y</span><span class="pt-numbox"><input class="pt-input" value="9" aria-label="Y"><span class="pt-unit">px</span></span></label>
+      <label class="pt-num" style="width: 64px"><span class="pt-num__lbl">An</span><span class="pt-numbox"><input class="pt-input" value="6" aria-label="Ancho"><span class="pt-unit">px</span></span></label>
+      <label class="pt-num" style="width: 64px"><span class="pt-num__lbl">Al</span><span class="pt-numbox"><input class="pt-input" value="4" aria-label="Alto"><span class="pt-unit">px</span></span></label>
+    </div>
+    <div class="pt-spacer"></div>
+    <div class="pt-ctl"><span class="pt-ctl__lbl">Disposición</span>
+      <div class="pt-segctl" role="group" aria-label="Disposición de visores"><button aria-label="Único"><svg class="i16" viewBox="0 0 16 16"><path d="M2.5 3h11v10h-11z"></path></svg></button><button class="is-on" aria-label="2 verticales"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.layoutV.d}}"></path></svg></button><button aria-label="2 horizontales"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.layoutH.d}}"></path></svg></button><button aria-label="2 × 2"><svg class="i16" viewBox="0 0 16 16"><path d="M2.5 3h11v10h-11z M8 3v10 M2.5 8h11"></path></svg></button></div>
+    </div>
+  </div>
+
+  <div class="pt-body">
+    <aside class="pt-toolbar" aria-label="Herramientas">
+      <sc-for list="{{tools}}" as="t" hint-placeholder-count="22">
+        <sc-if value="{{t.sep}}" hint-placeholder-val="{{ false }}"><div class="pt-tooldiv"></div></sc-if>
+        <sc-if value="{{t.btn}}" hint-placeholder-val="{{ true }}"><button class="{{t.cls}}" aria-label="{{t.label}}" title="{{t.tip}}"><svg class="i20" viewBox="0 0 20 20"><path d="{{t.d}}"></path><path class="f" d="{{t.f}}"></path></svg></button></sc-if>
+      </sc-for>
+      <div class="pt-spacer"></div>
+      <div class="pt-fswidget"><button class="pt-fswidget__fill" aria-label="Relleno #8796AB" style="background: #8796AB"></button><button class="pt-fswidget__stroke" aria-label="Contorno #4F5D75" style="border-color: #4F5D75"></button></div>
+      <div class="pt-modes"><button aria-label="Color" style="background: #8796AB; box-shadow: 0 0 0 1px var(--accent)"></button><button aria-label="Degradado" style="background: linear-gradient(90deg,#fff,#000)"></button><button aria-label="Ninguno" class="pt-sw--none"></button></div>
+    </aside>
+
+    <main class="pt-center">
+      <div class="pt-doctabs" role="tablist" aria-label="Documentos">
+        <button class="pt-doctab" role="tab" aria-selected="false">caballero.pixeltor <span class="pt-doctab__zoom">@ 1200 %</span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+        <button class="pt-doctab" role="tab" aria-selected="false">icono-app.pixeltor <span class="pt-doctab__zoom">@ 1200 %</span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+        <button class="pt-doctab is-active" role="tab" aria-selected="true">hierba.pixeltor <span class="pt-doctab__zoom">@ 2400 %</span><span class="pt-dirty"></span><span class="pt-iconbtn" aria-label="Cerrar documento"><svg class="i16" viewBox="0 0 16 16" style="width: 12px; height: 12px"><path d="{{ic.close.d}}"></path></svg></span></button>
+      </div>
+      <div class="pt-viewports">
+        <!-- Visor 1: edición -->
+        <section class="pt-viewport is-current" aria-label="Visor 1 (activo)">
+          <div class="pt-vhead pt-vhead--overlay">
+            <span class="pt-vhead__lbl">Imagen</span>
+            <button class="pt-select" style="width: 120px"><span>Sigue la activa · 1</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 5px 2px"></span>
+            <button class="pt-select" style="width: 74px"><span class="pt-mono">2400 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 5px 2px"></span>
+            <button class="pt-iconbtn is-on" aria-label="Cuadrícula de píxeles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Cuadrícula de tiles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.tiles.d}}"></path></svg></button>
+            <button class="pt-iconbtn is-on" aria-label="Trazados"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.paths.d}}"></path><path class="f" d="{{ic.paths.f}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Papel cebolla"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.onion.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Modo mosaico"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.mosaic.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Reproducir en este visor"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.play.f}}"></path></svg></button>
+            <div class="pt-spacer"></div>
+            <button class="pt-iconbtn" aria-label="Más opciones del visor"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.more.f}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Cerrar visor"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+          </div>
+          <div class="pt-stage">
+            <div class="pt-canvas" role="img" aria-label="Tile de hierba 16 × 16 al 2400 %" style="width: 384px; height: 384px">
+              <div class="pt-art" style="left: -24px; top: -24px; width: 24px; height: 24px; box-shadow: {{artBig}}"></div>
+              <div class="pt-pxgrid" style="background-size: 24px 24px"></div>
+              <svg class="pt-overlay" width="384" height="384" viewBox="0 0 384 384" aria-hidden="true">
+                <!-- Flor (estrella), trazado en hover -->
+                <path d="M108 66 L116 94 L146 96 L121 112 L130 140 L108 122 L86 140 L95 112 L70 96 L100 94 Z" fill="none" stroke="#D46BFF"></path>
+                <!-- Piedra (elipse) seleccionada -->
+                <ellipse cx="264" cy="264" rx="72" ry="48" fill="none" stroke="#D46BFF"></ellipse>
+                <rect x="192.5" y="216.5" width="144" height="96" fill="none" stroke="#D46BFF" style="shape-rendering: crispEdges"></rect>
+                <rect x="189" y="213" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect><rect x="261" y="213" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect><rect x="333" y="213" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect>
+                <rect x="333" y="261" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect><rect x="333" y="309" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect><rect x="261" y="309" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect>
+                <rect x="189" y="309" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect><rect x="189" y="261" width="7" height="7" fill="#fff" stroke="#D46BFF"></rect>
+                <path d="M261 264h7 M264.5 260.5v7" stroke="#D46BFF"></path>
+              </svg>
+            </div>
+          </div>
+        </section>
+        <div class="pt-splitter" role="separator" aria-orientation="vertical" aria-label="Separador de visores"></div>
+        <!-- Visor 2: mosaico -->
+        <section class="pt-viewport" aria-label="Visor 2 en modo mosaico">
+          <div class="pt-vhead pt-vhead--overlay">
+            <span class="pt-vhead__lbl">Imagen</span>
+            <button class="pt-select" style="width: 120px"><span>Sigue la activa · 1</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 5px 2px"></span>
+            <button class="pt-select" style="width: 66px"><span class="pt-mono">600 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></button>
+            <span class="pt-sep" style="margin: 5px 2px"></span>
+            <button class="pt-iconbtn" aria-label="Cuadrícula de píxeles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button>
+            <button class="pt-iconbtn is-on" aria-label="Cuadrícula de tiles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.tiles.d}}"></path></svg></button>
+            <button class="pt-iconbtn" aria-label="Trazados"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.paths.d}}"></path><path class="f" d="{{ic.paths.f}}"></path></svg></button>
+            <button class="pt-iconbtn is-on" aria-label="Modo mosaico 3 × 3"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.mosaic.d}}"></path></svg></button>
+            <div class="pt-spacer"></div>
+            <button class="pt-iconbtn" aria-label="Cerrar visor"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.close.d}}"></path></svg></button>
+          </div>
+          <div class="pt-stage">
+            <div class="pt-canvas pt-canvas--plain" role="img" aria-label="Tile repetido 3 × 3 al 600 %" style="width: 288px; height: 288px">
+              <div class="pt-art" style="left: -6px; top: -6px; width: 6px; height: 6px; box-shadow: {{artTiled}}"></div>
+              <div style="position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, rgba(61,139,255,.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(61,139,255,.35) 1px, transparent 1px); background-size: 96px 96px"></div>
+              <div style="position: absolute; left: 96px; top: 96px; width: 96px; height: 96px; box-shadow: 0 0 0 1px rgba(255,255,255,.55); pointer-events: none"></div>
+            </div>
+          </div>
+          <span class="pt-hint" style="position: absolute; left: 0; right: 0; bottom: 14px; text-align: center">Se puede editar en cualquier copia · la central es el original</span>
+        </section>
+      </div>
+      <section class="pt-strip" aria-label="Imágenes">
+        <button class="pt-iconbtn" aria-label="Expandir panel Imágenes"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevUp.d}}"></path></svg></button>
+        <span class="pt-strip__title">Imágenes</span>
+        <span class="pt-sep" style="margin: 7px 2px"></span>
+        <button class="pt-frame pt-frame--sm is-active" aria-label="Imagen 1"><span class="pt-thumbart" style="left: 5px; top: 5px; box-shadow: {{thumbTile}}"></span><span class="pt-fnum">1</span></button>
+        <div class="pt-spacer"></div>
+        <span class="pt-sec2">1 imagen</span>
+      </section>
+    </main>
+
+    <aside class="pt-dock" aria-label="Paneles">
+      <section class="pt-panel" aria-label="Navegador" style="flex: none">
+        <div class="pt-phead"><button class="pt-ptab is-active">Navegador</button><button class="pt-ptab">Propiedades</button><div class="pt-phead__tools"><button class="pt-iconbtn pt-iconbtn--20" aria-label="Opciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button></div></div>
+        <div class="pt-pbody">
+          <div style="height: 150px; border-radius: 2px; background: var(--canvas-bg); display: flex; align-items: center; justify-content: center">
+            <div style="position: relative; width: 128px; height: 128px; box-shadow: var(--shadow-canvas)">
+              <div class="pt-art" style="left: -8px; top: -8px; width: 8px; height: 8px; box-shadow: {{artNav}}"></div>
+              <span style="position: absolute; left: 0; top: 0; width: 128px; height: 128px; box-shadow: inset 0 0 0 1px var(--accent)"></span>
+            </div>
+          </div>
+          <div class="pt-row"><svg class="i16" viewBox="0 0 16 16" style="color: var(--icon)"><path d="{{ic.zoomPx.d}}"></path><path class="f" d="{{ic.zoomPx.f}}"></path></svg><div class="pt-slider"><span class="pt-slider__fill" style="width: 78%"></span><span class="pt-slider__head" style="left: 78%"></span></div><span class="pt-mono pt-sec2" style="font-size: 10.5px">2400 %</span></div>
+          <span class="pt-hint">Refleja el visor activo (Visor 1)</span>
+        </div>
+      </section>
+      <section class="pt-panel" aria-label="Capas" style="flex: 1">
+        <div class="pt-phead"><button class="pt-ptab is-active">Capas</button><button class="pt-ptab">Apariencia</button><div class="pt-phead__tools"><button class="pt-iconbtn pt-iconbtn--20" aria-label="Opciones"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.menu.d}}"></path></svg></button></div></div>
+        <div style="flex: 1; min-height: 0; overflow: hidden">
+          <div class="pt-lrow is-current">
+            <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="pt-lcol pt-lcol--lock"></span>
+            <span class="pt-lchev"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></span><span class="pt-lbar" style="background: #D46BFF"></span>
+            <span class="pt-thumb"><span class="pt-thumbart" style="box-shadow: {{thumbDetails}}"></span></span><span class="pt-lname">Detalles</span><span class="pt-target is-sel"></span><span class="pt-selsq" style="background: #D46BFF"></span>
+          </div>
+          <div class="pt-lrow pt-srow">
+            <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="pt-lcol pt-lcol--lock"></span><span class="pt-lindent"></span>
+            <span class="pt-lchev" style="color: var(--icon)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.star16.d}}"></path></svg></span><span class="pt-lname">Flor <em>Estrella</em></span><span class="pt-target"></span><span class="pt-selsq pt-selsq--empty"></span>
+          </div>
+          <div class="pt-lrow pt-srow is-selected">
+            <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="pt-lcol pt-lcol--lock"></span><span class="pt-lindent"></span>
+            <span class="pt-lchev" style="color: var(--icon)"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.ellipse16.d}}"></path></svg></span><span class="pt-lname">Piedra <em>Elipse</em></span><span class="pt-target is-sel"></span><span class="pt-selsq" style="background: #D46BFF"></span>
+          </div>
+          <div class="pt-lrow pt-srow">
+            <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="pt-lcol pt-lcol--lock"></span><span class="pt-lindent"></span>
+            <span class="pt-lchev" style="color: var(--icon)"><svg class="i16" viewBox="0 0 16 16"><path class="f" d="{{ic.pixels16.f}}"></path></svg></span><span class="pt-lname">Píxeles <em>Ráster base</em></span><span class="pt-target"></span><span class="pt-selsq pt-selsq--empty"></span>
+          </div>
+          <div class="pt-lrow">
+            <button class="pt-iconbtn pt-lcol" aria-label="Visibilidad"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.eye.d}}"></path></svg></button><span class="pt-lcol pt-lcol--lock"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.lock.d}}"></path></svg></span>
+            <span class="pt-lchev"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevRight.d}}"></path></svg></span><span class="pt-lbar" style="background: #3FD07F"></span>
+            <span class="pt-thumb"><span class="pt-thumbart" style="box-shadow: {{thumbTile2}}"></span></span><span class="pt-lname">Hierba</span><span class="pt-target"></span><span class="pt-selsq pt-selsq--empty"></span>
+          </div>
+        </div>
+        <div class="pt-pfoot"><span class="pt-sec2" style="flex: 1">2 capas</span><button class="pt-iconbtn" aria-label="Nueva capa"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.newLayer.d}}"></path></svg></button><button class="pt-iconbtn" aria-label="Eliminar"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.trash.d}}"></path></svg></button></div>
+      </section>
+      <section class="pt-panel" aria-label="Muestras" style="flex: none; border-bottom: 0">
+        <div class="pt-phead"><button class="pt-ptab">Color</button><button class="pt-ptab is-active">Muestras</button></div>
+        <div class="pt-pbody"><div class="pt-swgrid"><sc-for list="{{swatches}}" as="s" hint-placeholder-count="17"><button class="{{s.cls}}" aria-label="{{s.hex}}" style="background: {{s.hex}}"></button></sc-for></div></div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="pt-status" aria-label="Barra de estado">
+    <div class="pt-seg" style="padding-left: 6px"><span class="pt-zoomfield"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.zoomPx.d}}"></path><path class="f" d="{{ic.zoomPx.f}}"></path></svg><span class="pt-mono" style="font-size: 10.5px; min-width: 40px; text-align: right">2400 %</span><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.chevDown.d}}"></path></svg></span></div>
+    <div class="pt-seg"><span class="pt-mono"><b>16 × 16</b> px</span></div>
+    <div class="pt-seg"><svg class="i12" viewBox="0 0 16 16"><path d="{{ic.cursor.d}}"></path></svg><span class="pt-mono">x <b>11</b>  y <b>10</b></span></div>
+    <div class="pt-seg"><span class="pt-sw pt-sw--sm" style="background: #C7D0DC"></span><span class="pt-mono"><b>#C7D0DC</b>  100 %</span></div>
+    <div class="pt-seg"><span class="pt-swatchdot" style="background: #D46BFF"></span>Capa: <b>Detalles</b></div>
+    <div class="pt-seg">Visor <b>1</b> de 2</div>
+    <div class="pt-spacer"></div>
+    <div class="pt-seg pt-seg--r" style="gap: 2px; padding: 0 6px" role="group" aria-label="Ajustar a">
+      <button class="pt-snap is-on" aria-label="Ajustar a rejilla de píxeles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.gridPx.d}}"></path></svg></button>
+      <button class="pt-snap is-on" aria-label="Ajustar a guías y tiles"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.snapGuide.d}}"></path></svg></button>
+      <button class="pt-snap pt-snap--smart is-on" aria-label="Guías inteligentes"><svg class="i16" viewBox="0 0 16 16"><path d="{{ic.magnet.d}}"></path></svg></button>
+    </div>
+    <div class="pt-seg" style="border-right: 0">Listo</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = window.PT;
+    var G = P.grass();
+    var det = P.blank(16, 16);
+    for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) if ('dhHng'.indexOf(G[y][x]) >= 0) det[y][x] = G[y][x];
+    var sw = ['D','G','y','d','H','h','n','g','k','w'].map(function(k, i){ return {hex:P.PAL[k], cls:'pt-swcell'+(k==='H'?' is-on':'')}; });
+    return {
+      ic: P.icons(),
+      menus: P.menus(),
+      tools: P.tools('sel', 'ellipse'),
+      artBig: P.sh(G, 24),
+      artTiled: P.sh(P.tile(G, 3, 3), 6),
+      artNav: P.sh(G, 8),
+      thumbTile: P.sh(G, 1),
+      thumbTile2: P.sh(G, 2),
+      thumbDetails: P.sh(det, 2),
+      swatches: sw
+    };
+  }
+}
+</script>
+</body>
+</html>
