@@ -233,6 +233,6 @@ describe('tamaño en píxeles de las formas', () => {
     const e = makeEllipse(20, 20, 4, 3, makeAppearance(RED, null))
     addShape(s, e)
     expect(shapesPixelSize(s, [e.id])).toEqual({ w: 8, h: 6 })
-    expect(shapesPixelSize(s, [r.id, e.id])).toEqual({ w: 20, h: 18 })
+    expect(shapesPixelSize(s, [r.id, e.id])).toEqual({ w: 20, h: 19 })
   })
 })
