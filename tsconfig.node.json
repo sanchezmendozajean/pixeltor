@@ -12,6 +12,7 @@
     "src/preload/**/*",
     "src/shared/**/*",
     "src/core/**/*",
-    "tests/**/*.ts"
+    "tests/core/**/*.ts",
+    "tests/e2e/**/*.ts"
   ]
 }

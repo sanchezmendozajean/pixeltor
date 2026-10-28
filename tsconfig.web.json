@@ -10,5 +10,11 @@
       "@core/*": ["./src/core/*"]
     }
   },
-  "include": ["src/renderer/**/*", "src/renderer/**/*.vue", "src/shared/**/*", "src/core/**/*"]
+  "include": [
+    "src/renderer/**/*",
+    "src/renderer/**/*.vue",
+    "src/shared/**/*",
+    "src/core/**/*",
+    "tests/renderer/**/*"
+  ]
 }
