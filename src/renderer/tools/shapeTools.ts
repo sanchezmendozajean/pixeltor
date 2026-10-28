@@ -1,14 +1,26 @@
-// Herramientas vectoriales de F2: formas paramétricas, Pluma y Selección (V) de formas.
-// Crear una forma = un comando; durante el arrastre solo hay una vista previa transitoria.
+// Herramientas vectoriales: formas paramétricas, Pluma, Selección (V), Selección directa (A)
+// y herramientas de anclas. Crear/editar una forma = un comando; durante el arrastre solo hay
+// vista previa o edición transitoria dentro de una Transaction.
 
 import {
   type Anchor,
+  type AnchorPart,
   type Appearance,
-  type Rect,
+  type Box,
+  type ID,
+  type PathShape,
   type Shape,
   type Vec2,
+  AnchorDrag,
   ShapeMove,
+  ShapeScale,
+  addAnchorAt,
   addShape,
+  apply,
+  convertAnchor,
+  convertToPath,
+  deleteAnchor,
+  getShape,
   hitShape,
   makeAppearance,
   makeEllipse,
@@ -18,7 +30,9 @@ import {
   makeRect,
   makeStar,
   selectShapes,
-  shapeLines
+  shapeLines,
+  shapesBox,
+  toPath
 } from '@core/index'
 import type { Workspace } from '@/session/workspace'
 import { useColorsStore } from '@/stores/colors'
@@ -26,12 +40,54 @@ import { hexToRgba } from '@/stores/colorUtil'
 import { useToolsStore } from '@/stores/tools'
 import type { ShapeOverlay } from '@/viewport/overlay'
 
-export const SHAPE_TOOLS = new Set(['rect', 'ellipse', 'polygon', 'star', 'line', 'pen', 'sel'])
+export const SHAPE_TOOLS = new Set([
+  'rect',
+  'ellipse',
+  'polygon',
+  'star',
+  'line',
+  'pen',
+  'sel',
+  'dsel',
+  'addAnchor',
+  'delAnchor',
+  'convAnchor'
+])
 
 interface Mods {
   shift: boolean
   alt: boolean
 }
+
+interface Pointer {
+  /** Píxel entero de imagen. */
+  x: number
+  y: number
+  /** Coordenadas de imagen en coma flotante. */
+  fx: number
+  fy: number
+  /** Coordenadas de pantalla relativas al visor. */
+  sx: number
+  sy: number
+}
+
+interface AnchorSel {
+  shapeId: ID
+  subpath: number
+  index: number
+}
+
+const HIT = 6 // px de pantalla
+const HANDLES: [number, number][] = [
+  [0, 0],
+  [0.5, 0],
+  [1, 0],
+  [0, 0.5],
+  [1, 0.5],
+  [0, 1],
+  [0.5, 1],
+  [1, 1]
+]
 
 const rgba = (n: number) => ({
   r: (n >>> 24) & 255,
@@ -53,10 +109,24 @@ function currentAppearance(closed: boolean): Appearance {
   return ap
 }
 
+/** Trazado visible de una forma: el suyo, o el equivalente si es paramétrica (solo para mostrar). */
+function displayPath(sh: Shape): PathShape {
+  return sh.kind === 'path' ? sh : toPath(sh)
+}
+
 export class ShapeTools {
   private drag: { x0: number; y0: number; x1: number; y1: number; mods: Mods } | null = null
   private moving: { mv: ShapeMove; x0: number; y0: number; started: boolean } | null = null
+  private scaling: {
+    sc: ShapeScale
+    handle: [number, number]
+    box: Box
+    mods: Mods
+  } | null = null
+  private anchorDrag: { ad: AnchorDrag; x0: number; y0: number; started: boolean } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
+  /** Anclas seleccionadas con la Selección directa. */
+  private anchorSel: AnchorSel[] = []
   hoverId: string | null = null
 
   constructor(private readonly getWs: () => Workspace | null) {}
@@ -64,6 +134,8 @@ export class ShapeTools {
   get penActive(): boolean {
     return !!this.pen && this.pen.anchors.length > 0
   }
+
+  // ---------- creación ----------
 
   private build(tool: string, d: NonNullable<typeof this.drag>): Shape | null {
     const t = useToolsStore()
@@ -118,44 +190,49 @@ export class ShapeTools {
     return null
   }
 
-  private penShape(extra?: Anchor): Shape | null {
-    if (!this.pen) return null
-    const anchors = extra ? [...this.pen.anchors, extra] : this.pen.anchors
-    if (anchors.length < 2) return null
-    const closed = false
-    return makePath([{ closed, anchors }], currentAppearance(false))
+  private penShape(): Shape | null {
+    if (!this.pen || this.pen.anchors.length < 2) return null
+    return makePath([{ closed: false, anchors: this.pen.anchors }], currentAppearance(false))
   }
 
-  down(
-    tool: string,
-    x: number,
-    y: number,
-    mods: Mods,
-    screenNearFirst: (p: Vec2) => boolean
-  ): void {
+  // ---------- puntero ----------
+
+  down(tool: string, p: Pointer, mods: Mods): void {
     const ws = this.getWs()
     if (!ws) return
     const s = ws.session
-    if (tool === 'sel') {
-      const id = hitShape(s, x, y)
-      if (id) {
-        const cur = s.selectedShapes
-        if (mods.shift)
-          selectShapes(s, cur.includes(id) ? cur.filter((i) => i !== id) : [...cur, id])
-        else if (!cur.includes(id)) selectShapes(s, [id])
-        const layer = s.image.layers.find((l) => l.shapes.some((sh) => sh.id === id))
-        if (layer && layer.id !== s.activeLayerId) s.setActiveLayer(layer.id)
-        this.moving = { mv: new ShapeMove(s, s.selectedShapes), x0: x, y0: y, started: false }
-      } else if (!mods.shift && s.selectedShapes.length) selectShapes(s, [])
+    const vp = ws.viewport
+    const near = (q: Vec2) => {
+      const a = vp.toScreen(q.x, q.y)
+      return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT
+    }
+
+    if (tool === 'sel') return this.downSelect(p, mods)
+    if (tool === 'dsel') return this.downDirect(p, mods)
+    if (tool === 'addAnchor') {
+      const id = hitShape(s, p.x, p.y, 2) ?? s.selectedShapes.find((i) => getShape(s, i))
+      if (id && addAnchorAt(s, id, p.fx, p.fy, 6 / vp.zoom + 1)) selectShapes(s, [id])
       return
     }
+    if (tool === 'delAnchor' || tool === 'convAnchor') {
+      const hit = this.hitAnchor(p, near)
+      if (!hit || hit.part !== 'p') return
+      const shape = getShape(s, hit.shapeId)!
+      if (tool === 'delAnchor') deleteAnchor(s, hit)
+      else {
+        const sp = displayPath(shape).subpaths[hit.subpath]!.anchors[hit.index]!
+        convertAnchor(s, hit, !(sp.in || sp.out))
+      }
+      return
+    }
+
     const layer = s.activeLayer
     if (layer.locked || !layer.visible) return
     if (tool === 'pen') {
-      const pt = { x: x + 0.5, y: y + 0.5 }
+      const pt = { x: p.x + 0.5, y: p.y + 0.5 }
       this.pen ??= { anchors: [], dragging: false }
       const first = this.pen.anchors[0]
-      if (first && this.pen.anchors.length >= 3 && screenNearFirst(first.p)) {
+      if (first && this.pen.anchors.length >= 3 && near(first.p)) {
         this.finishPen(true)
         return
       }
@@ -164,22 +241,149 @@ export class ShapeTools {
       ws.setPreview(this.penShape())
       return
     }
-    this.drag = { x0: x, y0: y, x1: x, y1: y, mods }
+    this.drag = { x0: p.x, y0: p.y, x1: p.x, y1: p.y, mods }
     ws.setPreview(this.build(tool, this.drag))
   }
 
-  move(tool: string, x: number, y: number, mods: Mods): void {
+  /** Tiradores de la caja de selección bajo el cursor. */
+  private hitBoxHandle(p: Pointer): { handle: [number, number]; box: Box } | null {
+    const ws = this.getWs()
+    if (!ws || !ws.session.selectedShapes.length) return null
+    const box = shapesBox(ws.session, ws.session.selectedShapes)
+    if (!box) return null
+    const vp = ws.viewport
+    for (const [hx, hy] of HANDLES) {
+      const a = vp.toScreen(box.x + hx * box.w, box.y + hy * box.h)
+      if (Math.hypot(a.x - p.sx, a.y - p.sy) < HIT) return { handle: [hx, hy], box }
+    }
+    return null
+  }
+
+  private downSelect(p: Pointer, mods: Mods): void {
+    const ws = this.getWs()!
+    const s = ws.session
+    const h = this.hitBoxHandle(p)
+    if (h) {
+      this.scaling = {
+        sc: new ShapeScale(s, s.selectedShapes, h.box),
+        handle: h.handle,
+        box: h.box,
+        mods
+      }
+      return
+    }
+    const id = hitShape(s, p.x, p.y)
+    if (id) {
+      const cur = s.selectedShapes
+      if (mods.shift) selectShapes(s, cur.includes(id) ? cur.filter((i) => i !== id) : [...cur, id])
+      else if (!cur.includes(id)) selectShapes(s, [id])
+      const layer = s.image.layers.find((l) => l.shapes.some((sh) => sh.id === id))
+      if (layer && layer.id !== s.activeLayerId) s.setActiveLayer(layer.id)
+      this.moving = { mv: new ShapeMove(s, s.selectedShapes), x0: p.x, y0: p.y, started: false }
+    } else if (!mods.shift && s.selectedShapes.length) selectShapes(s, [])
+  }
+
+  /** Ancla o tirador bajo el cursor entre las formas seleccionadas. */
+  private hitAnchor(
+    p: Pointer,
+    near: (q: Vec2) => boolean
+  ): (AnchorSel & { part: AnchorPart }) | null {
+    const ws = this.getWs()!
+    const s = ws.session
+    const ids = s.selectedShapes.length ? s.selectedShapes : []
+    const hovered = hitShape(s, p.x, p.y, 2)
+    const candidates = hovered && !ids.includes(hovered) ? [...ids, hovered] : ids
+    for (const id of candidates) {
+      const sh = getShape(s, id)
+      if (!sh) continue
+      const path = displayPath(sh)
+      for (let si = 0; si < path.subpaths.length; si++) {
+        const anchors = path.subpaths[si]!.anchors
+        // los tiradores tienen prioridad sobre las anclas que cubren
+        for (let i = 0; i < anchors.length; i++) {
+          for (const part of ['in', 'out'] as const) {
+            const hp = anchors[i]![part]
+            if (hp && near(apply(path.transform, hp)) && this.isAnchorSelected(id, si, i))
+              return { shapeId: id, subpath: si, index: i, part }
+          }
+        }
+        for (let i = 0; i < anchors.length; i++)
+          if (near(apply(path.transform, anchors[i]!.p)))
+            return { shapeId: id, subpath: si, index: i, part: 'p' }
+      }
+    }
+    return null
+  }
+
+  private isAnchorSelected(shapeId: ID, subpath: number, index: number): boolean {
+    return this.anchorSel.some(
+      (a) => a.shapeId === shapeId && a.subpath === subpath && a.index === index
+    )
+  }
+
+  private downDirect(p: Pointer, mods: Mods): void {
+    const ws = this.getWs()!
+    const s = ws.session
+    const vp = ws.viewport
+    const near = (q: Vec2) => {
+      const a = vp.toScreen(q.x, q.y)
+      return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT
+    }
+    const hit = this.hitAnchor(p, near)
+    if (hit) {
+      if (!s.selectedShapes.includes(hit.shapeId)) selectShapes(s, [hit.shapeId])
+      if (hit.part === 'p') {
+        if (mods.shift && this.isAnchorSelected(hit.shapeId, hit.subpath, hit.index))
+          this.anchorSel = this.anchorSel.filter(
+            (a) =>
+              !(a.shapeId === hit.shapeId && a.subpath === hit.subpath && a.index === hit.index)
+          )
+        else if (mods.shift) this.anchorSel.push({ ...hit })
+        else if (!this.isAnchorSelected(hit.shapeId, hit.subpath, hit.index))
+          this.anchorSel = [{ shapeId: hit.shapeId, subpath: hit.subpath, index: hit.index }]
+      }
+      const targets =
+        hit.part === 'p'
+          ? this.anchorSel
+              .filter((a) => a.shapeId === hit.shapeId)
+              .map((a) => ({ subpath: a.subpath, index: a.index, part: 'p' as const }))
+          : [{ subpath: hit.subpath, index: hit.index, part: hit.part }]
+      this.anchorDrag = {
+        ad: new AnchorDrag(s, hit.shapeId, targets),
+        x0: p.x,
+        y0: p.y,
+        started: false
+      }
+      return
+    }
+    const id = hitShape(s, p.x, p.y)
+    this.anchorSel = []
+    if (id) selectShapes(s, [id])
+    else if (s.selectedShapes.length) selectShapes(s, [])
+  }
+
+  move(tool: string, p: Pointer, mods: Mods): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.scaling) {
+      this.scaleTo(p, mods)
+      return
+    }
     if (this.moving) {
       const m = this.moving
-      if (!m.started && (x !== m.x0 || y !== m.y0)) m.started = true
-      if (m.started) m.mv.moveBy(x - m.x0, y - m.y0)
+      if (!m.started && (p.x !== m.x0 || p.y !== m.y0)) m.started = true
+      if (m.started) m.mv.moveBy(p.x - m.x0, p.y - m.y0)
+      return
+    }
+    if (this.anchorDrag) {
+      const a = this.anchorDrag
+      if (!a.started && (p.x !== a.x0 || p.y !== a.y0)) a.started = true
+      if (a.started) a.ad.moveBy(p.x - a.x0, p.y - a.y0)
       return
     }
     if (this.pen?.dragging) {
       const a = this.pen.anchors[this.pen.anchors.length - 1]!
-      const out = { x: x + 0.5, y: y + 0.5 }
+      const out = { x: p.x + 0.5, y: p.y + 0.5 }
       if (Math.hypot(out.x - a.p.x, out.y - a.p.y) >= 1) {
         a.out = out
         // Alt rompe la simetría: el tirador de entrada queda donde estaba, como en Illustrator.
@@ -190,19 +394,56 @@ export class ShapeTools {
       return
     }
     if (this.drag) {
-      this.drag.x1 = x
-      this.drag.y1 = y
+      this.drag.x1 = p.x
+      this.drag.y1 = p.y
       this.drag.mods = mods
       ws.setPreview(this.build(tool, this.drag))
     }
   }
 
+  /** Escala la selección: el tirador sigue al cursor (con Mayús proporcional, Alt desde el centro). */
+  private scaleTo(p: Pointer, mods: Mods): void {
+    const sc = this.scaling!
+    const { box, handle } = sc
+    const [hx, hy] = handle
+    const fixed: Vec2 = mods.alt
+      ? { x: box.x + box.w / 2, y: box.y + box.h / 2 }
+      : { x: box.x + (1 - hx) * box.w, y: box.y + (1 - hy) * box.h }
+    const start: Vec2 = { x: box.x + hx * box.w, y: box.y + hy * box.h }
+    const cx = Math.round(p.fx)
+    const cy = Math.round(p.fy)
+    const factor = (cur: number, st: number, fx: number) =>
+      Math.abs(st - fx) < 1e-9 ? 1 : (cur - fx) / (st - fx)
+    let sx = hx === 0.5 ? 1 : factor(cx, start.x, fixed.x)
+    let sy = hy === 0.5 ? 1 : factor(cy, start.y, fixed.y)
+    if (mods.shift) {
+      if (hx === 0.5) sx = sy
+      else if (hy === 0.5) sy = sx
+      else {
+        const k = Math.abs(sx) > Math.abs(sy) ? sx : sy
+        sx = sy = k
+      }
+    }
+    if (!Number.isFinite(sx) || !Number.isFinite(sy) || sx === 0 || sy === 0) return
+    sc.sc.scaleBy(fixed, sx, sy)
+  }
+
   up(tool: string): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.scaling) {
+      this.scaling.sc.end()
+      this.scaling = null
+      return
+    }
     if (this.moving) {
       if (this.moving.started) this.moving.mv.end()
       this.moving = null
+      return
+    }
+    if (this.anchorDrag) {
+      if (this.anchorDrag.started) this.anchorDrag.ad.end()
+      this.anchorDrag = null
       return
     }
     if (this.pen) {
@@ -217,6 +458,8 @@ export class ShapeTools {
     }
   }
 
+  // ---------- Pluma ----------
+
   /** Termina el trazado de la Pluma (Intro = abierto, clic en la primera ancla = cerrado). */
   finishPen(closed: boolean): void {
     const ws = this.getWs()
@@ -224,8 +467,7 @@ export class ShapeTools {
     this.pen = null
     ws?.setPreview(null)
     if (!ws || !p || p.anchors.length < 2) return
-    const shape = makePath([{ closed, anchors: p.anchors }], currentAppearance(closed))
-    addShape(ws.session, shape)
+    addShape(ws.session, makePath([{ closed, anchors: p.anchors }], currentAppearance(closed)))
   }
 
   cancelPen(): void {
@@ -236,48 +478,64 @@ export class ShapeTools {
   cancel(): void {
     this.drag = null
     this.cancelPen()
-    if (this.moving) {
-      if (this.moving.started) this.moving.mv.end()
-      this.moving = null
-    }
+    if (this.moving?.started) this.moving.mv.end()
+    this.moving = null
+    this.scaling?.sc.end()
+    this.scaling = null
+    if (this.anchorDrag?.started) this.anchorDrag.ad.end()
+    this.anchorDrag = null
   }
 
   hover(x: number, y: number, tool: string): void {
     const ws = this.getWs()
-    this.hoverId = ws && (tool === 'sel' || tool === 'pen') ? hitShape(ws.session, x, y) : null
+    this.hoverId =
+      ws && ['sel', 'dsel', 'pen', 'addAnchor'].includes(tool) ? hitShape(ws.session, x, y) : null
   }
 
-  /** Datos para dibujar trazados, anclas y cajas delimitadoras. */
-  overlay(): ShapeOverlay[] {
+  convertSelectionToPath(): void {
     const ws = this.getWs()
-    if (!ws) return []
+    if (ws) convertToPath(ws.session, ws.session.selectedShapes)
+  }
+
+  // ---------- overlay ----------
+
+  overlay(tool: string): { shapes: ShapeOverlay[]; selBox: Box | null } {
+    const ws = this.getWs()
+    if (!ws) return { shapes: [], selBox: null }
     const s = ws.session
     const out: ShapeOverlay[] = []
+    const direct =
+      tool === 'dsel' || tool === 'addAnchor' || tool === 'delAnchor' || tool === 'convAnchor'
     for (const layer of s.image.layers) {
       if (!layer.visible) continue
       for (const sh of layer.shapes) {
         const selected = s.selectedShapes.includes(sh.id)
         if (!selected && sh.id !== this.hoverId) continue
-        const lines = shapeLines(sh)
-        let box: Rect | null = null
-        if (selected) {
-          const pts = lines.flatMap((l) => l.pts)
-          if (pts.length) {
-            const x0 = Math.min(...pts.map((p) => p.x))
-            const y0 = Math.min(...pts.map((p) => p.y))
-            box = {
-              x: x0,
-              y: y0,
-              w: Math.max(...pts.map((p) => p.x)) - x0,
-              h: Math.max(...pts.map((p) => p.y)) - y0
-            }
-          }
+        const entry: ShapeOverlay = {
+          lines: shapeLines(sh),
+          color: layer.color,
+          box: null,
+          anchors: [],
+          selectedAnchors: [],
+          handles: []
         }
-        const anchors =
-          selected && sh.kind === 'path'
-            ? sh.subpaths.flatMap((sp) => sp.anchors.map((a) => a.p))
-            : []
-        out.push({ lines, color: layer.color, box, anchors })
+        if (selected && (direct || sh.kind === 'path')) {
+          const path = displayPath(sh)
+          path.subpaths.forEach((sp, si) =>
+            sp.anchors.forEach((a, i) => {
+              const pt = apply(path.transform, a.p)
+              const isSel = this.isAnchorSelected(sh.id, si, i)
+              ;(isSel ? entry.selectedAnchors : entry.anchors).push(pt)
+              // tiradores de las anclas seleccionadas y de sus vecinas
+              if (direct && (isSel || this.neighbourSelected(sh.id, si, i, sp.anchors.length)))
+                for (const part of ['in', 'out'] as const) {
+                  const hp = a[part]
+                  if (hp) entry.handles.push({ a: pt, b: apply(path.transform, hp) })
+                }
+            })
+          )
+        }
+        out.push(entry)
       }
     }
     if (this.pen) {
@@ -286,9 +544,18 @@ export class ShapeTools {
         lines: shape ? shapeLines(shape) : [],
         color: '#3d8bff',
         box: null,
-        anchors: this.pen.anchors.map((a) => a.p)
+        anchors: this.pen.anchors.map((a) => a.p),
+        selectedAnchors: [],
+        handles: []
       })
     }
-    return out
+    const selBox = tool === 'sel' && s.selectedShapes.length ? shapesBox(s, s.selectedShapes) : null
+    return { shapes: out, selBox }
+  }
+
+  private neighbourSelected(id: ID, si: number, i: number, n: number): boolean {
+    return (
+      this.isAnchorSelected(id, si, (i + 1) % n) || this.isAnchorSelected(id, si, (i - 1 + n) % n)
+    )
   }
 }

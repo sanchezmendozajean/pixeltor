@@ -95,7 +95,7 @@ export class CanvasController {
     }
     const m = this.marquee
     return {
-      shapes: this.shapes.overlay(),
+      ...this.shapes.overlay(t.active),
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : null,
       cursor,
@@ -129,12 +129,12 @@ export class CanvasController {
       const mask = s.selection.mask
       const onPixels = tool === 'sel' && !!mask && (mask.has(x, y) || !!s.selection.floating)
       if (!onPixels) {
-        const near = (q: { x: number; y: number }) => {
-          const a = vp.toScreen(q.x, q.y)
-          return Math.hypot(a.x - p.sx, a.y - p.sy) < 6
-        }
         this.shapeActive = tool
-        this.shapes.down(tool, x, y, { shift: p.shift, alt: p.alt }, near)
+        this.shapes.down(
+          tool,
+          { x, y, fx: pt.x, fy: pt.y, sx: p.sx, sy: p.sy },
+          { shift: p.shift, alt: p.alt }
+        )
         return
       }
     }
@@ -238,7 +238,11 @@ export class CanvasController {
       return
     }
     if (this.shapeActive) {
-      this.shapes.move(this.shapeActive, x, y, { shift: p.shift, alt: p.alt })
+      this.shapes.move(
+        this.shapeActive,
+        { x, y, fx: pt.x, fy: pt.y, sx: p.sx, sy: p.sy },
+        { shift: p.shift, alt: p.alt }
+      )
       return
     }
     if (this.stroke && this.strokeLast) {

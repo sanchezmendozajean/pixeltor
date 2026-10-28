@@ -59,10 +59,14 @@ export interface ShapeOverlay {
   /** Caja delimitadora con tiradores (forma seleccionada). */
   box: Rect | null
   anchors: { x: number; y: number }[]
+  selectedAnchors: { x: number; y: number }[]
+  handles: { a: { x: number; y: number }; b: { x: number; y: number } }[]
 }
 
 export interface OverlayState {
   shapes?: ShapeOverlay[]
+  /** Caja de la selección con tiradores de escala (herramienta V). */
+  selBox?: Rect | null
   mask: PixelMask | null
   marquee: Rect | null
   /** Píxel bajo el cursor y los desplazamientos de la punta (para el cursor exacto en zoom alto). */
@@ -123,9 +127,53 @@ export function drawOverlay(
         ctx.strokeRect(a.x + hx * w - 2.5, a.y + hy * h - 2.5, 5, 5)
       }
     }
+    for (const hd of sh.handles) {
+      const a = vp.toScreen(hd.a.x, hd.a.y)
+      const b = vp.toScreen(hd.b.x, hd.b.y)
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(b.x, b.y, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+    }
     for (const p of sh.anchors) {
       const q = vp.toScreen(p.x, p.y)
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(q.x - 2.5, q.y - 2.5, 5, 5)
       ctx.strokeRect(q.x - 2.5, q.y - 2.5, 5, 5)
+    }
+    for (const p of sh.selectedAnchors) {
+      const q = vp.toScreen(p.x, p.y)
+      ctx.fillStyle = sh.color
+      ctx.fillRect(q.x - 3, q.y - 3, 7, 7)
+    }
+  }
+
+  if (st.selBox) {
+    const b = st.selBox
+    const a = vp.toScreen(b.x, b.y)
+    const w = b.w * vp.zoom
+    const h = b.h * vp.zoom
+    ctx.setLineDash([])
+    ctx.lineWidth = 1
+    ctx.strokeStyle = '#3d8bff'
+    ctx.fillStyle = '#fff'
+    ctx.strokeRect(a.x + 0.5, a.y + 0.5, w, h)
+    for (const [hx, hy] of [
+      [0, 0],
+      [0.5, 0],
+      [1, 0],
+      [0, 0.5],
+      [1, 0.5],
+      [0, 1],
+      [0.5, 1],
+      [1, 1]
+    ] as const) {
+      ctx.fillRect(a.x + hx * w - 2.5, a.y + hy * h - 2.5, 6, 6)
+      ctx.strokeRect(a.x + hx * w - 2.5, a.y + hy * h - 2.5, 6, 6)
     }
   }
 

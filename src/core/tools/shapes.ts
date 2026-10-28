@@ -8,7 +8,7 @@ import { compositeOver } from '../raster/blend'
 import { renderShape, renderShapeCached } from '../render/shape'
 import type { DocumentSession } from '../session'
 
-function findShape(
+export function findShape(
   s: DocumentSession,
   id: ID
 ): { layer: Layer; index: number; shape: Shape } | null {

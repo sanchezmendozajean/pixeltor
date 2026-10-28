@@ -12,6 +12,8 @@ import {
   selectAll,
   SelectionMove,
   arrangeShapes,
+  convertToPath,
+  getShape,
   moveShapes,
   removeShapes,
   selectShapes,
@@ -180,6 +182,11 @@ export function registerAppActions(): void {
 
   // ---------- Objeto ----------
   const shapesSelected = () => has() && (docs.rev, ses().selectedShapes.length > 0)
+  registerHandler('object.convertToPath', {
+    enabled: () =>
+      shapesSelected() && ses().selectedShapes.some((i) => getShape(ses(), i)?.kind !== 'path'),
+    run: () => void convertToPath(ses(), ses().selectedShapes)
+  })
   registerHandler('object.stamp', {
     enabled: shapesSelected,
     run: () => void stampShapes(ses(), ses().selectedShapes)

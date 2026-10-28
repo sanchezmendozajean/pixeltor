@@ -13,9 +13,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Interfaz**: overlay con trazado en el color de la capa, caja delimitadora, tiradores y anclas; formas listadas bajo su capa en el panel Capas; panel Propiedades contextual (relleno, contorno, grosor, alineación, radio, opacidad); opciones de formas en la barra de control.
 - Golden test de círculos de 3 a 64 px (huella en `__snapshots__`) y e2e de crear, seleccionar, mover y estampar.
 
+- **Selección directa** (`A`): seleccionar anclas (Mayús suma), arrastrar anclas y tiradores (los suaves mantienen la simetría); editar una forma paramétrica la convierte en trazado. Herramientas Añadir, Eliminar y Convertir ancla. Objeto › Convertir en trazado (rectángulo, polígono y estrella conservan los píxeles; la elipse y los radios se aproximan con Bézier).
+- **Escalar con la caja** (`V`): ocho tiradores, Mayús proporcional y Alt desde el centro; rectángulos, elipses, líneas y trazados hornean la escala en sus parámetros.
+
 ### Pendiente de F2
 
-- Selección directa (`A`), añadir/eliminar/convertir ancla, escalar y rotar con los tiradores de la caja, modo aislamiento y grupos, mover formas a otra capa desde la interfaz, convertir en trazado, y los widgets de radio.
+- Rotar con la caja, modo aislamiento y grupos, mover formas a otra capa desde la interfaz y los widgets de radio.
 - `antialias` y trazos discontinuos no están implementados; el desplazamiento de contorno solo actúa con alineación interior/exterior.
 - Medir el objetivo de 30 fps al editar anclas en 1000×1000 (hoy cada forma se rasteriza a tamaño completo de imagen, con caché por contenido).
 
