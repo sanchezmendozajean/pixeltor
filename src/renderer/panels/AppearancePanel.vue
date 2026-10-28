@@ -337,7 +337,7 @@ const modeOf = (g: GradientPaint): ModeId =>
         <span class="name">
           {{ r.kind === 'fill' ? t('properties.fill') : t('properties.stroke') }}
           <em v-if="isStroke(r.attr)">{{ r.attr.width }} px</em>
-          <em v-else-if="r.attr.paint.type !== 'solid'">{{
+          <em v-if="r.attr.paint.type !== 'solid'">{{
             t(`appearance.type.${r.attr.paint.type}` as I18nKey)
           }}</em>
         </span>

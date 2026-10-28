@@ -6,6 +6,8 @@ import {
   type Anchor,
   type AnchorPart,
   type Appearance,
+  type GradientPaint,
+  type Mat2D,
   type Box,
   type ID,
   type PathShape,
@@ -17,6 +19,11 @@ import {
   ShapeRotate,
   isolateGroup,
   resolveShape,
+  commitLiveEdit,
+  defaultGradient,
+  invert,
+  liveUpdateShape,
+  sortedStops,
   pixelBounds,
   renderShapeRegion,
   ShapeScale,
@@ -45,9 +52,13 @@ import { useColorsStore } from '@/stores/colors'
 import { useDocumentsStore } from '@/stores/documents'
 import { hexToRgba } from '@/stores/colorUtil'
 import { useToolsStore } from '@/stores/tools'
-import type { ShapeOverlay } from '@/viewport/overlay'
+import { t } from '@/i18n'
+import { useUiStore } from '@/stores/ui'
+import { findGradientAttr, type Attr } from './gradientTarget'
+import type { OverlayState, ShapeOverlay } from '@/viewport/overlay'
 
 export const SHAPE_TOOLS = new Set([
+  'gradient',
   'rect',
   'ellipse',
   'polygon',
@@ -122,6 +133,8 @@ function displayPath(sh: Shape): PathShape {
   return sh.kind === 'path' ? sh : toPath(sh)
 }
 
+type OverlayGradientBar = NonNullable<OverlayState['gradientBar']>
+
 export class ShapeTools {
   private drag: { x0: number; y0: number; x1: number; y1: number; mods: Mods } | null = null
   private moving: { mv: ShapeMove; x0: number; y0: number; started: boolean } | null = null
@@ -130,6 +143,14 @@ export class ShapeTools {
     handle: [number, number]
     box: Box
     mods: Mods
+  } | null = null
+  private gradDrag: {
+    kind: 'from' | 'to' | 'stop' | 'new'
+    shapeId: ID
+    attrId: string
+    /** Local → imagen de la forma (fija durante el arrastre). */
+    T: Mat2D
+    stopIndex: number
   } | null = null
   private radiusDrag: RectRadiusDrag | null = null
   private rotating: { rot: ShapeRotate; start: number } | null = null
@@ -226,6 +247,7 @@ export class ShapeTools {
       return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT
     }
 
+    if (tool === 'gradient') return this.downGradient(p)
     if (tool === 'sel') return this.downSelect(p, mods)
     if (tool === 'dsel') return this.downDirect(p, mods)
     if (tool === 'addAnchor') {
@@ -434,6 +456,10 @@ export class ShapeTools {
   move(tool: string, p: Pointer, mods: Mods): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.gradDrag) {
+      this.moveGradient(p)
+      return
+    }
     if (this.radiusDrag) {
       this.radiusDrag.moveTo(p.fx, p.fy, mods.alt)
       return
@@ -512,6 +538,11 @@ export class ShapeTools {
   up(tool: string): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.gradDrag) {
+      commitLiveEdit(ws.session, 'grad-tool')
+      this.gradDrag = null
+      return
+    }
     if (this.radiusDrag) {
       this.radiusDrag.end()
       this.radiusDrag = null
@@ -578,6 +609,11 @@ export class ShapeTools {
     this.rotating = null
     this.radiusDrag?.end()
     this.radiusDrag = null
+    if (this.gradDrag) {
+      const ws = this.getWs()
+      if (ws) commitLiveEdit(ws.session, 'grad-tool')
+      this.gradDrag = null
+    }
     if (this.anchorDrag?.started) this.anchorDrag.ad.end()
     this.anchorDrag = null
   }
@@ -609,9 +645,10 @@ export class ShapeTools {
     shapes: ShapeOverlay[]
     selBox: Box | null
     radiusWidget: Vec2 | null
+    gradientBar: OverlayGradientBar | null
   } {
     const ws = this.getWs()
-    if (!ws) return { shapes: [], selBox: null, radiusWidget: null }
+    if (!ws) return { shapes: [], selBox: null, radiusWidget: null, gradientBar: null }
     const s = ws.session
     const out: ShapeOverlay[] = []
     const direct =
@@ -664,7 +701,157 @@ export class ShapeTools {
     }
     const selBox = tool === 'sel' && s.selectedShapes.length ? shapesBox(s, s.selectedShapes) : null
     const rw = tool === 'sel' || tool === 'dsel' ? this.radiusWidget() : null
-    return { shapes: out, selBox, radiusWidget: rw?.pos ?? null }
+    return {
+      shapes: out,
+      selBox,
+      radiusWidget: rw?.pos ?? null,
+      gradientBar: this.gradientBar(tool)
+    }
+  }
+
+  // ---------- herramienta Degradado (G) ----------
+
+  /** Forma, atributo y degradado sobre los que actúa la herramienta (forma única seleccionada). */
+  private gradientTarget(): { sh: Shape; attr: Attr; grad: GradientPaint | null; T: Mat2D } | null {
+    const ws = this.getWs()
+    if (!ws || ws.session.selectedShapes.length !== 1) return null
+    const sh = resolveShape(ws.session, ws.session.selectedShapes[0]!)
+    if (!sh || sh.kind === 'group') return null
+    const ui = useUiStore()
+    let attr = findGradientAttr(sh, ui.activeAttr)
+    // sin degradado ni atributo elegido: el relleno de más arriba, o el primer contorno
+    if (!attr) {
+      // los rellenos tienen prioridad sobre los contornos (como en Illustrator)
+      const top = (list: Attr[]): Attr | null => {
+        for (const id of [...sh.appearance.stack].reverse()) {
+          const x = list.find((y) => y.id === id && y.enabled)
+          if (x) return x
+        }
+        return null
+      }
+      attr = top(sh.appearance.fills) ?? top(sh.appearance.strokes)
+    }
+    if (!attr) return null
+    return { sh, attr, grad: attr.paint.type === 'solid' ? null : attr.paint, T: sh.transform }
+  }
+
+  private gradientBar(tool: string): OverlayGradientBar | null {
+    if (tool !== 'gradient') return null
+    const t = this.gradientTarget()
+    if (!t?.grad) return null
+    const { grad, T } = t
+    const from = apply(T, grad.from)
+    const to = apply(T, grad.to)
+    const ui = useUiStore()
+    return {
+      from,
+      to,
+      stops: sortedStops(grad.stops).map((s, i) => ({
+        pos: { x: from.x + (to.x - from.x) * s.offset, y: from.y + (to.y - from.y) * s.offset },
+        color: `rgba(${s.color.r},${s.color.g},${s.color.b},${s.color.a / 255})`,
+        selected: i === ui.activeStop
+      }))
+    }
+  }
+
+  private gradStart: Vec2 = { x: 0, y: 0 }
+
+  private downGradient(p: Pointer): void {
+    const ws = this.getWs()
+    const tg = this.gradientTarget()
+    if (ws && !tg) {
+      // sin forma seleccionada: un clic sobre una forma la selecciona
+      const id = hitShape(ws.session, p.x, p.y)
+      if (id) selectShapes(ws.session, [id])
+      return
+    }
+    if (!ws || !tg) return
+    const vp = ws.viewport
+    const ui = useUiStore()
+    ui.activeAttr = tg.attr.id
+    const base = { shapeId: tg.sh.id, attrId: tg.attr.id, T: tg.T }
+    const nearPt = (q: Vec2): boolean => {
+      const a = vp.toScreen(q.x, q.y)
+      return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT + 2
+    }
+    if (tg.grad) {
+      const from = apply(tg.T, tg.grad.from)
+      const to = apply(tg.T, tg.grad.to)
+      const stops = sortedStops(tg.grad.stops)
+      // las paradas intermedias quedan encima de la línea; los extremos tienen prioridad
+      if (nearPt(from)) {
+        this.gradDrag = { kind: 'from', stopIndex: 0, ...base }
+        return
+      }
+      if (nearPt(to)) {
+        this.gradDrag = { kind: 'to', stopIndex: 0, ...base }
+        return
+      }
+      for (let i = 0; i < stops.length; i++) {
+        const s = stops[i]!
+        const pos = {
+          x: from.x + (to.x - from.x) * s.offset,
+          y: from.y + (to.y - from.y) * s.offset
+        }
+        if (nearPt(pos)) {
+          ui.activeStop = i
+          this.gradDrag = { kind: 'stop', stopIndex: i, ...base }
+          return
+        }
+      }
+    }
+    // arrastrar en el vacío define un degradado nuevo: de aquí hasta donde se suelte
+    this.gradDrag = { kind: 'new', stopIndex: 0, ...base }
+    this.gradStart = { x: Math.round(p.fx), y: Math.round(p.fy) }
+  }
+
+  private moveGradient(p: Pointer): void {
+    const ws = this.getWs()
+    const d = this.gradDrag
+    if (!ws || !d) return
+    const ui = useUiStore()
+    const inv = invert(d.T)
+    if (!inv) return
+    const img = { x: Math.round(p.fx), y: Math.round(p.fy) }
+    const local = (q: Vec2): Vec2 => apply(inv, q)
+    liveUpdateShape(ws.session, d.shapeId, 'grad-tool', t('gradient.edit'), (shape) => {
+      const at = [...shape.appearance.fills, ...shape.appearance.strokes].find(
+        (x) => x.id === d.attrId
+      )
+      if (!at) return
+      if (d.kind === 'new') {
+        if (img.x === this.gradStart.x && img.y === this.gradStart.y) return
+        if (at.paint.type === 'solid') {
+          const c = at.paint.color
+          const light = c.r * 0.3 + c.g * 0.59 + c.b * 0.11 > 128
+          const to = light ? { r: 0, g: 0, b: 0, a: 255 } : { r: 255, g: 255, b: 255, a: 255 }
+          at.paint = defaultGradient(shape, 'linear', c, to)
+        }
+        at.paint.from = local(this.gradStart)
+        at.paint.to = local(img)
+        return
+      }
+      const g = at.paint
+      if (g.type === 'solid') return
+      if (d.kind === 'from') g.from = local(img)
+      else if (d.kind === 'to') g.to = local(img)
+      else {
+        const a = apply(d.T, g.from)
+        const b = apply(d.T, g.to)
+        const len2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2 || 1
+        const k = Math.min(
+          1,
+          Math.max(0, ((p.fx - a.x) * (b.x - a.x) + (p.fy - a.y) * (b.y - a.y)) / len2)
+        )
+        g.stops = sortedStops(g.stops)
+        const stop = g.stops[d.stopIndex]
+        if (!stop) return
+        stop.offset = k
+        g.stops = sortedStops(g.stops)
+        d.stopIndex = g.stops.indexOf(stop)
+        ui.activeStop = d.stopIndex
+      }
+    })
   }
 
   private neighbourSelected(id: ID, si: number, i: number, n: number): boolean {

@@ -104,3 +104,28 @@ test('arrastrar una parada solo crea un paso de historial, al soltar', async () 
   await expect(entries).toHaveCount(before + 1)
   await expect(entries.last()).toContainText('Editar degradado')
 })
+
+test('herramienta Degradado: arrastrar sobre la forma crea el degradado en un solo paso', async () => {
+  await page.keyboard.press('Control+n')
+  await page.locator('#nw').fill('64')
+  await page.locator('#nh').fill('64')
+  await page.getByRole('button', { name: 'Crear', exact: true }).click()
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  await page.keyboard.press('m')
+  await page.mouse.move(cx - 100, cy - 100)
+  await page.mouse.down()
+  await page.mouse.move(cx + 100, cy + 100, { steps: 5 })
+  await page.mouse.up()
+  await page.keyboard.press('g')
+  await page.mouse.move(cx - 80, cy)
+  await page.mouse.down()
+  await page.mouse.move(cx + 80, cy, { steps: 8 })
+  await page.mouse.up()
+  await page.locator('.pt-ptab', { hasText: 'Apariencia' }).click()
+  await expect(page.locator('.app .row', { hasText: 'Degradado lineal' })).toHaveCount(1)
+  await page.screenshot({ path: 'test-results/f3-herramienta-g.png' })
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  await expect(page.getByRole('button', { name: 'Editar degradado' })).toHaveCount(1)
+})

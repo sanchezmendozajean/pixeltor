@@ -15,6 +15,8 @@ export const useUiStore = defineStore('ui', {
     toast: '',
     /** Relleno o contorno que editan los paneles Apariencia y Degradado. */
     activeAttr: '' as string,
+    /** Índice de la parada de degradado seleccionada (panel Degradado y herramienta G). */
+    activeStop: 0,
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {

@@ -65,6 +65,12 @@ export interface ShapeOverlay {
 
 export interface OverlayState {
   shapes?: ShapeOverlay[]
+  /** Anotador del degradado de la herramienta G (coordenadas de imagen). */
+  gradientBar?: {
+    from: { x: number; y: number }
+    to: { x: number; y: number }
+    stops: { pos: { x: number; y: number }; color: string; selected: boolean }[]
+  } | null
   /** Caja de la selección con tiradores de escala (herramienta V). */
   selBox?: Rect | null
   /** Widget de radio de esquina (círculo interior), en coordenadas de imagen. */
@@ -151,6 +157,44 @@ export function drawOverlay(
       const q = vp.toScreen(p.x, p.y)
       ctx.fillStyle = sh.color
       ctx.fillRect(q.x - 3, q.y - 3, 7, 7)
+    }
+  }
+
+  if (st.gradientBar) {
+    const g = st.gradientBar
+    const a = vp.toScreen(g.from.x, g.from.y)
+    const b = vp.toScreen(g.to.x, g.to.y)
+    ctx.setLineDash([])
+    // trazo doble (oscuro + claro) para que se vea sobre cualquier color
+    for (const [w, c] of [
+      [3, '#000'],
+      [1, '#fff']
+    ] as const) {
+      ctx.lineWidth = w
+      ctx.strokeStyle = c
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+    }
+    for (const p of [a, b]) {
+      ctx.fillStyle = '#fff'
+      ctx.strokeStyle = '#000'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+    }
+    for (const s of g.stops) {
+      const q = vp.toScreen(s.pos.x, s.pos.y)
+      ctx.fillStyle = s.color
+      ctx.strokeStyle = s.selected ? '#3d8bff' : '#fff'
+      ctx.lineWidth = s.selected ? 3 : 2
+      ctx.beginPath()
+      ctx.arc(q.x, q.y, 4.5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
     }
   }
 

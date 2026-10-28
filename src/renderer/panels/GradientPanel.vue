@@ -4,7 +4,6 @@
 // La barra se pinta con el mismo evaluador del core, así que muestra el modo de píxel real.
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import {
-  type Fill,
   type GradientPaint,
   type RGBA,
   type Shape,
@@ -17,10 +16,10 @@ import {
   sortedStops,
   updateShape
 } from '@core/index'
-import type { Stroke } from '@core/model/shapes'
 import PtIcon from '@/components/PtIcon.vue'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
+import { findGradientAttr, type Attr } from '@/tools/gradientTarget'
 import { hexToRgba } from '@/stores/colorUtil'
 import { t, type I18nKey } from '@/i18n'
 
@@ -35,20 +34,11 @@ const shape = computed<Shape | null>(() => {
   return sh && sh.kind !== 'group' ? sh : null
 })
 
-type Attr = Fill | Stroke
-/** Atributo activo: el elegido en Apariencia o, si no, el primer degradado de la pila (de arriba abajo). */
+/** Atributo activo: el elegido en Apariencia o, si no, el primer degradado de la pila. */
 const attr = computed<Attr | null>(() => {
   void docs.rev
   const sh = shape.value
-  if (!sh) return null
-  const all: Attr[] = [...sh.appearance.fills, ...sh.appearance.strokes]
-  const byId = all.find((a) => a.id === ui.activeAttr)
-  if (byId) return byId
-  for (const id of [...sh.appearance.stack].reverse()) {
-    const a = all.find((x) => x.id === id)
-    if (a && a.paint.type !== 'solid') return a
-  }
-  return null
+  return sh ? findGradientAttr(sh, ui.activeAttr) : null
 })
 const grad = computed<GradientPaint | null>(() => {
   void docs.rev
@@ -81,7 +71,11 @@ function endLive(live: string): void {
 }
 
 /** Las paradas se mantienen ordenadas; `sel` sigue a la parada movida. */
-const sel = ref(0)
+// La parada seleccionada se comparte con la herramienta Degradado del lienzo.
+const sel = computed({
+  get: () => ui.activeStop,
+  set: (v: number) => (ui.activeStop = v)
+})
 // El degradado se edita en el sitio (misma referencia): estos derivados se relevan con cada revisión.
 const sorted = computed(() => (docs.rev, grad.value ? sortedStops(grad.value.stops) : []))
 watch(
