@@ -21,7 +21,32 @@ export interface SolidPaint {
   type: 'solid'
   color: RGBA
 }
-export type Paint = SolidPaint
+export interface GradientStop {
+  /** 0..1 */
+  offset: number
+  color: RGBA
+}
+
+export type DitherMatrix = 'bayer2' | 'bayer4' | 'bayer8' | 'checker'
+
+/** Cómo se convierte el degradado continuo en píxeles (specs/12). */
+export type GradientPixelMode =
+  | { mode: 'smooth' }
+  | { mode: 'bands'; steps: number }
+  | { mode: 'dither'; matrix: DitherMatrix; steps: number }
+  /** Cuantiza a la paleta indicada (colores en línea), con tramado ordenado opcional. */
+  | { mode: 'palette'; colors: RGBA[]; dither: boolean }
+
+export interface GradientPaint {
+  type: 'linear' | 'radial' | 'angular'
+  stops: GradientStop[]
+  /** Coordenadas locales de la forma. */
+  from: Vec2
+  to: Vec2
+  pixelMode: GradientPixelMode
+}
+
+export type Paint = SolidPaint | GradientPaint
 
 export interface Fill {
   id: ID

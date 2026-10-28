@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`degradados > GOLDEN: huella de los degradados con tramado en las cuatro matrices 1`] = `"bayer2-linear:06606136ee1b|bayer2-radial:200952fac261|bayer2-angular:19a5a598f52d|bayer4-linear:6295829de274|bayer4-radial:d7be786ae540|bayer4-angular:7f4e5a3ef83e|bayer8-linear:6295829de274|bayer8-radial:5ba3f6617dea|bayer8-angular:7a712e6c753e|checker-linear:c1450a19b1ca|checker-radial:1b0c37240a5d|checker-angular:49750df37d86"`;

@@ -19,8 +19,8 @@ const count = computed(() => {
   return docs.session?.selectedShapes.length ?? 0
 })
 
-const fill = computed(() => shape.value?.appearance.fills[0] ?? null)
-const stroke = computed(() => shape.value?.appearance.strokes[0] ?? null)
+const fill = computed(() => (docs.rev, shape.value?.appearance.fills[0] ?? null))
+const stroke = computed(() => (docs.rev, shape.value?.appearance.strokes[0] ?? null))
 
 const hex = (c: { r: number; g: number; b: number; a: number }) =>
   rgbaToHex(((c.r << 24) | (c.g << 16) | (c.b << 8) | c.a) >>> 0).slice(0, 7)
@@ -35,7 +35,11 @@ function setColor(which: 'fill' | 'stroke', e: Event): void {
   const c = { r: (v >>> 24) & 255, g: (v >>> 16) & 255, b: (v >>> 8) & 255, a: 255 }
   edit(which === 'fill' ? t('properties.fill') : t('properties.stroke'), which, (s) => {
     const a = which === 'fill' ? s.appearance.fills[0] : s.appearance.strokes[0]
-    if (a) a.paint = { type: 'solid', color: { ...c, a: a.paint.color.a } }
+    if (a)
+      a.paint = {
+        type: 'solid',
+        color: { ...c, a: a.paint.type === 'solid' ? a.paint.color.a : 255 }
+      }
   })
 }
 function toggle(which: 'fill' | 'stroke'): void {

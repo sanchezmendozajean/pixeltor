@@ -4,6 +4,7 @@ import Panel, { type PanelTab } from './Panel.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import ColorPanel from '@/panels/ColorPanel.vue'
 import HistoryPanel from '@/panels/HistoryPanel.vue'
+import AppearancePanel from '@/panels/AppearancePanel.vue'
 import LayersPanel from '@/panels/LayersPanel.vue'
 import PropertiesPanel from '@/panels/PropertiesPanel.vue'
 import NavigatorPanel from '@/panels/NavigatorPanel.vue'
@@ -34,6 +35,7 @@ const color: PanelTab[] = [
     </Panel>
     <Panel :tabs="layers">
       <template #layers><LayersPanel /></template>
+      <template #appearance><AppearancePanel /></template>
       <template #foot>
         <div class="pt-pfoot">
           <span class="pt-spacer" />

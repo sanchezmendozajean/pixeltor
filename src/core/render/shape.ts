@@ -13,7 +13,17 @@ import {
 } from '../raster/scan'
 import { type Polyline, thickStroke, thinStroke } from '../raster/stroke'
 import { apply, flattenCubic, isTranslateOnly, multiply } from '../geometry/geometry'
-import type { GroupShape, Shape, Stroke, SubPath, Vec2 } from '../model/shapes'
+import type {
+  GradientPaint,
+  GroupShape,
+  Mat2D,
+  Shape,
+  Stroke,
+  SubPath,
+  Vec2
+} from '../model/shapes'
+import type { RGBA } from '../model/types'
+import { gradientSampler } from './paint'
 
 const TOL = 0.1
 
@@ -163,25 +173,39 @@ function strokeMask(st: Stroke, lines: Polyline[], m: ShapeMasks, w: number, h: 
   return coverageSub(erode(m.fill, w, h, off), erode(m.fill, w, h, off + width))
 }
 
+/** Capa de pintura: cada píxel cubierto toma su color (fijo o muestreado en coordenadas de imagen). */
 function paintBitmap(
   cov: Coverage,
-  c: { r: number; g: number; b: number; a: number },
+  color: (x: number, y: number) => RGBA,
   w: number,
   h: number
 ): Bitmap {
   const bmp = new Bitmap(w, h)
   const d = bmp.data
-  for (let i = 0; i < cov.length; i++) {
-    if (!cov[i]) continue
-    d[i * 4] = c.r
-    d[i * 4 + 1] = c.g
-    d[i * 4 + 2] = c.b
-    d[i * 4 + 3] = c.a
-  }
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x
+      if (!cov[i]) continue
+      const c = color(x, y)
+      d[i * 4] = c.r
+      d[i * 4 + 1] = c.g
+      d[i * 4 + 2] = c.b
+      d[i * 4 + 3] = c.a
+    }
   return bmp
 }
 
-function renderShapeFull(s: Shape, w: number, h: number): Bitmap {
+/**
+ * `origin` es la posición de la región en la imagen y `paintTransform` la transformación real de la
+ * forma: los degradados se evalúan en coordenadas de imagen (el tramado queda anclado a la imagen).
+ */
+function renderShapeFull(
+  s: Shape,
+  w: number,
+  h: number,
+  origin: Vec2,
+  paintTransform: Mat2D
+): Bitmap {
   const out = new Bitmap(w, h)
   const lines = shapeLines(s)
   const masks = fillMask(s, lines, w, h)
@@ -192,7 +216,14 @@ function renderShapeFull(s: Shape, w: number, h: number): Bitmap {
     const attr = f ?? st
     if (!attr || !attr.enabled) continue
     const cov = f ? masks.fill : strokeMask(st!, lines, masks, w, h)
-    const c = attr.paint.color
+    const paint = attr.paint
+    if (paint.type !== 'solid') {
+      const sample = gradientSampler(paint, paintTransform)
+      const colorAt = (x: number, y: number) => sample(x + origin.x, y + origin.y)
+      compositeOver(out, paintBitmap(cov, colorAt, w, h), attr.blendMode, attr.opacity)
+      continue
+    }
+    const c = paint.color
     if (attr.blendMode === 'normal' && attr.opacity === 1 && c.a === 255) {
       // Relleno opaco: se escribe directo en el bitmap.
       const d = out.data
@@ -203,7 +234,13 @@ function renderShapeFull(s: Shape, w: number, h: number): Bitmap {
         d[i * 4 + 2] = c.b
         d[i * 4 + 3] = 255
       }
-    } else compositeOver(out, paintBitmap(cov, c, w, h), attr.blendMode, attr.opacity)
+    } else
+      compositeOver(
+        out,
+        paintBitmap(cov, () => c, w, h),
+        attr.blendMode,
+        attr.opacity
+      )
   }
   return out
 }
@@ -249,7 +286,7 @@ export function renderShapeRegion(s: Shape, w: number, h: number): ShapeBitmap |
   if (rw <= 0 || rh <= 0) return null
   const t = s.transform
   const shifted: Shape = { ...s, transform: [t[0], t[1], t[2], t[3], t[4] - rx, t[5] - ry] }
-  return { x: rx, y: ry, bitmap: renderShapeFull(shifted, rw, rh) }
+  return { x: rx, y: ry, bitmap: renderShapeFull(shifted, rw, rh, { x: rx, y: ry }, t) }
 }
 
 /** Un grupo se compone aparte (hijos de abajo arriba) y después se aplica como una sola forma. */
@@ -335,4 +372,50 @@ export function pixelBounds(
         if (y > y1) y1 = y
       }
   return x1 < 0 ? null : { x: r.x + x0, y: r.y + y0, w: x1 - x0 + 1, h: y1 - y0 + 1 }
+}
+
+/** Degradado inicial para una forma: de izquierda a derecha de su caja local (radial: del centro al borde). */
+export function defaultGradient(
+  s: Shape,
+  type: GradientPaint['type'],
+  from: RGBA,
+  to: RGBA
+): GradientPaint {
+  let x0 = Infinity
+  let y0 = Infinity
+  let x1 = -Infinity
+  let y1 = -Infinity
+  for (const l of localLines(s))
+    for (const p of l.pts) {
+      x0 = Math.min(x0, p.x)
+      y0 = Math.min(y0, p.y)
+      x1 = Math.max(x1, p.x)
+      y1 = Math.max(y1, p.y)
+    }
+  if (x0 === Infinity) {
+    x0 = y0 = 0
+    x1 = y1 = 1
+  }
+  const cy = (y0 + y1) / 2
+  const cx = (x0 + x1) / 2
+  const [a, b] =
+    type === 'linear'
+      ? [
+          { x: x0, y: cy },
+          { x: x1, y: cy }
+        ]
+      : [
+          { x: cx, y: cy },
+          { x: x1, y: cy }
+        ]
+  return {
+    type,
+    stops: [
+      { offset: 0, color: from },
+      { offset: 1, color: to }
+    ],
+    from: a,
+    to: b,
+    pixelMode: { mode: 'smooth' }
+  }
 }

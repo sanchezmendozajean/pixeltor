@@ -358,5 +358,44 @@
     "radius": "Radio",
     "opacity": "Opacidad",
     "many": "{n} formas seleccionadas"
+  },
+  "appearance": {
+    "edit": "Editar apariencia",
+    "addFill": "Añadir relleno",
+    "addStroke": "Añadir contorno",
+    "remove": "Eliminar",
+    "duplicate": "Duplicar",
+    "reorder": "Reordenar apariencia",
+    "up": "Subir (dibujar más arriba)",
+    "down": "Bajar (dibujar más abajo)",
+    "none": "Esta forma no tiene relleno ni contorno",
+    "paint": "Pintura",
+    "color": "Color",
+    "alpha": "Alfa",
+    "stop": "Parada",
+    "position": "Posición",
+    "addStop": "Añadir parada",
+    "reverse": "Invertir",
+    "pixelMode": "Modo de píxel",
+    "steps": "Escalones",
+    "matrix": "Matriz de tramado",
+    "offset": "Desplazamiento",
+    "type": {
+      "solid": "Sólido",
+      "linear": "Degradado lineal",
+      "radial": "Degradado radial",
+      "angular": "Degradado angular"
+    },
+    "mode": {
+      "smooth": "Suave",
+      "bands": "Bandas",
+      "dither": "Tramado"
+    },
+    "matrices": {
+      "bayer2": "Bayer 2×2",
+      "bayer4": "Bayer 4×4",
+      "bayer8": "Bayer 8×8",
+      "checker": "Ajedrez"
+    }
   }
 }
