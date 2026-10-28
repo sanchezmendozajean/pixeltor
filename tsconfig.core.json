@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Sin DOM, sin Node: el core debe correr en Node y en Workers.
+    "lib": ["ES2023"],
+    "types": []
+  },
+  "include": ["src/core/**/*"]
+}
