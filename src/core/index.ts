@@ -1,5 +1,23 @@
 // Núcleo de Pixeltor: TypeScript puro, sin DOM, Vue ni Electron.
-// Corre en Node y en Workers. El modelo, el raster y los comandos llegan en F1.
+// Corre en Node y en Workers.
 
-/** Versión del formato de archivo `.pixeltor` que escribe este núcleo (ver specs/10). */
-export const FORMAT_VERSION = '1.0.0'
+export { FORMAT_VERSION } from './model/version'
+export * from './model/types'
+export * from './model/document'
+export { newId } from './model/ids'
+export { Bitmap, rgba, type Rect } from './raster/bitmap'
+export { PixelMask, type MaskOp, type FloatingPixels } from './raster/mask'
+export { compositeOver } from './raster/blend'
+export { composeImage } from './render/compose'
+export { DocumentSession, Transaction, type ChangeEvent, type SelectionState } from './session'
+export {
+  Stroke,
+  bucketFill,
+  pickColor,
+  wandMask,
+  paintBlockReason,
+  type StrokeOptions
+} from './tools/paint'
+export * from './tools/selection'
+export { encodePng, decodePng, scaleNearest } from './io/png'
+export { saveDocument, loadDocument, exportImagePng, FormatError } from './io/pixeltor'
