@@ -55,6 +55,7 @@ test('crear, renombrar y ocultar capas', async () => {
   await page.keyboard.press('Control+Shift+n')
   await expect(page.locator('.layers li')).toHaveCount(2)
   await page
+    .locator('.layers')
     .getByRole('option')
     .first()
     .getByRole('button', { name: /Mostrar u ocultar/ })

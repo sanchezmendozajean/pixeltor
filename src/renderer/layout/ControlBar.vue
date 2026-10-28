@@ -14,6 +14,7 @@ const docs = useDocumentsStore()
 
 const usesSize = computed(() => tools.active === 'brush' || tools.active === 'eraser')
 const usesShape = usesSize
+const usesSymmetry = computed(() => ['pencil', 'brush', 'eraser'].includes(tools.active))
 const usesFill = computed(() => tools.active === 'bucket' || tools.active === 'wand')
 const isShape = computed(() =>
   ['rect', 'ellipse', 'polygon', 'star', 'line', 'pen'].includes(tools.active)
@@ -60,6 +61,24 @@ function onTolerance(e: Event): void {
           <input class="pt-input" :value="tools.brushSize" inputmode="numeric" @change="onSize" />
           <span class="pt-unit">px</span>
         </span>
+      </label>
+    </template>
+    <template v-if="usesSymmetry">
+      <label class="pt-check-label">
+        <input v-model="tools.symmetry.x" type="checkbox" />
+        {{ t('tooloptions.symX') }}
+      </label>
+      <label class="pt-check-label">
+        <input v-model="tools.symmetry.y" type="checkbox" />
+        {{ t('tooloptions.symY') }}
+      </label>
+      <label class="pt-ctl">
+        <span class="pt-ctl__lbl">{{ t('tooloptions.symRot') }}</span>
+        <select v-model.number="tools.symmetry.rot" class="pt-select shape">
+          <option :value="1">{{ t('tooloptions.symNone') }}</option>
+          <option :value="2">180°</option>
+          <option :value="4">90°</option>
+        </select>
       </label>
     </template>
     <label v-if="usesShape" class="pt-ctl">

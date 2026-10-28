@@ -99,7 +99,8 @@ function linkSelection(unlink = false): void {
         const paints = [...shape.appearance.fills, ...shape.appearance.strokes].map((x) => x.paint)
         for (const p of paints) {
           if (p.type !== 'solid') continue
-          const same = p.color.r === sw.color.r && p.color.g === sw.color.g && p.color.b === sw.color.b
+          const same =
+            p.color.r === sw.color.r && p.color.g === sw.color.g && p.color.b === sw.color.b
           if (unlink && p.swatchId === sw.id) linkPaint(p, null)
           else if (!unlink && same) linkPaint(p, sw.id)
         }
@@ -235,20 +236,35 @@ function extract(): void {
         :aria-label="t('swatches.edit')"
         @input="editColor"
       />
-      <span class="info">{{ hex(selected.color).toUpperCase() }} · {{ t('swatches.usage', { n: usage }) }}</span>
+      <span class="info"
+        >{{ hex(selected.color).toUpperCase() }} · {{ t('swatches.usage', { n: usage }) }}</span
+      >
       <button type="button" class="pt-btn pt-btn--secondary" @click="linkSelection(false)">
         {{ t('swatches.link') }}
       </button>
-      <button v-if="usage" type="button" class="pt-btn pt-btn--secondary" @click="linkSelection(true)">
+      <button
+        v-if="usage"
+        type="button"
+        class="pt-btn pt-btn--secondary"
+        @click="linkSelection(true)"
+      >
         {{ t('swatches.unlink') }}
       </button>
     </div>
 
     <div class="row">
-      <button type="button" class="pt-btn pt-btn--secondary" @click="docs.session && sortPalette(docs.session, 'hue')">
+      <button
+        type="button"
+        class="pt-btn pt-btn--secondary"
+        @click="docs.session && sortPalette(docs.session, 'hue')"
+      >
         {{ t('swatches.sortHue') }}
       </button>
-      <button type="button" class="pt-btn pt-btn--secondary" @click="docs.session && sortPalette(docs.session, 'lightness')">
+      <button
+        type="button"
+        class="pt-btn pt-btn--secondary"
+        @click="docs.session && sortPalette(docs.session, 'lightness')"
+      >
         {{ t('swatches.sortLight') }}
       </button>
       <button type="button" class="pt-btn pt-btn--secondary" @click="extract">
@@ -257,13 +273,20 @@ function extract(): void {
     </div>
 
     <div class="row ramp">
-      <label>{{ t('swatches.rampN') }}
+      <label
+        >{{ t('swatches.rampN') }}
         <input v-model.number="rampN" type="number" min="2" max="64" class="pt-input num" />
       </label>
-      <label>{{ t('swatches.rampShift') }}
+      <label
+        >{{ t('swatches.rampShift') }}
         <input v-model.number="rampShift" type="number" min="-90" max="90" class="pt-input num" />
       </label>
-      <button type="button" class="pt-btn pt-btn--secondary" :title="t('swatches.rampTip')" @click="ramp">
+      <button
+        type="button"
+        class="pt-btn pt-btn--secondary"
+        :title="t('swatches.rampTip')"
+        @click="ramp"
+      >
         {{ t('swatches.ramp') }}
       </button>
     </div>

@@ -352,6 +352,10 @@
   },
   "tooloptions": {
     "size": "Tamaño",
+    "symX": "Espejo ↔",
+    "symY": "Espejo ↕",
+    "symRot": "Giro",
+    "symNone": "Ninguno",
     "shape": "Forma",
     "square": "Cuadrada",
     "round": "Redonda",

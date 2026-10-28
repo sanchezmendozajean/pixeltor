@@ -10,6 +10,7 @@ import {
   bucketFill,
   commitFloating,
   GuideDrag,
+  isSymmetric,
   deselect,
   paintBlockReason,
   pickColor,
@@ -104,6 +105,10 @@ export class CanvasController {
     const m = this.marquee
     return {
       ...this.shapes.overlay(t.active),
+      symmetry:
+        ['pencil', 'brush', 'eraser'].includes(t.active) && isSymmetric(this.tools.symmetry)
+          ? { ...this.tools.symmetry }
+          : undefined,
       guides: useUiStore().showGuides ? (s.image.guides ?? []) : [],
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : null,
@@ -169,14 +174,15 @@ export class CanvasController {
           tool: tool as 'pencil' | 'brush' | 'eraser',
           color,
           size: this.tools.brushSize,
-          shape: this.tools.brushShape
+          shape: this.tools.brushShape,
+          symmetry: { ...this.tools.symmetry }
         })
         const last = this.lastPaintPoint.get(ws)
         // Mayús+clic: línea recta desde el último punto.
         if (p.shift && last && tool !== 'eraser') this.stroke.move(last.x, last.y)
         this.strokeLast = { x: x, y: y }
         this.stroke.move(x, y)
-        ws.liveDirty(brushBox(x, y, last && p.shift ? last : null, this.radius()))
+        ws.liveDirty(this.liveBox(ws, brushBox(x, y, last && p.shift ? last : null, this.radius())))
         break
       }
       case 'bucket': {
@@ -282,7 +288,7 @@ export class CanvasController {
       const prev = this.strokeLast
       if (prev.x !== x || prev.y !== y) {
         this.stroke.move(x, y)
-        ws.liveDirty(brushBox(x, y, prev, this.radius()))
+        ws.liveDirty(this.liveBox(ws, brushBox(x, y, prev, this.radius())))
         this.strokeLast = { x, y }
       }
       return
@@ -344,6 +350,13 @@ export class CanvasController {
   private eyedrop(ws: Workspace, x: number, y: number, button: number, sampleAll: boolean): void {
     const c = pickColor(ws.session, x, y, sampleAll)
     if (c !== null && (c & 255) !== 0) this.setColor(button, c)
+  }
+
+  /** Con simetría el trazo toca zonas lejanas: repinta todo el lienzo. */
+  private liveBox(ws: Workspace, box: Rect): Rect {
+    return isSymmetric(this.tools.symmetry)
+      ? { x: 0, y: 0, w: ws.session.image.width, h: ws.session.image.height }
+      : box
   }
 
   /** Guía a menos de 4 px de pantalla del puntero, si las guías son visibles. */

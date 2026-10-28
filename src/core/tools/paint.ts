@@ -1,16 +1,10 @@
 // Herramientas de pintura sobre una sesión: cada gesto = una Transaction = un paso de historial.
 
 import type { ID } from '../model/types'
-import { Bitmap } from '../raster/bitmap'
-import {
-  DirtyTracker,
-  type PaintTarget,
-  brushOffsets,
-  linePoints,
-  putPixel,
-  stampBrush
-} from '../raster/draw'
+import { Bitmap, clipRect } from '../raster/bitmap'
+import { DirtyTracker, type PaintTarget, brushOffsets, linePoints, putPixel } from '../raster/draw'
 import { type FloodOptions, selectSimilar } from '../raster/fill'
+import { type PixelMap, type Symmetry, isSymmetric, symmetryMaps } from '../raster/symmetry'
 import { PixelMask, combineMasks } from '../raster/mask'
 import { composeImage } from '../render/compose'
 import { type DocumentSession, Transaction } from '../session'
@@ -21,6 +15,8 @@ export interface StrokeOptions {
   color: number
   size: number
   shape: 'square' | 'round'
+  /** Simetría respecto al centro del lienzo (opcional). */
+  symmetry?: Symmetry
 }
 
 export type PaintBlock = 'hidden' | 'locked' | 'floating' | null
@@ -42,6 +38,7 @@ export class Stroke {
   private readonly dirty = new DirtyTracker()
   /** Copia del ráster antes del trazo: permite deshacer píxeles al aplicar pixel-perfect. */
   private readonly base: Bitmap | null
+  private readonly maps: PixelMap[]
   private kept: [number, number][] = []
   private last: [number, number] | null = null
 
@@ -55,6 +52,9 @@ export class Stroke {
     this.target = { bitmap, mask: s.selection.mask, lockAlpha: layer.lockAlpha }
     const size = opt.tool === 'pencil' ? 1 : opt.size
     this.offsets = brushOffsets(size, opt.shape)
+    this.maps = isSymmetric(opt.symmetry)
+      ? symmetryMaps(opt.symmetry, bitmap.width, bitmap.height)
+      : []
     this.base = opt.tool === 'pencil' ? bitmap.clone() : null
     this.tx = s.begin(
       opt.tool === 'eraser'
@@ -66,19 +66,33 @@ export class Stroke {
   }
 
   private paint(x: number, y: number): void {
-    const [mx, my] = [x, y]
-    // El tx.touch debe cubrir toda la punta antes de pintar.
+    // El tx.touch debe cubrir toda la punta (y sus reflejos) antes de pintar.
     const r = this.opt.tool === 'pencil' ? 0 : Math.ceil(this.opt.size)
-    this.tx.touch(this.layerId, { x: mx - r, y: my - r, w: 2 * r + 1, h: 2 * r + 1 })
-    stampBrush(
-      this.target,
-      x,
-      y,
-      this.offsets,
-      this.opt.color,
-      this.opt.tool === 'eraser',
-      this.dirty
-    )
+    const bw = this.target.bitmap.width
+    const bh = this.target.bitmap.height
+    this.tx.touch(this.layerId, { x: x - r, y: y - r, w: 2 * r + 1, h: 2 * r + 1 })
+    for (const m of this.maps) {
+      const a = m(x - r, y - r)
+      const b = m(x + r, y + r)
+      const x0 = Math.min(a[0], b[0])
+      const y0 = Math.min(a[1], b[1])
+      const rect = clipRect(
+        { x: x0, y: y0, w: Math.abs(a[0] - b[0]) + 1, h: Math.abs(a[1] - b[1]) + 1 },
+        bw,
+        bh
+      )
+      if (rect.w > 0 && rect.h > 0) this.tx.touch(this.layerId, rect)
+    }
+    const erase = this.opt.tool === 'eraser'
+    for (const [ox, oy] of this.offsets) {
+      const px = x + ox
+      const py = y + oy
+      if (putPixel(this.target, px, py, this.opt.color, erase)) this.dirty.add(px, py)
+      for (const m of this.maps) {
+        const [qx, qy] = m(px, py)
+        if (putPixel(this.target, qx, qy, this.opt.color, erase)) this.dirty.add(qx, qy)
+      }
+    }
   }
 
   /** Añade un punto (coordenadas enteras de píxel). Interpola con Bresenham desde el anterior. */
@@ -107,6 +121,10 @@ export class Stroke {
         const old = this.base!.get(b[0], b[1])
         const t = this.target
         if (t.bitmap.inBounds(b[0], b[1])) t.bitmap.set(b[0], b[1], old)
+        for (const m of this.maps) {
+          const [qx, qy] = m(b[0], b[1])
+          if (t.bitmap.inBounds(qx, qy)) t.bitmap.set(qx, qy, this.base!.get(qx, qy))
+        }
       }
     }
     k.push(p)

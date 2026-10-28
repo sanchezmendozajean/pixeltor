@@ -69,6 +69,8 @@ export interface OverlayState {
   shapes?: ShapeOverlay[]
   /** Guías del lienzo (px de imagen). */
   guides?: { axis: 'h' | 'v'; pos: number }[]
+  /** Ejes de simetría activos (respecto al centro del lienzo). */
+  symmetry?: { x: boolean; y: boolean; rot: 1 | 2 | 4 }
   /** Líneas de ajuste temporales (guías inteligentes) en coordenadas de imagen. */
   snapLines?: { axis: 'v' | 'h'; pos: number; from: number; to: number; kind: string }[]
   /** Anotador del degradado de la herramienta G (coordenadas de imagen). */
@@ -103,6 +105,26 @@ export function drawOverlay(
     ctx.scale(vp.zoom, vp.zoom)
     fn()
     ctx.restore()
+  }
+
+  if (st.symmetry) {
+    const c = vp.toScreen(vp.imageW / 2, vp.imageH / 2)
+    const tl = vp.toScreen(0, 0)
+    const br = vp.toScreen(vp.imageW, vp.imageH)
+    ctx.setLineDash([4, 3])
+    ctx.lineWidth = 1
+    ctx.strokeStyle = '#ff2bd6'
+    ctx.beginPath()
+    if (st.symmetry.x || st.symmetry.rot > 1) {
+      ctx.moveTo(Math.round(c.x) + 0.5, tl.y)
+      ctx.lineTo(Math.round(c.x) + 0.5, br.y)
+    }
+    if (st.symmetry.y || st.symmetry.rot > 1) {
+      ctx.moveTo(tl.x, Math.round(c.y) + 0.5)
+      ctx.lineTo(br.x, Math.round(c.y) + 0.5)
+    }
+    ctx.stroke()
+    ctx.setLineDash([])
   }
 
   for (const g of st.guides ?? []) {
