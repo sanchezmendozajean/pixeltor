@@ -17,6 +17,8 @@ import {
   ShapeRotate,
   isolateGroup,
   resolveShape,
+  pixelBounds,
+  renderShapeRegion,
   ShapeScale,
   addAnchorAt,
   addShape,
@@ -40,6 +42,7 @@ import {
 } from '@core/index'
 import type { Workspace } from '@/session/workspace'
 import { useColorsStore } from '@/stores/colors'
+import { useDocumentsStore } from '@/stores/documents'
 import { hexToRgba } from '@/stores/colorUtil'
 import { useToolsStore } from '@/stores/tools'
 import type { ShapeOverlay } from '@/viewport/overlay'
@@ -137,6 +140,15 @@ export class ShapeTools {
   hoverId: string | null = null
 
   constructor(private readonly getWs: () => Workspace | null) {}
+
+  /** Muestra la vista previa y publica su tamaño en píxeles para la barra de estado. */
+  private setPreview(ws: Workspace, shape: Shape | null): void {
+    ws.setPreview(shape)
+    const b = shape
+      ? pixelBounds(renderShapeRegion(shape, ws.session.image.width, ws.session.image.height))
+      : null
+    useDocumentsStore().drawingSize = b ? { w: b.w, h: b.h } : null
+  }
 
   get penActive(): boolean {
     return !!this.pen && this.pen.anchors.length > 0
@@ -245,11 +257,11 @@ export class ShapeTools {
       }
       this.pen.anchors.push({ p: pt, in: null, out: null, type: 'corner' })
       this.pen.dragging = true
-      ws.setPreview(this.penShape())
+      this.setPreview(ws, this.penShape())
       return
     }
     this.drag = { x0: p.x, y0: p.y, x1: p.x, y1: p.y, mods }
-    ws.setPreview(this.build(tool, this.drag))
+    this.setPreview(ws, this.build(tool, this.drag))
   }
 
   /** Tiradores de la caja de selección bajo el cursor. */
@@ -459,14 +471,14 @@ export class ShapeTools {
         a.in = mods.alt ? a.in : { x: 2 * a.p.x - out.x, y: 2 * a.p.y - out.y }
         a.type = mods.alt ? 'smooth' : 'symmetric'
       }
-      ws.setPreview(this.penShape())
+      this.setPreview(ws, this.penShape())
       return
     }
     if (this.drag) {
       this.drag.x1 = p.x
       this.drag.y1 = p.y
       this.drag.mods = mods
-      ws.setPreview(this.build(tool, this.drag))
+      this.setPreview(ws, this.build(tool, this.drag))
     }
   }
 
@@ -532,7 +544,7 @@ export class ShapeTools {
     if (this.drag) {
       const shape = this.build(tool, this.drag)
       this.drag = null
-      ws.setPreview(null)
+      this.setPreview(ws, null)
       if (shape) addShape(ws.session, shape)
     }
   }
@@ -544,14 +556,15 @@ export class ShapeTools {
     const ws = this.getWs()
     const p = this.pen
     this.pen = null
-    ws?.setPreview(null)
+    if (ws) this.setPreview(ws, null)
     if (!ws || !p || p.anchors.length < 2) return
     addShape(ws.session, makePath([{ closed, anchors: p.anchors }], currentAppearance(closed)))
   }
 
   cancelPen(): void {
     this.pen = null
-    this.getWs()?.setPreview(null)
+    const w = this.getWs()
+    if (w) this.setPreview(w, null)
   }
 
   cancel(): void {

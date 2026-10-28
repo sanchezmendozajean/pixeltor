@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { shapesPixelSize } from '@core/index'
 import { rgbaToHex } from '@/stores/colorUtil'
 import PtIcon from '@/components/PtIcon.vue'
 import { useDocumentsStore } from '@/stores/documents'
@@ -8,6 +9,14 @@ import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
 const ui = useUiStore()
+
+/** Tamaño en píxeles de la forma que se dibuja o, si no hay ninguna, de la selección. */
+const shapeSize = computed(() => {
+  void docs.rev
+  if (docs.drawingSize) return docs.drawingSize
+  const s = docs.session
+  return s && s.selectedShapes.length ? shapesPixelSize(s, s.selectedShapes) : null
+})
 
 /** Color del píxel bajo el cursor en la capa activa (#RRGGBB[AA]). */
 const pixelColor = computed(() => {
@@ -46,6 +55,12 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
           {{ docs.session?.image.height ?? t('status.none') }}</b
         >
         px</span
+      >
+    </div>
+    <div v-if="shapeSize" class="pt-seg" :data-tip="t('status.shapeSize')">
+      <PtIcon name="rect" class="tiny" />
+      <span class="pt-mono small"
+        ><b>{{ shapeSize.w }} × {{ shapeSize.h }}</b> px</span
       >
     </div>
     <div class="pt-seg" :data-tip="t('status.cursor')">

@@ -18,6 +18,7 @@ import {
   moveShapes,
   renderShape,
   stampAllShapes,
+  shapesPixelSize,
   stampShapes
 } from '@core/index'
 
@@ -218,5 +219,20 @@ describe('formas junto al borde del lienzo', () => {
     const e = renderShape(makeEllipse(4, 4, 4, 4, makeAppearance(RED, null)), 16, 16)
     expect(e.get(0, 3)).toBe(0xff0000ff)
     expect(e.get(3, 0)).toBe(0xff0000ff)
+  })
+})
+
+describe('tamaño en píxeles de las formas', () => {
+  it('un cuadrado de 12×12 mide 12×12 con contorno interior y tras estirar una esquina', () => {
+    const s = DocumentSession.create(32, 32)
+    const ap = makeAppearance(RED, BLUE, 2)
+    ap.strokes[0]!.align = 'inside' // como las crea la herramienta
+    const r = makeRect(4, 4, 12, 12, ap)
+    addShape(s, r)
+    expect(shapesPixelSize(s, [r.id])).toEqual({ w: 12, h: 12 })
+    const e = makeEllipse(20, 20, 4, 3, makeAppearance(RED, null))
+    addShape(s, e)
+    expect(shapesPixelSize(s, [e.id])).toEqual({ w: 8, h: 6 })
+    expect(shapesPixelSize(s, [r.id, e.id])).toEqual({ w: 20, h: 18 })
   })
 })

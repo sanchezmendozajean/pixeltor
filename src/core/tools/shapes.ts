@@ -6,7 +6,13 @@ import { cloneShape, makeGroup } from '../model/shapes'
 import { newId } from '../model/ids'
 import type { ID, Layer } from '../model/types'
 import { compositeOver } from '../raster/blend'
-import { renderShape, renderShapeCached, shapeAlphaAt } from '../render/shape'
+import {
+  pixelBounds,
+  renderShape,
+  renderShapeCached,
+  renderShapeRegion,
+  shapeAlphaAt
+} from '../render/shape'
 import type { DocumentSession } from '../session'
 
 export interface ShapeLocation {
@@ -414,4 +420,23 @@ export class ShapeMove {
   end(): boolean {
     return this.tx.commit({ model: true })
   }
+}
+
+/** Tamaño en píxeles (ancho × alto) de lo que pintan las formas dadas, o null si no pintan nada. */
+export function shapesPixelSize(s: DocumentSession, ids: ID[]): { w: number; h: number } | null {
+  let x0 = Infinity
+  let y0 = Infinity
+  let x1 = -Infinity
+  let y1 = -Infinity
+  for (const id of ids) {
+    const sh = resolveShape(s, id)
+    if (!sh) continue
+    const b = pixelBounds(renderShapeRegion(sh, s.image.width, s.image.height))
+    if (!b) continue
+    x0 = Math.min(x0, b.x)
+    y0 = Math.min(y0, b.y)
+    x1 = Math.max(x1, b.x + b.w)
+    y1 = Math.max(y1, b.y + b.h)
+  }
+  return x0 === Infinity ? null : { w: x1 - x0, h: y1 - y0 }
 }

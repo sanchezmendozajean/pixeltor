@@ -74,6 +74,8 @@ export const useDocumentsStore = defineStore('documents', () => {
   const rev = ref(0)
   const zoomPercent = ref(100)
   const cursor = shallowRef<{ x: number; y: number } | null>(null)
+  /** Tamaño en píxeles de la forma que se está dibujando (null si no se dibuja ninguna). */
+  const drawingSize = shallowRef<{ w: number; h: number } | null>(null)
 
   const active = computed(() => {
     void rev.value
@@ -195,6 +197,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     rev,
     zoomPercent,
     cursor,
+    drawingSize,
     active,
     activeTab,
     session,

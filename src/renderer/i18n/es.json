@@ -253,7 +253,8 @@
     "snapGuides": "Ajustar a guías y tiles",
     "snapCanvas": "Ajustar a bordes y centro del lienzo",
     "snapLabel": "Ajustar a",
-    "none": "—"
+    "none": "—",
+    "shapeSize": "Tamaño de la forma (ancho × alto)"
   },
   "notice": {
     "hidden": "La capa activa está oculta",
