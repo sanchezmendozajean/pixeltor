@@ -1,0 +1,26 @@
+appId: com.pixeltor.app
+productName: Pixeltor
+directories:
+  buildResources: resources
+  output: release
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: resources/licenses
+    to: licenses
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: x64
+  artifactName: ${productName}-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  target:
+    - target: AppImage
+      arch: x64
+  category: Graphics
+  artifactName: ${productName}-${version}.${ext}

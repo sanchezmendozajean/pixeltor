@@ -16,7 +16,7 @@ export const IPC = {
 
 /** API expuesta en `window.pixeltor` por el preload. */
 export interface PixeltorApi {
-  platform: NodeJS.Platform
+  platform: string
   getAppVersion(): Promise<string>
   settings: {
     get(): Promise<Settings>
