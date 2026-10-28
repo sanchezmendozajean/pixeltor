@@ -2,6 +2,30 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
+## [0.2.0] — F1 · Núcleo ráster
+
+### Añadido
+
+- **Núcleo (`src/core`, sin DOM)**: modelo de documento (imágenes, capas con visibilidad, bloqueo, bloqueo de transparencia, opacidad y 9 modos de fusión), bitmaps RGBA8 fuera de la reactividad, composición determinista con las fórmulas de W3C Compositing and Blending y máscaras de selección.
+- **Sesión, historial y comandos**: toda edición pasa por una `Transaction` que genera un único comando deshacible. Los cambios de píxeles se guardan como teselas de 64×64 (antes/después, comprimidas con fflate); los de modelo, como instantáneas de capas y selección. Límite de 200 pasos o 512 MB, fusión de cambios seguidos de una misma propiedad y detección de cambios sin guardar.
+- **Herramientas**: Lápiz (pixel-perfect, Mayús+clic para línea recta), Pincel (cuadrado o redondo, tamaño con `[` y `]`), Borrador, Bote (tolerancia, contiguo, todas las capas), Cuentagotas (Alt como temporal), Mano (Espacio o botón central), Zoom, Marco rectangular (nueva/añadir/restar/intersección con Mayús/Alt), Varita mágica y mover selección o píxeles flotantes (flechas, Intro, Esc).
+- **Selección**: seleccionar todo, deseleccionar, invertir, copiar, cortar, pegar, borrar y rellenar, con hormigas en marcha alineadas a la rejilla.
+- **Visor**: `Viewport` (zoom y desplazamiento, independiente del render, listo para varios visores), render WebGL2 con filtro NEAREST, tablero de transparencia y cuadrícula de píxeles a partir de 800 %, overlay Canvas2D, zoom con rueda centrado en el cursor y desplazamiento ajustado a píxeles enteros.
+- **Paneles**: Capas (miniaturas, visibilidad, bloqueo, renombrar con doble clic, reordenar arrastrando, opacidad, fusión, bloquear transparencia), Historial (clic para volver a un paso), Color (HSV + hexadecimal), Muestras, Navegador. Barra de control con las opciones de cada herramienta.
+- **Archivos**: formato `.pixeltor` 1.0.0 (ZIP con `mimetype` sin comprimir, `document.json`, rásters PNG con SHA-256, miniatura), guardado atómico con `.bak`, tolerancia a rásters dañados (se cargan vacíos con aviso) y rechazo claro de versiones mayores. Importar PNG (Archivo › Abrir), exportar PNG con escala entera ×1–×16 y «Exportar de nuevo».
+- **Autoguardado y recuperación**: cada 2 minutos y solo con cambios, en `userData/recovery`; al arrancar tras un cierre inesperado se ofrece Recuperar o Descartar. Al cerrar con cambios sin guardar se pregunta Guardar / No guardar / Cancelar.
+- Códec PNG y SHA-256 propios en el core (sin dependencias nuevas salvo `fflate`).
+- Pruebas: 30+ unitarias del core (deshacer 100 pasos, round-trip de `.pixeltor`, exportación ×4 pixel-perfect…), prueba de rendimiento de pincel en 1000×1000 con 20 capas y e2e de dibujo, capas, IPC de archivos y autoguardado.
+
+### Pendiente o limitado
+
+- **Linux sin verificar** (como en F0).
+- El pincel no tiene aún opacidad ni tramado, y el Marco elíptico, el Lazo y los demás elementos de selección de píxeles de `specs/04` quedan para fases posteriores (no están en el alcance de F1).
+- El Navegador no refresca su rectángulo al desplazar el visor sin cambiar el zoom.
+- No se ha medido el objetivo de 60 fps en una máquina de referencia; la prueba automática solo comprueba < 16 ms por segmento de pincel.
+- Recuperación tras fallo y diálogos nativos de guardado/cierre no tienen e2e (los diálogos nativos no se pueden automatizar); el IPC subyacente sí.
+- `vitest bench` ya no existe en Vitest 5: los benchmarks de `tests/core/bench` son pruebas con umbral.
+
 ## [0.1.0] — F0 · Esqueleto
 
 ### Añadido

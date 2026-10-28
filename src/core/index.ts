@@ -21,3 +21,4 @@ export {
 export * from './tools/selection'
 export { encodePng, decodePng, scaleNearest } from './io/png'
 export { saveDocument, loadDocument, exportImagePng, FormatError } from './io/pixeltor'
+export { brushOffsets, linePoints } from './raster/draw'

@@ -25,7 +25,7 @@ test.beforeAll(async () => {
 })
 
 test.afterAll(async () => {
-  await app.close()
+  await app.evaluate(({ app: electronApp }) => electronApp.exit(0))
 })
 
 test('la ventana abre con el shell completo', async () => {
