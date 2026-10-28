@@ -1,0 +1,243 @@
+{
+  "app": {
+    "name": "Pixeltor"
+  },
+  "menus": {
+    "file": "Archivo",
+    "edit": "Editar",
+    "object": "Objeto",
+    "layer": "Capa",
+    "effect": "Efecto",
+    "image": "Imagen",
+    "select": "Seleccionar",
+    "view": "Ver",
+    "window": "Ventana",
+    "help": "Ayuda",
+    "theme": "Tema",
+    "effectCategories": "Categorías de efectos"
+  },
+  "actions": {
+    "file": {
+      "new": "Nuevo…",
+      "open": "Abrir…",
+      "save": "Guardar",
+      "saveAs": "Guardar como…",
+      "export": "Exportar como…",
+      "exportAgain": "Exportar de nuevo",
+      "close": "Cerrar",
+      "quit": "Salir"
+    },
+    "edit": {
+      "undo": "Deshacer",
+      "redo": "Rehacer",
+      "cut": "Cortar",
+      "copy": "Copiar",
+      "paste": "Pegar",
+      "delete": "Borrar",
+      "preferences": "Preferencias…"
+    },
+    "object": {
+      "group": "Agrupar",
+      "ungroup": "Desagrupar",
+      "bringFront": "Traer al frente",
+      "bringForward": "Traer adelante",
+      "sendBackward": "Enviar atrás",
+      "sendBack": "Enviar al fondo",
+      "stamp": "Estampar formas seleccionadas",
+      "stampAll": "Estampar todas las formas de la capa",
+      "convertToPath": "Convertir en trazado"
+    },
+    "layer": {
+      "new": "Nueva capa",
+      "duplicate": "Duplicar capa",
+      "delete": "Eliminar capa",
+      "mergeDown": "Combinar hacia abajo",
+      "mergeVisible": "Combinar visibles",
+      "flatten": "Acoplar imagen",
+      "rasterizeEffects": "Rasterizar efectos de capa",
+      "lockAlpha": "Bloquear transparencia"
+    },
+    "effect": {
+      "shadowLight": "Sombras e iluminación",
+      "outline": "Contornos",
+      "blur": "Desenfoque",
+      "distort": "Distorsión",
+      "color": "Color"
+    },
+    "image": {
+      "new": "Nueva imagen",
+      "prev": "Imagen anterior",
+      "next": "Imagen siguiente",
+      "size": "Tamaño de imagen…",
+      "canvasSize": "Tamaño de lienzo…",
+      "crop": "Recortar a la selección"
+    },
+    "select": {
+      "all": "Seleccionar todo",
+      "none": "Deseleccionar",
+      "invert": "Invertir selección"
+    },
+    "view": {
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "zoom100": "Zoom 100 %",
+      "zoomFit": "Encajar en la ventana",
+      "pixelGrid": "Cuadrícula de píxeles",
+      "guides": "Mostrar guías",
+      "smartGuides": "Guías inteligentes",
+      "snapPixel": "Ajustar a píxel",
+      "hidePaths": "Ocultar trazados",
+      "preview": "Modo vista previa",
+      "onion": "Papel cebolla",
+      "play": "Reproducir / pausar"
+    },
+    "theme": {
+      "oscuro": "Oscuro",
+      "gris": "Gris medio",
+      "claro": "Claro"
+    },
+    "window": {
+      "splitV": "Dividir visor en vertical",
+      "splitH": "Dividir visor en horizontal",
+      "hidePanels": "Ocultar todos los paneles",
+      "hidePanelsKeepTools": "Ocultar paneles (menos herramientas)"
+    },
+    "help": {
+      "commandPalette": "Paleta de comandos",
+      "about": "Acerca de Pixeltor"
+    },
+    "tool": {
+      "sel": "Selección",
+      "dsel": "Selección directa",
+      "groupSel": "Selección de grupo",
+      "marquee": "Marco rectangular",
+      "marqueeEll": "Marco elíptico",
+      "lasso": "Lazo",
+      "polyLasso": "Lazo poligonal",
+      "wand": "Varita mágica",
+      "pen": "Pluma",
+      "addAnchor": "Añadir ancla",
+      "delAnchor": "Eliminar ancla",
+      "convAnchor": "Convertir ancla",
+      "vpencil": "Lápiz vectorial",
+      "rect": "Rectángulo",
+      "ellipse": "Elipse",
+      "polygon": "Polígono",
+      "star": "Estrella",
+      "line": "Línea",
+      "pencil": "Lápiz",
+      "brush": "Pincel",
+      "shade": "Sombreado",
+      "eraser": "Borrador",
+      "bucket": "Bote de pintura",
+      "replaceColor": "Reemplazar color",
+      "gradient": "Degradado",
+      "eyedrop": "Cuentagotas",
+      "hand": "Mano",
+      "zoom": "Zoom"
+    },
+    "colors": {
+      "toggleActive": "Alternar relleno y contorno activo",
+      "swap": "Intercambiar relleno y contorno",
+      "default": "Relleno y contorno por defecto"
+    },
+    "brush": {
+      "sizeDown": "Reducir tamaño de pincel",
+      "sizeUp": "Aumentar tamaño de pincel"
+    }
+  },
+  "titlebar": {
+    "workspace": "Espacio de trabajo",
+    "search": "Buscar comandos",
+    "searchSoon": "La paleta de comandos llega en F3"
+  },
+  "workspaces": {
+    "essentials": "Esenciales"
+  },
+  "controlbar": {
+    "label": "Barra de control",
+    "tool": "Herramienta",
+    "fill": "Relleno",
+    "stroke": "Contorno",
+    "opacity": "Opacidad"
+  },
+  "toolbar": {
+    "label": "Herramientas",
+    "fillStroke": "Relleno y contorno",
+    "swap": "Intercambiar relleno y contorno",
+    "defaults": "Relleno y contorno por defecto",
+    "color": "Color",
+    "gradient": "Degradado",
+    "none": "Ninguno",
+    "screenMode": "Modo de pantalla"
+  },
+  "docs": {
+    "tabs": "Documentos",
+    "untitled": "Sin título-{n}",
+    "close": "Cerrar documento",
+    "unsaved": "Cambios sin guardar",
+    "canvasLabel": "Lienzo {w} × {h} px al {zoom} %"
+  },
+  "viewer": {
+    "image": "Imagen",
+    "followsActive": "Sigue la activa",
+    "pixelGrid": "Cuadrícula de píxeles",
+    "tileGrid": "Cuadrícula de tiles",
+    "paths": "Trazados",
+    "onion": "Papel cebolla",
+    "mosaic": "Modo mosaico",
+    "play": "Reproducir en este visor",
+    "more": "Dividir, sincronizar…",
+    "name": "Visor {n}"
+  },
+  "frames": {
+    "title": "Imágenes",
+    "expand": "Expandir panel Imágenes",
+    "empty": "Imagen {n} de {total}",
+    "total": "Total {ms} ms"
+  },
+  "dock": {
+    "label": "Paneles",
+    "collapsed": "Paneles colapsados",
+    "options": "Opciones del panel",
+    "collapse": "Contraer panel",
+    "expand": "Expandir panel"
+  },
+  "panels": {
+    "properties": "Propiedades",
+    "layers": "Capas",
+    "appearance": "Apariencia",
+    "color": "Color",
+    "swatches": "Muestras",
+    "navigator": "Navegador",
+    "align": "Alinear",
+    "stroke": "Contorno",
+    "gradient": "Degradado",
+    "styles": "Estilos gráficos",
+    "preview": "Vista previa",
+    "pathfinder": "Buscatrazos",
+    "history": "Historial",
+    "emptyProperties": "Sin selección",
+    "emptyLayers": "Sin capas",
+    "emptyAppearance": "Sin forma seleccionada",
+    "emptyColor": "El selector de color llega en F1",
+    "emptySwatches": "Las muestras llegan en F1",
+    "emptyGeneric": "Este panel llega en una fase posterior"
+  },
+  "status": {
+    "label": "Barra de estado",
+    "zoom": "Zoom",
+    "size": "Tamaño de imagen",
+    "cursor": "Posición del cursor",
+    "color": "Color bajo el cursor",
+    "layer": "Capa",
+    "image": "Imagen",
+    "snapGrid": "Ajustar a rejilla de píxeles",
+    "snapAnchor": "Ajustar a anclas y centros",
+    "snapPaths": "Ajustar a trazados",
+    "snapGuides": "Ajustar a guías y tiles",
+    "snapCanvas": "Ajustar a bordes y centro del lienzo",
+    "snapLabel": "Ajustar a",
+    "none": "—"
+  }
+}

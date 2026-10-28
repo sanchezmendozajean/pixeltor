@@ -1,0 +1,48 @@
+/* Base global del renderer. Todo el color sale de tokens.css. */
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+input {
+  user-select: text;
+}
+
+/* Barra de título: arrastrable salvo los controles interactivos. */
+.pt-drag {
+  -webkit-app-region: drag;
+}
+.pt-nodrag {
+  -webkit-app-region: no-drag;
+}
+
+/* Scroll fino de 6 px que aparece al pasar el cursor. */
+.pt-scroll {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.pt-scroll:hover {
+  scrollbar-color: var(--border-input) transparent;
+}
+.is-dim {
+  opacity: 0.4;
+}
