@@ -45,6 +45,48 @@ export function fillPolygons(polys: Vec2[][], rule: FillRule, w: number, h: numb
   return cov
 }
 
+/** Un paso de erosión (4-vecinos). Fuera del lienzo cuenta como relleno: el borde del lienzo no deja contorno. */
+export function erode(c: Coverage, w: number, h: number, steps: number): Coverage {
+  let cur = c
+  for (let s = 0; s < steps; s++) {
+    const o = new Uint8Array(cur.length)
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x
+        if (!cur[i]) continue
+        const l = x === 0 || cur[i - 1]
+        const r = x === w - 1 || cur[i + 1]
+        const u = y === 0 || cur[i - w]
+        const d = y === h - 1 || cur[i + w]
+        if (l && r && u && d) o[i] = 255
+      }
+    cur = o
+  }
+  return cur
+}
+
+/** Dilatación (4-vecinos) `steps` veces. */
+export function dilate(c: Coverage, w: number, h: number, steps: number): Coverage {
+  let cur = c
+  for (let s = 0; s < steps; s++) {
+    const o = new Uint8Array(cur.length)
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x
+        if (
+          cur[i] ||
+          (x > 0 && cur[i - 1]) ||
+          (x < w - 1 && cur[i + 1]) ||
+          (y > 0 && cur[i - w]) ||
+          (y < h - 1 && cur[i + w])
+        )
+          o[i] = 255
+      }
+    cur = o
+  }
+  return cur
+}
+
 export function coverageOr(a: Coverage, b: Coverage): Coverage {
   const o = new Uint8Array(a.length)
   for (let i = 0; i < o.length; i++) o[i] = a[i]! | b[i]!

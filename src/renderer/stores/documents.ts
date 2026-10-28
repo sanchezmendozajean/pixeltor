@@ -26,6 +26,8 @@ export interface LayerRow {
   blendMode: Layer['blendMode']
   color: string
   active: boolean
+  /** De arriba abajo. */
+  shapes: { id: ID; name: string; visible: boolean; selected: boolean }[]
 }
 
 export interface HistoryRow {
@@ -69,7 +71,13 @@ export const useDocumentsStore = defineStore('documents', () => {
       opacity: l.opacity,
       blendMode: l.blendMode,
       color: l.color,
-      active: l.id === s.activeLayerId
+      active: l.id === s.activeLayerId,
+      shapes: [...l.shapes].reverse().map((sh) => ({
+        id: sh.id,
+        name: sh.name,
+        visible: sh.visible,
+        selected: s.selectedShapes.includes(sh.id)
+      }))
     }))
   })
 

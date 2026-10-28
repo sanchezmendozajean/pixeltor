@@ -7,7 +7,7 @@ import ActionButton from '@/components/ActionButton.vue'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
-import { CanvasController, type Notice } from '@/tools/controller'
+import { CanvasController, type Notice, setActiveController } from '@/tools/controller'
 import { GlView } from '@/viewport/GlView'
 import { drawOverlay } from '@/viewport/overlay'
 import type { Workspace } from '@/session/workspace'
@@ -38,6 +38,7 @@ const controller = new CanvasController(
   () => ws,
   (n) => (notice.value = n)
 )
+setActiveController(controller)
 
 function schedule(): void {
   if (!raf) raf = requestAnimationFrame(frame)
@@ -170,6 +171,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('keyup', onKeyUp)
   clearInterval(ants)
+  setActiveController(null)
   cancelAnimationFrame(raf)
   bind(null)
 })
@@ -183,6 +185,13 @@ watch(
 )
 // El overlay (selección) y el cursor dependen del modelo; la rejilla y el tema, de la UI.
 watch(() => [docs.rev, tools.active, tools.brushSize, tools.brushShape, ui.pixelGrid], schedule)
+// Al cambiar de herramienta se termina el trazado de la Pluma en curso.
+watch(
+  () => tools.active,
+  (now, before) => {
+    if (before === 'pen' && now !== 'pen') controller.shapes.finishPen(false)
+  }
+)
 watch(
   () => ui.theme,
   () => {

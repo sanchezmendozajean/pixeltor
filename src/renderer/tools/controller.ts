@@ -22,6 +22,13 @@ import { hexToRgba, rgbaToHex } from '@/stores/colorUtil'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
 import type { OverlayState } from '@/viewport/overlay'
+import { SHAPE_TOOLS, ShapeTools } from './shapeTools'
+
+/** Controlador del visor activo; lo usan las acciones (Intro/Esc de la Pluma). */
+export let activeController: CanvasController | null = null
+export function setActiveController(c: CanvasController | null): void {
+  activeController = c
+}
 
 export type Notice = 'hidden' | 'locked' | 'floating' | null
 
@@ -44,13 +51,17 @@ export class CanvasController {
   private marquee: { x0: number; y0: number; x1: number; y1: number; op: MaskOp } | null = null
   private move: { mv: SelectionMove; x0: number; y0: number } | null = null
   private lastPaintPoint = new WeakMap<Workspace, { x: number; y: number }>()
+  readonly shapes: ShapeTools
+  private shapeActive: string | null = null
   spaceDown = false
   hover: { x: number; y: number } | null = null
 
   constructor(
     private readonly getWs: () => Workspace | null,
     private readonly onNotice: (n: Notice) => void
-  ) {}
+  ) {
+    this.shapes = new ShapeTools(getWs)
+  }
 
   private get tools() {
     return useToolsStore()
@@ -84,6 +95,7 @@ export class CanvasController {
     }
     const m = this.marquee
     return {
+      shapes: this.shapes.overlay(),
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : null,
       cursor,
@@ -110,6 +122,21 @@ export class CanvasController {
     if (p.alt && (PAINT_TOOLS.has(tool) || tool === 'bucket') && tool !== 'eraser') {
       this.eyedrop(ws, x, y, p.button, p.ctrl)
       return
+    }
+
+    if (SHAPE_TOOLS.has(tool)) {
+      // V sobre una selección de píxeles mueve los píxeles; en cualquier otro caso trabaja con formas.
+      const mask = s.selection.mask
+      const onPixels = tool === 'sel' && !!mask && (mask.has(x, y) || !!s.selection.floating)
+      if (!onPixels) {
+        const near = (q: { x: number; y: number }) => {
+          const a = vp.toScreen(q.x, q.y)
+          return Math.hypot(a.x - p.sx, a.y - p.sy) < 6
+        }
+        this.shapeActive = tool
+        this.shapes.down(tool, x, y, { shift: p.shift, alt: p.alt }, near)
+        return
+      }
     }
 
     switch (tool) {
@@ -201,12 +228,17 @@ export class CanvasController {
     const x = Math.floor(pt.x)
     const y = Math.floor(pt.y)
     this.hover = { x, y }
+    this.shapes.hover(x, y, this.tools.active)
     useDocumentsStore().cursor = { x, y }
 
     if (this.panning) {
       vp.panBy(p.sx - this.panning.sx, p.sy - this.panning.sy)
       this.panning = { sx: p.sx, sy: p.sy }
       ws.refreshView()
+      return
+    }
+    if (this.shapeActive) {
+      this.shapes.move(this.shapeActive, x, y, { shift: p.shift, alt: p.alt })
       return
     }
     if (this.stroke && this.strokeLast) {
@@ -231,6 +263,11 @@ export class CanvasController {
   up(): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.shapeActive) {
+      this.shapes.up(this.shapeActive)
+      this.shapeActive = null
+      return
+    }
     if (this.panning) {
       this.panning = null
       return
@@ -266,6 +303,8 @@ export class CanvasController {
   }
 
   cancelInteraction(): void {
+    this.shapes.cancel()
+    this.shapeActive = null
     this.stroke?.end()
     this.stroke = null
     this.marquee = null

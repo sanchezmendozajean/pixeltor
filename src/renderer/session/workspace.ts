@@ -1,7 +1,7 @@
 // Workspace = documento abierto en una pestaña: sesión del core + visor + composición viva.
 // Es un objeto "crudo" (no reactivo): los buffers de píxeles nunca pasan por Pinia (regla 3).
 
-import { Bitmap, type DocumentSession, type Rect, composeImage } from '@core/index'
+import { Bitmap, type DocumentSession, type Shape, type Rect, composeImage } from '@core/index'
 import { Viewport } from '@/viewport/Viewport'
 
 export class Workspace {
@@ -11,6 +11,8 @@ export class Workspace {
   filePath: string | null = null
   /** Última ruta/escala de exportación, para «Exportar de nuevo». */
   lastExport: { path: string; scale: number } | null = null
+  /** Forma en construcción que se ve pixelada en vivo. */
+  private preview: Shape | null = null
   private redrawListeners = new Set<(r: Rect | null) => void>()
   private viewListeners = new Set<() => void>()
   private unsub: () => void
@@ -44,7 +46,8 @@ export class Workspace {
     const s = this.session
     const f = s.selection.floating
     composeImage(s.image, s.rasters, this.composite, rect ?? undefined, {
-      floating: f ? { layerId: s.activeLayerId, pixels: f } : null
+      floating: f ? { layerId: s.activeLayerId, pixels: f } : null,
+      preview: this.preview ? { layerId: s.activeLayerId, shape: this.preview } : null
     })
     for (const fn of this.redrawListeners) fn(rect)
   }
@@ -57,6 +60,12 @@ export class Workspace {
   /** Recompone una región mientras se pinta (antes de que el comando se confirme). */
   liveDirty(rect: Rect | null): void {
     if (rect) this.recompose(rect)
+  }
+
+  setPreview(shape: Shape | null): void {
+    if (!shape && !this.preview) return
+    this.preview = shape
+    this.recompose(null)
   }
 
   /** Cambió el zoom, el desplazamiento o la selección, pero no los píxeles. */

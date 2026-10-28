@@ -5,6 +5,7 @@ import ActionButton from '@/components/ActionButton.vue'
 import ColorPanel from '@/panels/ColorPanel.vue'
 import HistoryPanel from '@/panels/HistoryPanel.vue'
 import LayersPanel from '@/panels/LayersPanel.vue'
+import PropertiesPanel from '@/panels/PropertiesPanel.vue'
 import NavigatorPanel from '@/panels/NavigatorPanel.vue'
 import SwatchesPanel from '@/panels/SwatchesPanel.vue'
 import { t } from '@/i18n'
@@ -27,6 +28,7 @@ const color: PanelTab[] = [
 <template>
   <aside class="pt-dock" :aria-label="t('dock.label')">
     <Panel :tabs="properties" :body-height="150">
+      <template #properties><PropertiesPanel /></template>
       <template #navigator><NavigatorPanel /></template>
       <template #history><HistoryPanel /></template>
     </Panel>

@@ -2,6 +2,23 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
+## [Sin publicar] — F2 · Formas vectoriales (en curso)
+
+### Añadido
+
+- **Rasterizador pixel-perfect** (`src/core`): relleno por líneas de escaneo con muestreo en el centro del píxel (`nonzero` y `evenodd`), Bézier aplanada a 0,1 px, elipse por punto medio (círculos simétricos), contorno de 1 px por Bresenham con pixel-perfect (sin recortar esquinas marcadas), contornos de grosor > 1 centrados (uniones y remates) y anillos interior/exterior con desplazamiento.
+- **Formas**: rectángulo (radios por esquina), elipse, línea, polígono, estrella y trazado con anclas Bézier. Apariencia simple (relleno y contorno sólidos con orden, opacidad y modo de fusión por atributo). Las formas se guardan en `document.json` y se componen en vivo sobre el ráster de su capa sin modificarlo.
+- **Estampar** (`Ctrl+E`, `Ctrl+Shift+E`) con la regla de orden: si una forma tiene otras debajo que se solapan, se estampan también las inferiores. Prueba de invariante: el render antes y después es idéntico píxel a píxel.
+- **Herramientas**: Rectángulo (`M`), Elipse (`L`), Línea, Polígono, Estrella y Pluma (clic = esquina, arrastrar = ancla suave, clic en la primera = cerrar, Intro/Esc), con vista previa pixelada en vivo y Mayús para proporcional o ángulos de 45°. Selección (`V`): clic, Mayús+clic, mover arrastrando o con flechas, Supr y organizar (`Ctrl+]` y compañía).
+- **Interfaz**: overlay con trazado en el color de la capa, caja delimitadora, tiradores y anclas; formas listadas bajo su capa en el panel Capas; panel Propiedades contextual (relleno, contorno, grosor, alineación, radio, opacidad); opciones de formas en la barra de control.
+- Golden test de círculos de 3 a 64 px (huella en `__snapshots__`) y e2e de crear, seleccionar, mover y estampar.
+
+### Pendiente de F2
+
+- Selección directa (`A`), añadir/eliminar/convertir ancla, escalar y rotar con los tiradores de la caja, modo aislamiento y grupos, mover formas a otra capa desde la interfaz, convertir en trazado, y los widgets de radio.
+- `antialias` y trazos discontinuos no están implementados; el desplazamiento de contorno solo actúa con alineación interior/exterior.
+- Medir el objetivo de 30 fps al editar anclas en 1000×1000 (hoy cada forma se rasteriza a tamaño completo de imagen, con caché por contenido).
+
 ## [0.2.0] — F1 · Núcleo ráster
 
 ### Añadido

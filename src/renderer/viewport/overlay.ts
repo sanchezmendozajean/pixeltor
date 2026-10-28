@@ -52,7 +52,17 @@ function maskPath(mask: PixelMask): Path2D {
   return p
 }
 
+export interface ShapeOverlay {
+  lines: { pts: { x: number; y: number }[]; closed: boolean }[]
+  /** Color de la capa (specs/05). */
+  color: string
+  /** Caja delimitadora con tiradores (forma seleccionada). */
+  box: Rect | null
+  anchors: { x: number; y: number }[]
+}
+
 export interface OverlayState {
+  shapes?: ShapeOverlay[]
   mask: PixelMask | null
   marquee: Rect | null
   /** Píxel bajo el cursor y los desplazamientos de la punta (para el cursor exacto en zoom alto). */
@@ -75,6 +85,48 @@ export function drawOverlay(
     ctx.scale(vp.zoom, vp.zoom)
     fn()
     ctx.restore()
+  }
+
+  for (const sh of st.shapes ?? []) {
+    withImageSpace(() => {
+      ctx.lineWidth = 1 / vp.zoom
+      ctx.setLineDash([])
+      ctx.strokeStyle = sh.color
+      for (const l of sh.lines) {
+        if (!l.pts.length) continue
+        ctx.beginPath()
+        ctx.moveTo(l.pts[0]!.x, l.pts[0]!.y)
+        for (const p of l.pts.slice(1)) ctx.lineTo(p.x, p.y)
+        if (l.closed) ctx.closePath()
+        ctx.stroke()
+      }
+    })
+    ctx.strokeStyle = sh.color
+    ctx.fillStyle = '#fff'
+    ctx.lineWidth = 1
+    if (sh.box) {
+      const a = vp.toScreen(sh.box.x, sh.box.y)
+      const w = sh.box.w * vp.zoom
+      const h = sh.box.h * vp.zoom
+      ctx.strokeRect(a.x + 0.5, a.y + 0.5, w, h)
+      for (const [hx, hy] of [
+        [0, 0],
+        [0.5, 0],
+        [1, 0],
+        [0, 0.5],
+        [1, 0.5],
+        [0, 1],
+        [0.5, 1],
+        [1, 1]
+      ] as const) {
+        ctx.fillRect(a.x + hx * w - 2, a.y + hy * h - 2, 5, 5)
+        ctx.strokeRect(a.x + hx * w - 2.5, a.y + hy * h - 2.5, 5, 5)
+      }
+    }
+    for (const p of sh.anchors) {
+      const q = vp.toScreen(p.x, p.y)
+      ctx.strokeRect(q.x - 2.5, q.y - 2.5, 5, 5)
+    }
   }
 
   if (st.mask) {

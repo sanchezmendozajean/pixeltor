@@ -15,6 +15,10 @@ const docs = useDocumentsStore()
 const usesSize = computed(() => tools.active === 'brush' || tools.active === 'eraser')
 const usesShape = usesSize
 const usesFill = computed(() => tools.active === 'bucket' || tools.active === 'wand')
+const isShape = computed(() =>
+  ['rect', 'ellipse', 'polygon', 'star', 'line', 'pen'].includes(tools.active)
+)
+const closedShape = computed(() => ['rect', 'ellipse', 'polygon', 'star'].includes(tools.active))
 const usesSample = computed(() => usesFill.value || tools.active === 'eyedrop')
 
 const layer = computed(() => docs.layers.find((l) => l.active))
@@ -86,7 +90,59 @@ function onTolerance(e: Event): void {
       <input v-model="tools.sampleAll" type="checkbox" />
       {{ t('tooloptions.sampleAll') }}
     </label>
-    <span v-if="usesSize || usesFill || usesSample" class="pt-sep pt-sep--inset" />
+    <template v-if="isShape">
+      <label v-if="closedShape" class="pt-check-label">
+        <input v-model="tools.useFill" type="checkbox" />
+        {{ t('tooloptions.fill') }}
+      </label>
+      <label class="pt-check-label">
+        <input v-model="tools.useStroke" type="checkbox" />
+        {{ t('tooloptions.stroke') }}
+      </label>
+      <label class="pt-num small">
+        <span class="pt-num__lbl">{{ t('tooloptions.width') }}</span>
+        <span class="pt-numbox">
+          <input
+            v-model.number="tools.strokeWidth"
+            class="pt-input"
+            type="number"
+            min="1"
+            max="64"
+          />
+        </span>
+      </label>
+      <label v-if="tools.active === 'rect'" class="pt-num small">
+        <span class="pt-num__lbl">{{ t('tooloptions.radius') }}</span>
+        <span class="pt-numbox">
+          <input v-model.number="tools.cornerRadius" class="pt-input" type="number" min="0" />
+        </span>
+      </label>
+      <label v-if="tools.active === 'polygon'" class="pt-num small">
+        <span class="pt-num__lbl">{{ t('tooloptions.sides') }}</span>
+        <span class="pt-numbox">
+          <input
+            v-model.number="tools.polygonSides"
+            class="pt-input"
+            type="number"
+            min="3"
+            max="64"
+          />
+        </span>
+      </label>
+      <label v-if="tools.active === 'star'" class="pt-num small">
+        <span class="pt-num__lbl">{{ t('tooloptions.points') }}</span>
+        <span class="pt-numbox">
+          <input
+            v-model.number="tools.starPoints"
+            class="pt-input"
+            type="number"
+            min="3"
+            max="64"
+          />
+        </span>
+      </label>
+    </template>
+    <span v-if="usesSize || usesFill || usesSample || isShape" class="pt-sep pt-sep--inset" />
 
     <div class="pt-ctl">
       <span class="pt-ctl__lbl">{{ t('controlbar.fill') }}</span>

@@ -20,7 +20,15 @@ export const useToolsStore = defineStore('tools', {
     brushShape: 'square' as 'square' | 'round',
     tolerance: 0,
     contiguous: true,
-    sampleAll: false
+    sampleAll: false,
+    /** Opciones de formas. */
+    useFill: true,
+    useStroke: true,
+    strokeWidth: 1,
+    cornerRadius: 0,
+    polygonSides: 6,
+    starPoints: 5,
+    starRatio: 0.5
   }),
   actions: {
     setBrushSize(n: number) {

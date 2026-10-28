@@ -5,10 +5,10 @@ import { compositeOver } from '../raster/blend'
 import { ellipseMasks } from '../raster/ellipse'
 import {
   type Coverage,
-  coverageAnd,
-  coverageOr,
   coverageSub,
+  dilate,
   emptyCoverage,
+  erode,
   fillPolygons
 } from '../raster/scan'
 import { type Polyline, thickStroke, thinStroke } from '../raster/stroke'
@@ -144,16 +144,15 @@ function strokeMask(st: Stroke, lines: Polyline[], m: ShapeMasks, w: number, h: 
   const g = { cap: st.cap, join: st.join, miterLimit: st.miterLimit }
   const closedShape = lines.every((l) => l.closed)
   const width = Math.max(1, Math.round(st.width))
-  const C = (wd: number): Coverage =>
-    wd <= 0 ? emptyCoverage(w, h) : thickStroke(lines, wd, g, w, h)
   const off = Math.max(0, Math.round(st.offset))
   if (!closedShape || st.align === 'center') {
     if (width === 1) return m.thin ?? thinStroke(lines, st.pixelPerfect, w, h)
-    return C(width)
+    return thickStroke(lines, width, g, w, h)
   }
+  // Anillos de píxeles: erosión hacia dentro / dilatación hacia fuera del relleno.
   if (st.align === 'outside')
-    return coverageSub(C(2 * (off + width)), coverageOr(C(2 * off), m.fill))
-  return coverageSub(coverageAnd(C(2 * (off + width)), m.fill), C(2 * off))
+    return coverageSub(dilate(m.fill, w, h, off + width), dilate(m.fill, w, h, off))
+  return coverageSub(erode(m.fill, w, h, off), erode(m.fill, w, h, off + width))
 }
 
 function paintBitmap(

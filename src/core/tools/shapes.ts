@@ -5,7 +5,7 @@ import { cloneShape } from '../model/shapes'
 import { newId } from '../model/ids'
 import type { ID, Layer } from '../model/types'
 import { compositeOver } from '../raster/blend'
-import { renderShape } from '../render/shape'
+import { renderShape, renderShapeCached } from '../render/shape'
 import type { DocumentSession } from '../session'
 
 function findShape(
@@ -221,4 +221,62 @@ function overlaps(
   if (!a || !b) return false
   for (let i = 3; i < a.data.length; i += 4) if (a.data[i] && b.data[i]) return true
   return false
+}
+
+/** Forma más alta bajo el píxel (x, y); con `reach` px de tolerancia para contornos finos. */
+export function hitShape(s: DocumentSession, x: number, y: number, reach = 1): ID | null {
+  const { width: w, height: h } = s.image
+  for (let li = s.image.layers.length - 1; li >= 0; li--) {
+    const layer = s.image.layers[li]!
+    if (!layer.visible || layer.locked) continue
+    for (let si = layer.shapes.length - 1; si >= 0; si--) {
+      const sh = layer.shapes[si]!
+      if (!sh.visible || sh.locked) continue
+      const bmp = renderShapeCached(sh, w, h)
+      for (let dy = -reach; dy <= reach; dy++)
+        for (let dx = -reach; dx <= reach; dx++) {
+          const px = x + dx
+          const py = y + dy
+          if (px < 0 || py < 0 || px >= w || py >= h) continue
+          // el centro cuenta siempre; los vecinos solo para formas de contorno fino
+          if ((dx === 0 && dy === 0) || thinOnly(sh))
+            if (bmp.data[(py * w + px) * 4 + 3]) return sh.id
+        }
+    }
+  }
+  return null
+}
+
+function thinOnly(sh: Shape): boolean {
+  return sh.appearance.fills.every((f) => !f.enabled) || sh.kind === 'line'
+}
+
+/** Mover formas de forma interactiva: todo el arrastre es un único paso de historial. */
+export class ShapeMove {
+  private readonly tx
+  private readonly start: Map<ID, Mat2D>
+
+  constructor(
+    private readonly s: DocumentSession,
+    private readonly ids: ID[]
+  ) {
+    this.tx = s.begin(ids.length === 1 ? 'Mover forma' : `Mover ${ids.length} formas`)
+    this.start = new Map()
+    for (const id of ids) {
+      const f = findShape(s, id)
+      if (f && !f.layer.locked) this.start.set(id, [...f.shape.transform] as Mat2D)
+    }
+  }
+
+  moveBy(dx: number, dy: number): void {
+    for (const [id, m] of this.start) {
+      const f = findShape(this.s, id)
+      if (f) f.shape.transform = translateMat(m, dx, dy)
+    }
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+  }
+
+  end(): boolean {
+    return this.tx.commit({ model: true })
+  }
 }

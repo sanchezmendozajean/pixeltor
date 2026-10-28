@@ -336,6 +336,25 @@
     "round": "Redonda",
     "tolerance": "Tolerancia",
     "contiguous": "Contiguo",
-    "sampleAll": "Todas las capas"
+    "sampleAll": "Todas las capas",
+    "fill": "Relleno",
+    "stroke": "Contorno",
+    "width": "Grosor",
+    "radius": "Radio",
+    "sides": "Lados",
+    "points": "Puntas",
+    "ratio": "Proporción"
+  },
+  "properties": {
+    "fill": "Relleno",
+    "stroke": "Contorno",
+    "width": "Grosor del contorno",
+    "align": "Alineación del contorno",
+    "alignCenter": "Centro",
+    "alignInside": "Dentro",
+    "alignOutside": "Fuera",
+    "radius": "Radio",
+    "opacity": "Opacidad",
+    "many": "{n} formas seleccionadas"
   }
 }

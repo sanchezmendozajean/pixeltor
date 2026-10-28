@@ -10,8 +10,15 @@ import {
   invertSelection,
   pasteFloating,
   selectAll,
-  SelectionMove
+  SelectionMove,
+  arrangeShapes,
+  moveShapes,
+  removeShapes,
+  selectShapes,
+  stampAllShapes,
+  stampShapes
 } from '@core/index'
+import { activeController } from '@/tools/controller'
 import { ACTIONS } from './definitions'
 import { registerHandler } from './registry'
 import { closeWorkspace, exportPng, openFile, saveWorkspace } from '@/app/documentOps'
@@ -112,7 +119,13 @@ export function registerAppActions(): void {
       if (clipboard) pasteFloating(ses(), clipboard.bitmap, clipboard.x, clipboard.y)
     }
   })
-  registerHandler('edit.delete', { enabled: has, run: () => void deletePixels(ses()) })
+  registerHandler('edit.delete', {
+    enabled: has,
+    run: () => {
+      if (ses().selectedShapes.length) removeShapes(ses(), ses().selectedShapes)
+      else deletePixels(ses())
+    }
+  })
   registerHandler('selection.fill', {
     enabled: has,
     run: () => void fillPixels(ses(), hexToRgba(colors.fill))
@@ -123,20 +136,34 @@ export function registerAppActions(): void {
   registerHandler('select.none', { enabled: has, run: () => deselect(ses()) })
   registerHandler('select.invert', { enabled: has, run: () => invertSelection(ses()) })
   registerHandler('selection.commit', {
-    enabled: () => has() && !!ses().selection.floating,
-    run: () => commitFloating(ses())
+    enabled: () => has() && (!!activeController?.shapes.penActive || !!ses().selection.floating),
+    run: () => {
+      if (activeController?.shapes.penActive) activeController.shapes.finishPen(false)
+      else commitFloating(ses())
+    }
   })
   registerHandler('selection.cancel', {
-    enabled: () => has() && !!(ses().selection.floating || ses().selection.mask),
+    enabled: () =>
+      has() &&
+      (!!activeController?.shapes.penActive ||
+        !!ses().selection.floating ||
+        !!ses().selection.mask ||
+        ses().selectedShapes.length > 0),
     run: () => {
-      if (ses().selection.floating) cancelFloating(ses())
-      else deselect(ses())
+      if (activeController?.shapes.penActive) activeController.shapes.cancelPen()
+      else if (ses().selection.floating) cancelFloating(ses())
+      else if (ses().selection.mask) deselect(ses())
+      else selectShapes(ses(), [])
     }
   })
   const nudge = (id: string, dx: number, dy: number) =>
     registerHandler(id, {
-      enabled: () => has() && !!ses().selection.mask,
+      enabled: () => has() && (!!ses().selection.mask || ses().selectedShapes.length > 0),
       run: () => {
+        if (!ses().selection.mask) {
+          moveShapes(ses(), ses().selectedShapes, dx, dy, `nudge:${dx}:${dy}`)
+          return
+        }
         const mv = new SelectionMove(ses(), true)
         mv.moveBy(dx, dy)
         mv.end()
@@ -150,6 +177,26 @@ export function registerAppActions(): void {
   nudge('selection.right10', 10, 0)
   nudge('selection.up10', 0, -10)
   nudge('selection.down10', 0, 10)
+
+  // ---------- Objeto ----------
+  const shapesSelected = () => has() && (docs.rev, ses().selectedShapes.length > 0)
+  registerHandler('object.stamp', {
+    enabled: shapesSelected,
+    run: () => void stampShapes(ses(), ses().selectedShapes)
+  })
+  registerHandler('object.stampAll', {
+    enabled: () => has() && (docs.rev, ses().activeLayer.shapes.length > 0),
+    run: () => void stampAllShapes(ses())
+  })
+  const arrange = (id: string, how: 'front' | 'forward' | 'backward' | 'back') =>
+    registerHandler(id, {
+      enabled: shapesSelected,
+      run: () => arrangeShapes(ses(), ses().selectedShapes, how)
+    })
+  arrange('object.bringFront', 'front')
+  arrange('object.bringForward', 'forward')
+  arrange('object.sendBackward', 'backward')
+  arrange('object.sendBack', 'back')
 
   // ---------- Capa ----------
   registerHandler('layer.new', { enabled: has, run: () => void ses().addLayer() })

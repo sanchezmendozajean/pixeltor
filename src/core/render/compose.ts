@@ -1,12 +1,15 @@
 import type { ID, PxImage } from '../model/types'
 import { Bitmap, type Rect, clipRect } from '../raster/bitmap'
 import { compositeOver } from '../raster/blend'
-import { renderShapeCached } from './shape'
+import type { Shape } from '../model/shapes'
+import { renderShape, renderShapeCached } from './shape'
 import type { FloatingPixels } from '../raster/mask'
 
 export interface ComposeExtras {
   /** Píxeles flotantes que se ven encima de la capa indicada. */
   floating?: { layerId: ID; pixels: FloatingPixels } | null
+  /** Forma en construcción (vista previa pixelada en vivo) sobre la capa indicada. */
+  preview?: { layerId: ID; shape: Shape } | null
 }
 
 /**
@@ -31,7 +34,8 @@ export function composeImage(
     if (!layer.visible || layer.opacity <= 0) continue
     let src = rasters.get(layer.raster.id)
     if (!src) continue
-    if (layer.shapes.length) {
+    const pv = extras.preview && extras.preview.layerId === layer.id ? extras.preview.shape : null
+    if (layer.shapes.length || pv) {
       // Estampado virtual: el ráster base + las formas visibles, de abajo arriba.
       shapeScratch ??= new Bitmap(img.width, img.height)
       shapeScratch.data.set(src.data)
@@ -45,6 +49,14 @@ export function composeImage(
           r
         )
       }
+      if (pv)
+        compositeOver(
+          shapeScratch,
+          renderShape(pv, img.width, img.height),
+          pv.blendMode,
+          pv.opacity,
+          r
+        )
       src = shapeScratch
     }
     const f = extras.floating

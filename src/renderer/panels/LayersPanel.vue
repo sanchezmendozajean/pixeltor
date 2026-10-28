@@ -2,7 +2,7 @@
 // Panel Capas: lista (arriba = capa superior), visibilidad, bloqueo, renombrar, reordenar
 // arrastrando, y opacidad / modo de fusión / bloqueo de transparencia de la capa activa.
 import { computed, nextTick, ref } from 'vue'
-import { BLEND_MODES, type BlendMode } from '@core/index'
+import { BLEND_MODES, type BlendMode, selectShapes } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import LayerThumb from './LayerThumb.vue'
@@ -17,6 +17,17 @@ const dropIndex = ref<number | null>(null)
 
 const active = computed(() => docs.layers.find((l) => l.active))
 const opacityPct = computed(() => Math.round((active.value?.opacity ?? 1) * 100))
+
+function onShapeClick(layerId: string, id: string, e: MouseEvent): void {
+  const s = docs.session
+  if (!s) return
+  s.setActiveLayer(layerId)
+  const cur = s.selectedShapes
+  selectShapes(
+    s,
+    e.shiftKey ? (cur.includes(id) ? cur.filter((i) => i !== id) : [...cur, id]) : [id]
+  )
+}
 
 function setProps(
   id: string,
@@ -60,61 +71,72 @@ function onDrop(rowIndex: number) {
 <template>
   <div class="layers">
     <ul class="list pt-scroll" role="listbox" :aria-label="t('panels.layers')">
-      <li
-        v-for="(l, i) in docs.layers"
-        :key="l.id"
-        class="pt-lrow"
-        :class="{
-          'is-current': l.active,
-          'is-hidden': !l.visible,
-          'is-drop': dropIndex === i && dragId !== l.id
-        }"
-        role="option"
-        :aria-selected="l.active"
-        draggable="true"
-        @click="docs.session?.setActiveLayer(l.id)"
-        @dragstart="dragId = l.id"
-        @dragover.prevent="dropIndex = i"
-        @dragleave="dropIndex = null"
-        @drop.prevent="onDrop(i)"
-        @dragend="((dragId = null), (dropIndex = null))"
-      >
-        <button
-          type="button"
-          class="pt-lcol"
-          :aria-label="t('layers.visible')"
-          :aria-pressed="l.visible"
-          @click.stop="setProps(l.id, { visible: !l.visible })"
+      <template v-for="(l, i) in docs.layers" :key="l.id">
+        <li
+          class="pt-lrow"
+          :class="{
+            'is-current': l.active,
+            'is-hidden': !l.visible,
+            'is-drop': dropIndex === i && dragId !== l.id
+          }"
+          role="option"
+          :aria-selected="l.active"
+          draggable="true"
+          @click="docs.session?.setActiveLayer(l.id)"
+          @dragstart="dragId = l.id"
+          @dragover.prevent="dropIndex = i"
+          @dragleave="dropIndex = null"
+          @drop.prevent="onDrop(i)"
+          @dragend="((dragId = null), (dropIndex = null))"
         >
-          <PtIcon :name="l.visible ? 'eye' : 'eyeOff'" />
-        </button>
-        <span class="pt-lbar" :style="{ background: l.color }" />
-        <LayerThumb :layer-id="l.id" />
-        <input
-          v-if="editing === l.id"
-          :id="`ren-${l.id}`"
-          v-model="draft"
-          class="pt-input rename"
-          :aria-label="t('layers.rename')"
-          @click.stop
-          @keydown.enter.prevent="commitRename"
-          @keydown.escape.prevent="editing = null"
-          @blur="commitRename"
-        />
-        <span v-else class="pt-lname" @dblclick.stop="startRename(l.id, l.name)">
-          {{ l.name }}
-          <em v-if="l.lockAlpha"> · α</em>
-        </span>
-        <button
-          type="button"
-          class="pt-lcol pt-lcol--lock"
-          :aria-label="t('layers.lock')"
-          :aria-pressed="l.locked"
-          @click.stop="setProps(l.id, { locked: !l.locked })"
+          <button
+            type="button"
+            class="pt-lcol"
+            :aria-label="t('layers.visible')"
+            :aria-pressed="l.visible"
+            @click.stop="setProps(l.id, { visible: !l.visible })"
+          >
+            <PtIcon :name="l.visible ? 'eye' : 'eyeOff'" />
+          </button>
+          <span class="pt-lbar" :style="{ background: l.color }" />
+          <LayerThumb :layer-id="l.id" />
+          <input
+            v-if="editing === l.id"
+            :id="`ren-${l.id}`"
+            v-model="draft"
+            class="pt-input rename"
+            :aria-label="t('layers.rename')"
+            @click.stop
+            @keydown.enter.prevent="commitRename"
+            @keydown.escape.prevent="editing = null"
+            @blur="commitRename"
+          />
+          <span v-else class="pt-lname" @dblclick.stop="startRename(l.id, l.name)">
+            {{ l.name }}
+            <em v-if="l.lockAlpha"> · α</em>
+          </span>
+          <button
+            type="button"
+            class="pt-lcol pt-lcol--lock"
+            :aria-label="t('layers.lock')"
+            :aria-pressed="l.locked"
+            @click.stop="setProps(l.id, { locked: !l.locked })"
+          >
+            <PtIcon :name="l.locked ? 'lock' : 'unlock'" />
+          </button>
+        </li>
+        <li
+          v-for="sh in l.shapes"
+          :key="sh.id"
+          class="pt-lrow pt-srow"
+          :class="{ 'is-selected': sh.selected, 'is-hidden': !sh.visible }"
+          @click="onShapeClick(l.id, sh.id, $event)"
         >
-          <PtIcon :name="l.locked ? 'lock' : 'unlock'" />
-        </button>
-      </li>
+          <span class="indent" />
+          <span class="pt-lbar" :style="{ background: l.color }" />
+          <span class="pt-lname">{{ sh.name }}</span>
+        </li>
+      </template>
     </ul>
 
     <div v-if="active" class="props">
@@ -164,6 +186,10 @@ button.pt-lcol {
   border: 0;
   background: none;
   padding: 0;
+}
+.indent {
+  width: 38px;
+  flex: none;
 }
 .rename {
   flex: 1;
