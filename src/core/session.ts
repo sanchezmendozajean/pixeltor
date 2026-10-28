@@ -23,6 +23,7 @@ export interface Snapshot {
   layers: Layer[]
   activeLayerId: ID
   selection: SelectionState
+  shapes: ID[]
 }
 
 export interface ChangeEvent {
@@ -154,6 +155,8 @@ export class DocumentSession {
   activeImageId: ID
   activeLayerId: ID
   selection: SelectionState = { mask: null, floating: null }
+  /** Formas seleccionadas (herramienta Selección). */
+  selectedShapes: ID[] = []
   private listeners = new Set<(e: ChangeEvent) => void>()
 
   constructor(
@@ -209,7 +212,8 @@ export class DocumentSession {
       imageId: this.activeImageId,
       layers: this.image.layers.map(cloneLayerMeta),
       activeLayerId: this.activeLayerId,
-      selection: { ...this.selection }
+      selection: { ...this.selection },
+      shapes: [...this.selectedShapes]
     }
   }
 
@@ -219,6 +223,7 @@ export class DocumentSession {
     img.layers = snap.layers.map(cloneLayerMeta)
     this.activeLayerId = snap.activeLayerId
     this.selection = { ...snap.selection }
+    this.selectedShapes = [...snap.shapes]
     this.emit({ imageId: img.id, dirty, structure: true })
   }
 

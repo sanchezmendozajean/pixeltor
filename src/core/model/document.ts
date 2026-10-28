@@ -1,5 +1,6 @@
 import { FORMAT_VERSION } from './version'
 import { newId } from './ids'
+import { cloneShape } from './shapes'
 import type { ID, Layer, PixeltorDocument, PxImage } from './types'
 import { MAX_SIZE } from './types'
 
@@ -64,5 +65,10 @@ export function findLayer(img: PxImage, id: ID): Layer | undefined {
 
 /** Copia de los metadatos de una capa (el ráster se comparte por id). */
 export function cloneLayerMeta(l: Layer): Layer {
-  return { ...l, raster: { ...l.raster }, shapes: [...l.shapes], effects: [...l.effects] }
+  return {
+    ...l,
+    raster: { ...l.raster },
+    shapes: l.shapes.map(cloneShape),
+    effects: [...l.effects]
+  }
 }

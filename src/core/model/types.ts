@@ -26,6 +26,8 @@ export const BLEND_MODES: readonly BlendMode[] = [
   'difference'
 ]
 
+import type { Shape } from './shapes'
+
 export interface RasterRef {
   id: ID
   width: number
@@ -42,8 +44,8 @@ export interface Layer {
   blendMode: BlendMode
   color: string
   raster: RasterRef
-  /** Reservado para F2/F4; en F1 siempre vacío. */
-  shapes: unknown[]
+  /** [0] = forma inferior. */
+  shapes: Shape[]
   effects: unknown[]
 }
 

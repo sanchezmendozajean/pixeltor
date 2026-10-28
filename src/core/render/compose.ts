@@ -1,6 +1,7 @@
 import type { ID, PxImage } from '../model/types'
 import { Bitmap, type Rect, clipRect } from '../raster/bitmap'
 import { compositeOver } from '../raster/blend'
+import { renderShapeCached } from './shape'
 import type { FloatingPixels } from '../raster/mask'
 
 export interface ComposeExtras {
@@ -25,10 +26,27 @@ export function composeImage(
     out.data.fill(0, (y * out.width + r.x) * 4, (y * out.width + r.x + r.w) * 4)
   }
   let scratch: Bitmap | null = null
+  let shapeScratch: Bitmap | null = null
   for (const layer of img.layers) {
     if (!layer.visible || layer.opacity <= 0) continue
     let src = rasters.get(layer.raster.id)
     if (!src) continue
+    if (layer.shapes.length) {
+      // Estampado virtual: el ráster base + las formas visibles, de abajo arriba.
+      shapeScratch ??= new Bitmap(img.width, img.height)
+      shapeScratch.data.set(src.data)
+      for (const sh of layer.shapes) {
+        if (!sh.visible) continue
+        compositeOver(
+          shapeScratch,
+          renderShapeCached(sh, img.width, img.height),
+          sh.blendMode,
+          sh.opacity,
+          r
+        )
+      }
+      src = shapeScratch
+    }
     const f = extras.floating
     if (f && f.layerId === layer.id) {
       scratch ??= new Bitmap(img.width, img.height)
