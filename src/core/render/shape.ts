@@ -240,10 +240,12 @@ export function renderShapeRegion(s: Shape, w: number, h: number): ShapeBitmap |
     const reach = Math.max(st.width + st.offset, (st.width * Math.max(1, st.miterLimit)) / 2)
     margin = Math.max(margin, Math.ceil(reach) + 2)
   }
-  const rx = Math.max(0, Math.floor(x0) - margin)
-  const ry = Math.max(0, Math.floor(y0) - margin)
-  const rw = Math.min(w, Math.ceil(x1) + margin + 1) - rx
-  const rh = Math.min(h, Math.ceil(y1) + margin + 1) - ry
+  // La región puede salirse del lienzo hasta `margin` px: así un contorno interior no se pierde
+  // cuando la forma toca el borde del lienzo, y uno que cruza el borde no deja anillo en él.
+  const rx = Math.max(-margin, Math.floor(x0) - margin)
+  const ry = Math.max(-margin, Math.floor(y0) - margin)
+  const rw = Math.min(w + margin, Math.ceil(x1) + margin + 1) - rx
+  const rh = Math.min(h + margin, Math.ceil(y1) + margin + 1) - ry
   if (rw <= 0 || rh <= 0) return null
   const t = s.transform
   const shifted: Shape = { ...s, transform: [t[0], t[1], t[2], t[3], t[4] - rx, t[5] - ry] }
@@ -274,10 +276,15 @@ export function renderShape(s: Shape, w: number, h: number): Bitmap {
   const out = new Bitmap(w, h)
   const r = renderShapeRegion(s, w, h)
   if (!r) return out
-  for (let y = 0; y < r.bitmap.height; y++)
+  const x0 = Math.max(0, r.x)
+  const x1 = Math.min(w, r.x + r.bitmap.width)
+  for (let y = Math.max(0, r.y); y < Math.min(h, r.y + r.bitmap.height); y++)
     out.data.set(
-      r.bitmap.data.subarray(y * r.bitmap.width * 4, (y + 1) * r.bitmap.width * 4),
-      ((r.y + y) * w + r.x) * 4
+      r.bitmap.data.subarray(
+        ((y - r.y) * r.bitmap.width + (x0 - r.x)) * 4,
+        ((y - r.y) * r.bitmap.width + (x1 - r.x)) * 4
+      ),
+      (y * w + x0) * 4
     )
   return out
 }

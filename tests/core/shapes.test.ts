@@ -191,3 +191,32 @@ describe('formas en la sesión', () => {
     expect(render(s).data).toEqual(before)
   })
 })
+
+describe('formas junto al borde del lienzo', () => {
+  it('el contorno interior no desaparece en el lado que toca el borde', () => {
+    const ap = makeAppearance(null, RED, 1)
+    ap.strokes[0]!.align = 'inside'
+    const b = renderShape(makeRect(0, 0, 8, 8, ap), 16, 16)
+    expect(count(b)).toBe(28)
+    expect(b.get(0, 3)).toBe(0xff0000ff)
+    expect(b.get(3, 0)).toBe(0xff0000ff)
+    const c = renderShape(makeRect(8, 8, 8, 8, ap), 16, 16)
+    expect(c.get(15, 12)).toBe(0xff0000ff)
+    expect(c.get(12, 15)).toBe(0xff0000ff)
+  })
+
+  it('una forma que cruza el borde recorta su contorno sin dibujar un anillo en el borde', () => {
+    const ap = makeAppearance(null, RED, 1)
+    ap.strokes[0]!.align = 'inside'
+    const b = renderShape(makeRect(-4, -4, 10, 10, ap), 16, 16)
+    expect(b.get(0, 2)).toBe(0)
+    expect(b.get(2, 0)).toBe(0)
+    expect(b.get(5, 2)).toBe(0xff0000ff)
+  })
+
+  it('las elipses pegadas al borde se mantienen', () => {
+    const e = renderShape(makeEllipse(4, 4, 4, 4, makeAppearance(RED, null)), 16, 16)
+    expect(e.get(0, 3)).toBe(0xff0000ff)
+    expect(e.get(3, 0)).toBe(0xff0000ff)
+  })
+})
