@@ -17,6 +17,8 @@ export const useUiStore = defineStore('ui', {
     activeAttr: '' as string,
     /** Índice de la parada de degradado seleccionada (panel Degradado y herramienta G). */
     activeStop: 0,
+    /** Objeto clave del panel Alinear (forma que no se mueve al alinear). */
+    keyShape: '' as string,
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {

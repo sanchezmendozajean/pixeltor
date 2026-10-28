@@ -410,5 +410,32 @@
     "eyedropper": "Muestrear color de la pantalla",
     "noGradient": "El relleno o contorno activo no es un degradado.",
     "noShape": "Selecciona una forma para editar su degradado"
+  },
+  "align": {
+    "to": "Alinear a",
+    "selection": "Selección",
+    "key": "Objeto clave",
+    "canvas": "Lienzo",
+    "align": "Alinear",
+    "distribute": "Distribuir",
+    "left": "Alinear a la izquierda",
+    "centerH": "Centrar horizontalmente",
+    "right": "Alinear a la derecha",
+    "top": "Alinear arriba",
+    "centerV": "Centrar verticalmente",
+    "bottom": "Alinear abajo",
+    "hStart": "Distribuir bordes izquierdos",
+    "hCenter": "Distribuir centros horizontales",
+    "hEnd": "Distribuir bordes derechos",
+    "vStart": "Distribuir bordes superiores",
+    "vCenter": "Distribuir centros verticales",
+    "vEnd": "Distribuir bordes inferiores",
+    "spacing": "Espaciado",
+    "horizontal": "↔",
+    "vertical": "↕",
+    "keyHint": "Con la selección (V), haz clic en una forma ya seleccionada para marcarla como clave.",
+    "keyOn": "Objeto clave marcado (trazo grueso); vuelve a hacer clic para quitarlo.",
+    "spacingH": "Espaciado horizontal",
+    "spacingV": "Espaciado vertical"
   }
 }

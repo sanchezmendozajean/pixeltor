@@ -84,6 +84,22 @@ const collapsed = ref(false)
 .pt-panel {
   flex: 1 1 0;
   min-height: 0;
+  min-width: 0;
+}
+/* Las pestañas se acortan en vez de ensanchar el dock */
+.pt-phead {
+  min-width: 0;
+  overflow: hidden;
+}
+.pt-ptab {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-phead__tools {
+  flex: none;
 }
 .pt-panel.collapsed,
 .pt-panel.fixed {

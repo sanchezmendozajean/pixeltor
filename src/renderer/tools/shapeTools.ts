@@ -152,6 +152,7 @@ export class ShapeTools {
     T: Mat2D
     stopIndex: number
   } | null = null
+  private keyCandidate: ID | null = null
   private radiusDrag: RectRadiusDrag | null = null
   private rotating: { rot: ShapeRotate; start: number } | null = null
   private anchorDrag: { ad: AnchorDrag; x0: number; y0: number; started: boolean } | null = null
@@ -366,6 +367,8 @@ export class ShapeTools {
     const id = hitShape(s, p.x, p.y)
     if (id) {
       const cur = s.selectedShapes
+      // clic sin arrastre en una forma ya seleccionada (entre varias): objeto clave
+      this.keyCandidate = cur.length > 1 && cur.includes(id) && !mods.shift ? id : null
       if (mods.shift) selectShapes(s, cur.includes(id) ? cur.filter((i) => i !== id) : [...cur, id])
       else if (!cur.includes(id)) selectShapes(s, [id])
       const layer = s.image.layers.find((l) => l.shapes.some((sh) => sh.id === id))
@@ -560,6 +563,11 @@ export class ShapeTools {
     }
     if (this.moving) {
       if (this.moving.started) this.moving.mv.end()
+      else if (this.keyCandidate) {
+        const ui = useUiStore()
+        ui.keyShape = ui.keyShape === this.keyCandidate ? '' : this.keyCandidate
+      }
+      this.keyCandidate = null
       this.moving = null
       return
     }
@@ -663,6 +671,7 @@ export class ShapeTools {
         const entry: ShapeOverlay = {
           lines: shapeLines(sh),
           color: layerColor,
+          thick: selected && s.selectedShapes.length > 1 && item.id === useUiStore().keyShape,
           box: null,
           anchors: [],
           selectedAnchors: [],

@@ -58,6 +58,8 @@ export interface ShapeOverlay {
   color: string
   /** Caja delimitadora con tiradores (forma seleccionada). */
   box: Rect | null
+  /** Objeto clave del panel Alinear: se dibuja con trazo grueso. */
+  thick?: boolean
   anchors: { x: number; y: number }[]
   selectedAnchors: { x: number; y: number }[]
   handles: { a: { x: number; y: number }; b: { x: number; y: number } }[]
@@ -101,7 +103,7 @@ export function drawOverlay(
 
   for (const sh of st.shapes ?? []) {
     withImageSpace(() => {
-      ctx.lineWidth = 1 / vp.zoom
+      ctx.lineWidth = (sh.thick ? 3 : 1) / vp.zoom
       ctx.setLineDash([])
       ctx.strokeStyle = sh.color
       for (const l of sh.lines) {
