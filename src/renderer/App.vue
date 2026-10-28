@@ -10,6 +10,7 @@ import IconColumn from '@/layout/IconColumn.vue'
 import Dock from '@/layout/Dock.vue'
 import StatusBar from '@/layout/StatusBar.vue'
 import TooltipHost from '@/components/TooltipHost.vue'
+import CommandPalette from '@/dialogs/CommandPalette.vue'
 import DialogHost from '@/dialogs/DialogHost.vue'
 import { registerAppActions } from '@/actions/bindings'
 import { handleKeydown } from '@/actions/registry'
@@ -62,5 +63,6 @@ onBeforeUnmount(() => {
     <StatusBar />
     <TooltipHost />
     <DialogHost />
+    <CommandPalette />
   </div>
 </template>

@@ -80,6 +80,7 @@ export function registerAppActions(): void {
     run: () => (ui.showPaths = !ui.showPaths),
     checked: () => !ui.showPaths
   })
+  registerHandler('help.commandPalette', { run: () => (ui.palette = !ui.palette) })
   registerHandler('view.guides', {
     run: () => (ui.showGuides = !ui.showGuides),
     checked: () => ui.showGuides

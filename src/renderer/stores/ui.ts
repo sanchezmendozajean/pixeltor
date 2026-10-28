@@ -11,6 +11,8 @@ export const useUiStore = defineStore('ui', {
     showPaths: true,
     /** Mostrar las guías del lienzo (Ctrl+;). */
     showGuides: true,
+    /** Paleta de comandos abierta (Ctrl+K). */
+    palette: false,
     /** Diálogo modal abierto. */
     dialog: null as null | 'new' | 'export' | 'recovery',
     /** Mensaje breve no bloqueante (errores y avisos). */

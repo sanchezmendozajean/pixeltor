@@ -323,6 +323,11 @@
     "secondary": "Color de contorno",
     "saturationValue": "Saturación y brillo"
   },
+  "commands": {
+    "title": "Paleta de comandos",
+    "placeholder": "Escribe un comando…",
+    "none": "Sin resultados"
+  },
   "swatches": {
     "add": "Añadir el color actual a las muestras",
     "remove": "Quitar muestra",
