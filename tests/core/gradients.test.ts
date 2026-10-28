@@ -171,3 +171,22 @@ describe('degradados', () => {
     expect(parts.join('|')).toMatchSnapshot()
   })
 })
+
+describe('puntos medios', () => {
+  it('el punto medio desplaza el 50 % del color dentro del tramo', () => {
+    const stops = [
+      { offset: 0, color: BLACK, mid: 0.25 },
+      { offset: 1, color: WHITE }
+    ]
+    expect(colorAt(stops, 0.25).r).toBe(128)
+    expect(colorAt(stops, 0).r).toBe(0)
+    expect(colorAt(stops, 1).r).toBe(255)
+    // con mid 0,5 es el degradado normal
+    expect(
+      colorAt(
+        [stops[0]!, stops[1]!].map((s) => ({ ...s, mid: 0.5 })),
+        0.25
+      ).r
+    ).toBe(64)
+  })
+})

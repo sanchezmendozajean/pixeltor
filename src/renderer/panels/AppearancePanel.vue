@@ -21,6 +21,7 @@ import {
 import type { Stroke } from '@core/model/shapes'
 import PtIcon from '@/components/PtIcon.vue'
 import { useDocumentsStore } from '@/stores/documents'
+import { useUiStore } from '@/stores/ui'
 import { hexToRgba } from '@/stores/colorUtil'
 import { t, type I18nKey } from '@/i18n'
 
@@ -51,6 +52,8 @@ const rows = computed<Row[]>(() => {
   return out
 })
 const open = computed(() => rows.value.find((r) => r.id === openId.value) ?? null)
+const ui = useUiStore()
+watch(openId, (id) => (ui.activeAttr = id ?? ''))
 watch(shape, (s, prev) => {
   if (!s || s.id !== prev?.id) openId.value = null
 })

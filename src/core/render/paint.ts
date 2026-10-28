@@ -52,7 +52,11 @@ export function colorAt(stops: readonly GradientStop[], t: number): RGBA {
     if (t <= b.offset) {
       const a = stops[i - 1]!
       const span = b.offset - a.offset
-      const k = span <= 1e-9 ? 1 : (t - a.offset) / span
+      let k = span <= 1e-9 ? 1 : (t - a.offset) / span
+      // Punto medio: se remodela el tramo para que `mid` caiga en el 50 % del color.
+      const mid = a.mid ?? 0.5
+      if (mid !== 0.5 && k > 0 && k < 1)
+        k = Math.pow(k, Math.log(0.5) / Math.log(Math.min(0.99, Math.max(0.01, mid))))
       const mix = (p: number, q: number) => Math.round(p + (q - p) * k)
       return {
         r: mix(a.color.r, b.color.r),

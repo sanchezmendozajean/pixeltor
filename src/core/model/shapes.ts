@@ -25,6 +25,8 @@ export interface GradientStop {
   /** 0..1 */
   offset: number
   color: RGBA
+  /** Punto medio hacia la parada siguiente (0..1 del tramo; por defecto 0,5). */
+  mid?: number
 }
 
 export type DitherMatrix = 'bayer2' | 'bayer4' | 'bayer8' | 'checker'

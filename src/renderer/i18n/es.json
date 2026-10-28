@@ -397,5 +397,18 @@
       "bayer8": "Bayer 8×8",
       "checker": "Ajedrez"
     }
+  },
+  "gradient": {
+    "type": "Tipo",
+    "angle": "Ángulo",
+    "stop": "Parada",
+    "location": "Ubicación",
+    "color": "Color",
+    "edit": "Editar degradado",
+    "apply": "Aplicar degradado",
+    "removeStop": "Eliminar parada",
+    "eyedropper": "Muestrear color de la pantalla",
+    "noGradient": "El relleno o contorno activo no es un degradado.",
+    "noShape": "Selecciona una forma para editar su degradado"
   }
 }

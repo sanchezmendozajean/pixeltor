@@ -8,6 +8,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Degradados** lineal, radial y angular con paradas de color y alfa. **Modos de píxel**: suave, bandas (2–32 escalones), tramado (Bayer 2×2, 4×4, 8×8 y ajedrez) y cuantizado a paleta (en el modelo; sin editor aún). El tramado se ancla a coordenadas de imagen, así que dos formas contiguas casan con una sola (probado). Golden test con la huella de las 12 combinaciones matriz × tipo.
 - **Panel Apariencia**: pila de rellenos y contornos por forma, con orden (subir/bajar), visibilidad, opacidad y modo de fusión por atributo, duplicar, eliminar y añadir; editor de pintura (sólido o degradado, paradas, invertir, modo de píxel), y de contorno (grosor, alineación, desplazamiento).
+- **Panel Degradado** (como el de Illustrator): vista previa, tipo, ángulo, barra con el resultado pixelado real (bandas o tramado), paradas debajo (arrastrar, clic en el hueco para añadir), puntos medios (rombos) encima, color, opacidad y ubicación de la parada seleccionada, cuentagotas de pantalla y eliminar parada. Las paradas admiten punto medio en el modelo.
 - **Barra de estado**: tamaño W × H en píxeles de la forma que se dibuja o está seleccionada.
 
 ### Pendiente de F3

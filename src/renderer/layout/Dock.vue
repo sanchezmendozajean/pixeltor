@@ -3,6 +3,7 @@
 import Panel, { type PanelTab } from './Panel.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import ColorPanel from '@/panels/ColorPanel.vue'
+import GradientPanel from '@/panels/GradientPanel.vue'
 import HistoryPanel from '@/panels/HistoryPanel.vue'
 import AppearancePanel from '@/panels/AppearancePanel.vue'
 import LayersPanel from '@/panels/LayersPanel.vue'
@@ -22,7 +23,8 @@ const layers: PanelTab[] = [
 ]
 const color: PanelTab[] = [
   { id: 'color', label: 'panels.color', empty: 'panels.emptyColor' },
-  { id: 'swatches', label: 'panels.swatches', empty: 'panels.emptySwatches' }
+  { id: 'swatches', label: 'panels.swatches', empty: 'panels.emptySwatches' },
+  { id: 'gradient', label: 'panels.gradient', empty: 'panels.emptyGeneric' }
 ]
 </script>
 
@@ -44,9 +46,10 @@ const color: PanelTab[] = [
         </div>
       </template>
     </Panel>
-    <Panel :tabs="color" :body-height="150">
+    <Panel :tabs="color" :body-height="300">
       <template #color><ColorPanel /></template>
       <template #swatches><SwatchesPanel /></template>
+      <template #gradient><GradientPanel /></template>
     </Panel>
   </aside>
 </template>

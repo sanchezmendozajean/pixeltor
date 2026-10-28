@@ -13,6 +13,8 @@ export const useUiStore = defineStore('ui', {
     dialog: null as null | 'new' | 'export' | 'recovery',
     /** Mensaje breve no bloqueante (errores y avisos). */
     toast: '',
+    /** Relleno o contorno que editan los paneles Apariencia y Degradado. */
+    activeAttr: '' as string,
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {

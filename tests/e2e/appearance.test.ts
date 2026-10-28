@@ -37,6 +37,7 @@ test('apariencia: varios rellenos, degradado con tramado y reordenar', async () 
   await page.mouse.move(cx + 120, cy + 120, { steps: 6 })
   await page.mouse.up()
 
+  await page.screenshot({ path: 'test-results/f3-dbg.png' })
   await page.locator('.pt-ptab', { hasText: 'Apariencia' }).click()
   const rows = page.locator('.app .row')
   await expect(rows).toHaveCount(2)
@@ -55,4 +56,32 @@ test('apariencia: varios rellenos, degradado con tramado y reordenar', async () 
   await expect(rows).toHaveCount(3)
   await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
   await expect(page.getByRole('button', { name: 'Reordenar apariencia' })).toBeVisible()
+})
+
+test('panel Degradado: añadir parada, ubicación, tipo y modo de píxel', async () => {
+  await page.locator('.pt-ptab', { hasText: 'Degradado' }).click()
+  const panel = page.locator('.gradient-panel')
+  await expect(panel).toBeVisible()
+  const stops = panel.locator('.stop')
+  const before = await stops.count()
+  // clic en el hueco bajo la barra: nueva parada
+  const track = panel.locator('.track')
+  const tb = (await track.boundingBox())!
+  await page.mouse.click(tb.x + tb.width * 0.3, tb.y + 16)
+  await expect(stops).toHaveCount(before + 1)
+  // la parada nueva queda seleccionada: cambiar su ubicación
+  await panel.getByLabel('Ubicación').fill('42.5')
+  await panel.getByLabel('Ubicación').press('Enter')
+  await panel.getByLabel('Ubicación').blur()
+  await expect(panel.getByLabel('Ubicación')).toHaveValue('42.5')
+  await panel.getByRole('button', { name: 'Degradado radial' }).click()
+  await expect(panel.getByRole('button', { name: 'Degradado radial' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await panel.getByLabel('Modo de píxel').selectOption('bands')
+  await expect(panel.getByLabel('Escalones')).toBeVisible()
+  await page.screenshot({ path: 'test-results/f3-panel-degradado.png' })
+  await panel.getByRole('button', { name: 'Eliminar parada' }).click()
+  await expect(stops).toHaveCount(before)
 })
