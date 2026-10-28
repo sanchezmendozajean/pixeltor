@@ -103,7 +103,15 @@ export interface PathShape extends ShapeBase {
   fillRule: 'nonzero' | 'evenodd'
 }
 
-export type Shape = RectShape | EllipseShape | LineShape | PolygonShape | StarShape | PathShape
+/** Agrupa formas: se componen juntas y después se aplican su opacidad, modo y transformación. */
+export interface GroupShape extends ShapeBase {
+  kind: 'group'
+  /** [0] = inferior. Sus transformaciones son locales al grupo. */
+  children: Shape[]
+}
+
+export type Shape =
+  RectShape | EllipseShape | LineShape | PolygonShape | StarShape | PathShape | GroupShape
 export type ShapeKind = Shape['kind']
 
 export const color = (r: number, g: number, b: number, a = 255): RGBA => ({ r, g, b, a })
@@ -227,6 +235,12 @@ export const makePath = (subpaths: SubPath[], ap: Appearance): PathShape => ({
   kind: 'path',
   subpaths,
   fillRule: 'nonzero'
+})
+
+export const makeGroup = (children: Shape[]): GroupShape => ({
+  ...base('Grupo', 0, 0, { stack: [], fills: [], strokes: [] }),
+  kind: 'group',
+  children
 })
 
 export const corner = (x: number, y: number): Anchor => ({

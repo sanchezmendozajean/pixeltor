@@ -5,6 +5,7 @@ import {
   type Anchor,
   type Mat2D,
   type PathShape,
+  type RectShape,
   type Shape,
   type SubPath,
   type Vec2,
@@ -26,6 +27,7 @@ const corner = (x: number, y: number): Anchor => ({
 
 /** Convierte una forma paramétrica en trazado (conserva la transformación y la apariencia). */
 export function toPath(sh: Shape): PathShape {
+  if (sh.kind === 'group') throw new Error('Un grupo no se puede convertir en trazado')
   if (sh.kind === 'path') return sh
   let subpaths: SubPath[] = []
   switch (sh.kind) {
@@ -131,8 +133,8 @@ export function convertToPath(s: DocumentSession, ids: ID[]): boolean {
   let any = false
   for (const id of ids) {
     const f = findShape(s, id)
-    if (!f || f.shape.kind === 'path' || f.layer.locked) continue
-    f.layer.shapes[f.index] = toPath(f.shape)
+    if (!f || f.shape.kind === 'path' || f.shape.kind === 'group' || f.layer.locked) continue
+    f.list[f.index] = toPath(f.shape)
     any = true
   }
   if (any) tx.commit({ model: true })
@@ -172,10 +174,10 @@ export class AnchorDrag {
     targets: { subpath: number; index: number; part: AnchorPart }[]
   ) {
     const f = findShape(s, shapeId)
-    if (!f) throw new Error('forma desconocida')
+    if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
     this.tx = s.begin(targets.length > 1 ? `Mover ${targets.length} anclas` : 'Mover ancla')
-    if (f.shape.kind !== 'path') f.layer.shapes[f.index] = toPath(f.shape)
-    this.shape = f.layer.shapes[f.index] as PathShape
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    this.shape = f.list[f.index] as PathShape
     for (const t of targets) {
       const a = this.shape.subpaths[t.subpath]?.anchors[t.index]
       if (!a) continue
@@ -270,7 +272,7 @@ export function addAnchorAt(
   reach = 4
 ): boolean {
   const f = findShape(s, shapeId)
-  if (!f || f.layer.locked) return false
+  if (!f || f.shape.kind === 'group' || f.layer.locked) return false
   const sh = f.shape.kind === 'path' ? f.shape : toPath(f.shape)
   let best: { sp: number; i: number; t: number; d: number } | null = null
   sh.subpaths.forEach((sp, spi) => {
@@ -290,7 +292,7 @@ export function addAnchorAt(
   if (!best || (best as { d: number }).d > reach) return false
   const b = best as { sp: number; i: number; t: number }
   const tx = s.begin('Añadir ancla')
-  if (f.shape.kind !== 'path') f.layer.shapes[f.index] = sh
+  if (f.shape.kind !== 'path') f.list[f.index] = sh
   const sp = sh.subpaths[b.sp]!
   const a0 = sp.anchors[b.i]!
   const a1 = sp.anchors[(b.i + 1) % sp.anchors.length]!
@@ -306,16 +308,16 @@ export function addAnchorAt(
 /** Elimina un ancla; si el trazado se queda con menos de 2, se elimina la forma. */
 export function deleteAnchor(s: DocumentSession, ref: AnchorRef): boolean {
   const f = findShape(s, ref.shapeId)
-  if (!f || f.layer.locked) return false
+  if (!f || f.shape.kind === 'group' || f.layer.locked) return false
   const tx = s.begin('Eliminar ancla')
-  if (f.shape.kind !== 'path') f.layer.shapes[f.index] = toPath(f.shape)
-  const sh = f.layer.shapes[f.index] as PathShape
+  if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+  const sh = f.list[f.index] as PathShape
   const sp = sh.subpaths[ref.subpath]
   if (!sp) return false
   sp.anchors.splice(ref.index, 1)
   if (sp.anchors.length < 2) sh.subpaths.splice(ref.subpath, 1)
   if (!sh.subpaths.length) {
-    f.layer.shapes.splice(f.index, 1)
+    f.list.splice(f.index, 1)
     s.selectedShapes = s.selectedShapes.filter((i) => i !== sh.id)
   }
   tx.commit({ model: true })
@@ -325,10 +327,10 @@ export function deleteAnchor(s: DocumentSession, ref: AnchorRef): boolean {
 /** Convierte un ancla en esquina (sin tiradores) o en suave (tiradores según los vecinos). */
 export function convertAnchor(s: DocumentSession, ref: AnchorRef, smooth: boolean): boolean {
   const f = findShape(s, ref.shapeId)
-  if (!f || f.layer.locked) return false
+  if (!f || f.shape.kind === 'group' || f.layer.locked) return false
   const tx = s.begin(smooth ? 'Ancla suave' : 'Ancla de esquina')
-  if (f.shape.kind !== 'path') f.layer.shapes[f.index] = toPath(f.shape)
-  const sh = f.layer.shapes[f.index] as PathShape
+  if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+  const sh = f.list[f.index] as PathShape
   const sp = sh.subpaths[ref.subpath]
   const a = sp?.anchors[ref.index]
   if (!sp || !a) return false
@@ -451,7 +453,7 @@ export class ShapeScale {
       if (!f) continue
       const copy = cloneShape(orig)
       scaleShape(copy, sx, sy, anchor.x, anchor.y)
-      f.layer.shapes[f.index] = copy
+      f.list[f.index] = copy
     }
     this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
   }
@@ -496,8 +498,43 @@ export class ShapeRotate {
       if (!f) continue
       const copy = cloneShape(orig)
       copy.transform = multiply(m, copy.transform)
-      f.layer.shapes[f.index] = copy
+      f.list[f.index] = copy
     }
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+  }
+
+  end(): boolean {
+    return this.tx.commit({ model: true })
+  }
+}
+
+/** Radio de esquina del rectángulo arrastrando el widget (Alt: solo la esquina superior izquierda). */
+export class RectRadiusDrag {
+  private readonly tx
+  private readonly rect: RectShape
+  private readonly start: [number, number, number, number]
+
+  constructor(
+    private readonly s: DocumentSession,
+    id: ID
+  ) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind !== 'rect') throw new Error('no es un rectángulo')
+    this.rect = f.shape
+    this.start = [...f.shape.radius] as typeof this.start
+    this.tx = s.begin('Radio de esquina')
+  }
+
+  /** (fx, fy) en coordenadas de imagen; el radio es la proyección sobre la diagonal de la esquina. */
+  moveTo(fx: number, fy: number, single = false): void {
+    const inv = invert(this.rect.transform)
+    if (!inv) return
+    const l = apply(inv, { x: fx, y: fy })
+    const max = Math.min(this.rect.w, this.rect.h) / 2
+    const r = Math.max(0, Math.min(max, Math.round((l.x + l.y) / 2)))
+    this.rect.radius = single
+      ? ([r, this.start[1], this.start[2], this.start[3]] as typeof this.start)
+      : [r, r, r, r]
     this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
   }
 

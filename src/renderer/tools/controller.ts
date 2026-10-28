@@ -220,6 +220,14 @@ export class CanvasController {
     }
   }
 
+  /** Doble clic: entra en el modo aislamiento de un grupo (herramienta V). */
+  doubleClick(p: PointerInfo): void {
+    const ws = this.getWs()
+    if (!ws || this.tools.active !== 'sel') return
+    const pt = ws.viewport.toImage(p.sx, p.sy)
+    this.shapes.doubleClick(Math.floor(pt.x), Math.floor(pt.y))
+  }
+
   moveTo(p: PointerInfo): void {
     const ws = this.getWs()
     if (!ws) return

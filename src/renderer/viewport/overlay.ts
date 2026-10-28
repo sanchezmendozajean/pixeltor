@@ -67,6 +67,8 @@ export interface OverlayState {
   shapes?: ShapeOverlay[]
   /** Caja de la selección con tiradores de escala (herramienta V). */
   selBox?: Rect | null
+  /** Widget de radio de esquina (círculo interior), en coordenadas de imagen. */
+  radiusWidget?: { x: number; y: number } | null
   mask: PixelMask | null
   marquee: Rect | null
   /** Píxel bajo el cursor y los desplazamientos de la punta (para el cursor exacto en zoom alto). */
@@ -150,6 +152,18 @@ export function drawOverlay(
       ctx.fillStyle = sh.color
       ctx.fillRect(q.x - 3, q.y - 3, 7, 7)
     }
+  }
+
+  if (st.radiusWidget) {
+    const q = vp.toScreen(st.radiusWidget.x, st.radiusWidget.y)
+    ctx.setLineDash([])
+    ctx.lineWidth = 1
+    ctx.fillStyle = '#fff'
+    ctx.strokeStyle = '#3d8bff'
+    ctx.beginPath()
+    ctx.arc(q.x, q.y, 4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
   }
 
   if (st.selBox) {

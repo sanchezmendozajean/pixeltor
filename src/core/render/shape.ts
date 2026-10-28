@@ -1,7 +1,7 @@
 // Rasterización de formas: geometría → polilíneas → cobertura → ShapeBitmap (specs/03).
 
 import { Bitmap } from '../raster/bitmap'
-import { compositeOver } from '../raster/blend'
+import { compositeAt, compositeOver } from '../raster/blend'
 import { ellipseMasks } from '../raster/ellipse'
 import {
   type Coverage,
@@ -12,8 +12,8 @@ import {
   fillPolygons
 } from '../raster/scan'
 import { type Polyline, thickStroke, thinStroke } from '../raster/stroke'
-import { apply, flattenCubic, isTranslateOnly } from '../geometry/geometry'
-import type { Shape, Stroke, SubPath, Vec2 } from '../model/shapes'
+import { apply, flattenCubic, isTranslateOnly, multiply } from '../geometry/geometry'
+import type { GroupShape, Shape, Stroke, SubPath, Vec2 } from '../model/shapes'
 
 const TOL = 0.1
 
@@ -93,11 +93,19 @@ function localLines(s: Shape): Polyline[] {
     }
     case 'path':
       return s.subpaths.map(flattenSubPath)
+    case 'group':
+      return []
   }
+}
+
+/** Hijos del grupo con la transformación del grupo ya compuesta (coordenadas de imagen). */
+function flatChildren(g: GroupShape): Shape[] {
+  return g.children.map((c) => ({ ...c, transform: multiply(g.transform, c.transform) }))
 }
 
 /** Polilíneas en coordenadas de imagen. */
 export function shapeLines(s: Shape): Polyline[] {
+  if (s.kind === 'group') return flatChildren(s).flatMap(shapeLines)
   return localLines(s).map((l) => ({
     closed: l.closed,
     pts: l.pts.map((p) => apply(s.transform, p))
@@ -213,6 +221,7 @@ export interface ShapeBitmap {
  * es idéntico al de rasterizar la imagen entera.
  */
 export function renderShapeRegion(s: Shape, w: number, h: number): ShapeBitmap | null {
+  if (s.kind === 'group') return renderGroup(s, w, h)
   let x0 = Infinity
   let y0 = Infinity
   let x1 = -Infinity
@@ -239,6 +248,25 @@ export function renderShapeRegion(s: Shape, w: number, h: number): ShapeBitmap |
   const t = s.transform
   const shifted: Shape = { ...s, transform: [t[0], t[1], t[2], t[3], t[4] - rx, t[5] - ry] }
   return { x: rx, y: ry, bitmap: renderShapeFull(shifted, rw, rh) }
+}
+
+/** Un grupo se compone aparte (hijos de abajo arriba) y después se aplica como una sola forma. */
+function renderGroup(g: GroupShape, w: number, h: number): ShapeBitmap | null {
+  const parts: { sh: Shape; r: ShapeBitmap }[] = []
+  for (const c of flatChildren(g)) {
+    if (!c.visible) continue
+    const r = renderShapeRegion(c, w, h)
+    if (r) parts.push({ sh: c, r })
+  }
+  if (!parts.length) return null
+  const x0 = Math.min(...parts.map((p) => p.r.x))
+  const y0 = Math.min(...parts.map((p) => p.r.y))
+  const x1 = Math.max(...parts.map((p) => p.r.x + p.r.bitmap.width))
+  const y1 = Math.max(...parts.map((p) => p.r.y + p.r.bitmap.height))
+  const out = new Bitmap(x1 - x0, y1 - y0)
+  for (const { sh, r } of parts)
+    compositeAt(out, r.bitmap, r.x - x0, r.y - y0, sh.blendMode, sh.opacity)
+  return { x: x0, y: y0, bitmap: out }
 }
 
 /** Rasteriza la forma a una imagen completa (estampado y pruebas). */

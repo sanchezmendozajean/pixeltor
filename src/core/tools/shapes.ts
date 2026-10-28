@@ -1,22 +1,74 @@
 // Operaciones sobre formas vectoriales y estampado (specs/05, 07). Todo pasa por Transactions.
 
-import type { Mat2D, Shape } from '../model/shapes'
-import { cloneShape } from '../model/shapes'
+import { multiply } from '../geometry/geometry'
+import type { GroupShape, Mat2D, Shape } from '../model/shapes'
+import { cloneShape, makeGroup } from '../model/shapes'
 import { newId } from '../model/ids'
 import type { ID, Layer } from '../model/types'
 import { compositeOver } from '../raster/blend'
 import { renderShape, renderShapeCached, shapeAlphaAt } from '../render/shape'
 import type { DocumentSession } from '../session'
 
-export function findShape(
-  s: DocumentSession,
+export interface ShapeLocation {
+  layer: Layer
+  /** Lista que contiene la forma: la de la capa o los hijos de un grupo. */
+  list: Shape[]
+  index: number
+  shape: Shape
+  parent: GroupShape | null
+}
+
+function searchList(
+  layer: Layer,
+  list: Shape[],
+  parent: GroupShape | null,
   id: ID
-): { layer: Layer; index: number; shape: Shape } | null {
-  for (const layer of s.image.layers) {
-    const index = layer.shapes.findIndex((x) => x.id === id)
-    if (index >= 0) return { layer, index, shape: layer.shapes[index]! }
+): ShapeLocation | null {
+  for (let index = 0; index < list.length; index++) {
+    const shape = list[index]!
+    if (shape.id === id) return { layer, list, index, shape, parent }
+    if (shape.kind === 'group') {
+      const r = searchList(layer, shape.children, shape, id)
+      if (r) return r
+    }
   }
   return null
+}
+
+/** Localiza una forma en cualquier capa y a cualquier profundidad de grupos. */
+export function findShape(s: DocumentSession, id: ID): ShapeLocation | null {
+  for (const layer of s.image.layers) {
+    const r = searchList(layer, layer.shapes, null, id)
+    if (r) return r
+  }
+  return null
+}
+
+/** Todas las listas de formas de una capa (la de la capa y las de cada grupo). */
+function containers(layer: Layer): Shape[][] {
+  const out: Shape[][] = []
+  const walk = (list: Shape[]) => {
+    out.push(list)
+    for (const sh of list) if (sh.kind === 'group') walk(sh.children)
+  }
+  walk(layer.shapes)
+  return out
+}
+
+/** Copia de la forma con su transformación compuesta con la de sus grupos (coordenadas de imagen). */
+export function resolveShape(s: DocumentSession, id: ID): Shape | null {
+  const f = findShape(s, id)
+  if (!f) return null
+  const copy = cloneShape(f.shape)
+  const chain: Mat2D[] = []
+  let p = f.parent
+  while (p) {
+    chain.push(p.transform)
+    const pl = findShape(s, p.id)
+    p = pl?.parent ?? null
+  }
+  for (const m of chain) copy.transform = multiply(m, copy.transform)
+  return copy
 }
 
 export function getShape(s: DocumentSession, id: ID): Shape | null {
@@ -76,9 +128,13 @@ export function removeShapes(s: DocumentSession, ids: ID[]): boolean {
   const tx = s.begin(set.size === 1 ? 'Eliminar forma' : `Eliminar ${set.size} formas`)
   for (const layer of s.image.layers) {
     if (layer.locked) continue
-    const before = layer.shapes.length
-    layer.shapes = layer.shapes.filter((x) => !set.has(x.id))
-    any ||= layer.shapes.length !== before
+    for (const list of containers(layer)) {
+      for (let i = list.length - 1; i >= 0; i--)
+        if (set.has(list[i]!.id)) {
+          list.splice(i, 1)
+          any = true
+        }
+    }
   }
   s.selectedShapes = s.selectedShapes.filter((x) => !set.has(x))
   if (any) tx.commit({ model: true })
@@ -94,63 +150,128 @@ export type Arrange = 'front' | 'forward' | 'backward' | 'back'
 
 export function arrangeShapes(s: DocumentSession, ids: ID[], how: Arrange): void {
   const tx = s.begin('Organizar')
+  const sel = new Set(ids)
   for (const layer of s.image.layers) {
-    const sel = new Set(ids)
-    const list = layer.shapes
-    if (!list.some((x) => sel.has(x.id))) continue
-    if (how === 'front')
-      layer.shapes = [...list.filter((x) => !sel.has(x.id)), ...list.filter((x) => sel.has(x.id))]
-    else if (how === 'back')
-      layer.shapes = [...list.filter((x) => sel.has(x.id)), ...list.filter((x) => !sel.has(x.id))]
-    else if (how === 'forward') {
-      for (let i = list.length - 2; i >= 0; i--)
-        if (sel.has(list[i]!.id) && !sel.has(list[i + 1]!.id))
-          [list[i], list[i + 1]] = [list[i + 1]!, list[i]!]
-    } else {
-      for (let i = 1; i < list.length; i++)
-        if (sel.has(list[i]!.id) && !sel.has(list[i - 1]!.id))
-          [list[i], list[i - 1]] = [list[i - 1]!, list[i]!]
+    for (const list of containers(layer)) {
+      if (!list.some((x) => sel.has(x.id))) continue
+      let next: Shape[]
+      if (how === 'front')
+        next = [...list.filter((x) => !sel.has(x.id)), ...list.filter((x) => sel.has(x.id))]
+      else if (how === 'back')
+        next = [...list.filter((x) => sel.has(x.id)), ...list.filter((x) => !sel.has(x.id))]
+      else {
+        next = [...list]
+        if (how === 'forward') {
+          for (let i = next.length - 2; i >= 0; i--)
+            if (sel.has(next[i]!.id) && !sel.has(next[i + 1]!.id))
+              [next[i], next[i + 1]] = [next[i + 1]!, next[i]!]
+        } else {
+          for (let i = 1; i < next.length; i++)
+            if (sel.has(next[i]!.id) && !sel.has(next[i - 1]!.id))
+              [next[i], next[i - 1]] = [next[i - 1]!, next[i]!]
+        }
+      }
+      list.splice(0, list.length, ...next)
     }
   }
   tx.commit({ model: true })
 }
 
-/** Mueve formas a otra capa (quedan encima de las que ya tenga). */
+/** Mueve formas a otra capa (quedan encima de las que ya tenga). Las de grupos pierden el grupo. */
 export function moveShapesToLayer(s: DocumentSession, ids: ID[], layerId: ID): boolean {
   const target = s.image.layers.find((l) => l.id === layerId)
   if (!target || target.locked) return false
   const tx = s.begin('Mover a capa')
   const moved: Shape[] = []
-  for (const layer of s.image.layers) {
-    if (layer === target) continue
-    const keep: Shape[] = []
-    for (const sh of layer.shapes) (ids.includes(sh.id) ? moved : keep).push(sh)
-    layer.shapes = keep
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (!f || f.layer === target || f.layer.locked) continue
+    moved.push(f.parent ? resolveShape(s, id)! : f.shape)
+    f.list.splice(f.index, 1)
   }
   target.shapes.push(...moved)
   tx.commit({ model: true })
   return moved.length > 0
 }
 
+function reId(sh: Shape): void {
+  sh.id = newId()
+  if (sh.kind === 'group') sh.children.forEach(reId)
+}
+
 export function duplicateShapes(s: DocumentSession, ids: ID[], dx = 0, dy = 0): ID[] {
   const tx = s.begin('Duplicar forma')
   const created: ID[] = []
-  for (const layer of s.image.layers) {
-    const copies: Shape[] = []
-    for (const sh of layer.shapes) {
-      if (!ids.includes(sh.id)) continue
-      const c = cloneShape(sh)
-      c.id = newId()
-      c.name = `${sh.name} copia`
-      c.transform = translateMat(c.transform, dx, dy)
-      copies.push(c)
-      created.push(c.id)
-    }
-    layer.shapes.push(...copies)
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (!f) continue
+    const c = cloneShape(f.shape)
+    reId(c)
+    c.name = `${f.shape.name} copia`
+    c.transform = translateMat(c.transform, dx, dy)
+    f.list.splice(f.index + 1, 0, c)
+    created.push(c.id)
   }
   s.selectedShapes = created
   tx.commit({ model: true })
   return created
+}
+
+// ---------- Grupos ----------
+
+/** Agrupa formas de una misma lista (las de la capa de la primera). El grupo ocupa el lugar de la más alta. */
+export function groupShapes(s: DocumentSession, ids: ID[]): ID | null {
+  const first = ids.map((i) => findShape(s, i)).find(Boolean)
+  if (!first || first.layer.locked) return null
+  const members = ids
+    .map((i) => findShape(s, i))
+    .filter((f): f is ShapeLocation => !!f && f.list === first.list)
+  if (members.length < 2) return null
+  const tx = s.begin('Agrupar')
+  const ordered = [...members].sort((p, q) => p.index - q.index)
+  const group = makeGroup(ordered.map((m) => m.shape))
+  const at = ordered[ordered.length - 1]!.index - (ordered.length - 1)
+  for (const m of [...ordered].reverse()) first.list.splice(m.index, 1)
+  first.list.splice(at, 0, group)
+  s.selectedShapes = [group.id]
+  tx.commit({ model: true })
+  return group.id
+}
+
+/** Disuelve grupos: los hijos pasan a la lista del grupo con la transformación compuesta. */
+export function ungroupShapes(s: DocumentSession, ids: ID[]): ID[] {
+  const tx = s.begin('Desagrupar')
+  const out: ID[] = []
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind !== 'group' || f.layer.locked) continue
+    const g = f.shape
+    const kids = g.children.map((c) => {
+      const copy = cloneShape(c)
+      copy.transform = multiply(g.transform, copy.transform)
+      // la opacidad del grupo se reparte entre los hijos (aproximación: ya no se componen juntos)
+      copy.opacity *= g.opacity
+      return copy
+    })
+    f.list.splice(f.index, 1, ...kids)
+    out.push(...kids.map((k) => k.id))
+  }
+  if (out.length) s.selectedShapes = out
+  if (out.length) tx.commit({ model: true })
+  return out
+}
+
+/** Entra o sale del modo aislamiento de un grupo (no es un paso de historial). */
+export function isolateGroup(s: DocumentSession, id: ID | null): void {
+  if (id) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind !== 'group') return
+  }
+  const leaving = s.isolatedGroup
+  s.isolatedGroup = id
+  // al salir queda seleccionado el grupo; al entrar, ningún hijo
+  s.selectedShapes = !id && leaving ? [leaving] : []
+  s.emit({ imageId: s.activeImageId, dirty: null, structure: true })
 }
 
 export interface StampResult {
@@ -226,22 +347,36 @@ function overlaps(
 /** Forma más alta bajo el píxel (x, y); con `reach` px de tolerancia para contornos finos. */
 export function hitShape(s: DocumentSession, x: number, y: number, reach = 1): ID | null {
   const { width: w, height: h } = s.image
+  const test = (sh: Shape): boolean => {
+    if (!sh.visible || sh.locked) return false
+    const bmp = renderShapeCached(sh, w, h)
+    if (!bmp) return false
+    for (let dy = -reach; dy <= reach; dy++)
+      for (let dx = -reach; dx <= reach; dx++) {
+        const px = x + dx
+        const py = y + dy
+        if (px < 0 || py < 0 || px >= w || py >= h) continue
+        // el centro cuenta siempre; los vecinos solo para formas de contorno fino
+        if ((dx === 0 && dy === 0) || thinOnly(sh)) if (shapeAlphaAt(bmp, px, py)) return true
+      }
+    return false
+  }
+  // En aislamiento solo se pueden elegir los hijos del grupo aislado.
+  const iso = s.isolatedGroup ? findShape(s, s.isolatedGroup) : null
+  if (iso && iso.shape.kind === 'group') {
+    const kids = iso.shape.children
+    for (let i = kids.length - 1; i >= 0; i--) {
+      const r = resolveShape(s, kids[i]!.id)
+      if (r && test(r)) return kids[i]!.id
+    }
+    return null
+  }
   for (let li = s.image.layers.length - 1; li >= 0; li--) {
     const layer = s.image.layers[li]!
     if (!layer.visible || layer.locked) continue
     for (let si = layer.shapes.length - 1; si >= 0; si--) {
       const sh = layer.shapes[si]!
-      if (!sh.visible || sh.locked) continue
-      const bmp = renderShapeCached(sh, w, h)
-      if (!bmp) continue
-      for (let dy = -reach; dy <= reach; dy++)
-        for (let dx = -reach; dx <= reach; dx++) {
-          const px = x + dx
-          const py = y + dy
-          if (px < 0 || py < 0 || px >= w || py >= h) continue
-          // el centro cuenta siempre; los vecinos solo para formas de contorno fino
-          if ((dx === 0 && dy === 0) || thinOnly(sh)) if (shapeAlphaAt(bmp, px, py)) return sh.id
-        }
+      if (test(sh)) return sh.id
     }
   }
   return null

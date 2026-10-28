@@ -13,7 +13,10 @@ import {
   type Vec2,
   AnchorDrag,
   ShapeMove,
+  RectRadiusDrag,
   ShapeRotate,
+  isolateGroup,
+  resolveShape,
   ShapeScale,
   addAnchorAt,
   addShape,
@@ -112,6 +115,7 @@ function currentAppearance(closed: boolean): Appearance {
 
 /** Trazado visible de una forma: el suyo, o el equivalente si es paramétrica (solo para mostrar). */
 function displayPath(sh: Shape): PathShape {
+  if (sh.kind === 'group') return { ...sh, kind: 'path', subpaths: [], fillRule: 'nonzero' }
   return sh.kind === 'path' ? sh : toPath(sh)
 }
 
@@ -124,6 +128,7 @@ export class ShapeTools {
     box: Box
     mods: Mods
   } | null = null
+  private radiusDrag: RectRadiusDrag | null = null
   private rotating: { rot: ShapeRotate; start: number } | null = null
   private anchorDrag: { ad: AnchorDrag; x0: number; y0: number; started: boolean } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
@@ -261,6 +266,25 @@ export class ShapeTools {
     return null
   }
 
+  /** Posición en imagen del widget de radio del rectángulo seleccionado (esquina superior izquierda). */
+  private radiusWidget(): { id: ID; pos: Vec2 } | null {
+    const ws = this.getWs()
+    if (!ws || ws.session.selectedShapes.length !== 1) return null
+    const sh = getShape(ws.session, ws.session.selectedShapes[0]!)
+    if (!sh || sh.kind !== 'rect' || sh.locked) return null
+    // a 10 px de pantalla como mínimo de la esquina para no tapar el tirador de la caja
+    const d = Math.max(sh.radius[0], 10 / ws.viewport.zoom)
+    return { id: sh.id, pos: apply(sh.transform, { x: d, y: d }) }
+  }
+
+  private radiusWidgetAt(p: Pointer): ID | null {
+    const w = this.radiusWidget()
+    const ws = this.getWs()
+    if (!w || !ws) return null
+    const a = ws.viewport.toScreen(w.pos.x, w.pos.y)
+    return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT ? w.id : null
+  }
+
   /** Zona de rotación: fuera de la caja, cerca de una esquina (6–26 px de pantalla). */
   private hitRotateZone(p: Pointer): Box | null {
     const ws = this.getWs()
@@ -284,6 +308,11 @@ export class ShapeTools {
   private downSelect(p: Pointer, mods: Mods): void {
     const ws = this.getWs()!
     const s = ws.session
+    const rw = this.radiusWidgetAt(p)
+    if (rw) {
+      this.radiusDrag = new RectRadiusDrag(s, rw)
+      return
+    }
     const h = this.hitBoxHandle(p)
     const rot = h ? null : this.hitRotateZone(p)
     if (rot) {
@@ -393,6 +422,10 @@ export class ShapeTools {
   move(tool: string, p: Pointer, mods: Mods): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.radiusDrag) {
+      this.radiusDrag.moveTo(p.fx, p.fy, mods.alt)
+      return
+    }
     if (this.rotating) {
       const r = this.rotating
       let ang = Math.atan2(p.fy - r.rot.center.y, p.fx - r.rot.center.x) - r.start
@@ -467,6 +500,11 @@ export class ShapeTools {
   up(tool: string): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.radiusDrag) {
+      this.radiusDrag.end()
+      this.radiusDrag = null
+      return
+    }
     if (this.rotating) {
       this.rotating.rot.end()
       this.rotating = null
@@ -525,6 +563,8 @@ export class ShapeTools {
     this.scaling = null
     this.rotating?.rot.end()
     this.rotating = null
+    this.radiusDrag?.end()
+    this.radiusDrag = null
     if (this.anchorDrag?.started) this.anchorDrag.ad.end()
     this.anchorDrag = null
   }
@@ -535,6 +575,16 @@ export class ShapeTools {
       ws && ['sel', 'dsel', 'pen', 'addAnchor'].includes(tool) ? hitShape(ws.session, x, y) : null
   }
 
+  /** Doble clic con V sobre un grupo: modo aislamiento. */
+  doubleClick(x: number, y: number): void {
+    const ws = this.getWs()
+    if (!ws) return
+    const s = ws.session
+    if (s.isolatedGroup) return
+    const id = hitShape(s, x, y)
+    if (id && getShape(s, id)?.kind === 'group') isolateGroup(s, id)
+  }
+
   convertSelectionToPath(): void {
     const ws = this.getWs()
     if (ws) convertToPath(ws.session, ws.session.selectedShapes)
@@ -542,27 +592,33 @@ export class ShapeTools {
 
   // ---------- overlay ----------
 
-  overlay(tool: string): { shapes: ShapeOverlay[]; selBox: Box | null } {
+  overlay(tool: string): {
+    shapes: ShapeOverlay[]
+    selBox: Box | null
+    radiusWidget: Vec2 | null
+  } {
     const ws = this.getWs()
-    if (!ws) return { shapes: [], selBox: null }
+    if (!ws) return { shapes: [], selBox: null, radiusWidget: null }
     const s = ws.session
     const out: ShapeOverlay[] = []
     const direct =
       tool === 'dsel' || tool === 'addAnchor' || tool === 'delAnchor' || tool === 'convAnchor'
-    for (const layer of s.image.layers) {
-      if (!layer.visible) continue
-      for (const sh of layer.shapes) {
-        const selected = s.selectedShapes.includes(sh.id)
-        if (!selected && sh.id !== this.hoverId) continue
+    // Recorre también los hijos de los grupos; las formas anidadas se dibujan en coordenadas de imagen.
+    const visit = (layerColor: string, list: Shape[]): void => {
+      for (const item of list) {
+        if (item.kind === 'group') visit(layerColor, item.children)
+        const selected = s.selectedShapes.includes(item.id)
+        if (!selected && item.id !== this.hoverId) continue
+        const sh = resolveShape(s, item.id) ?? item
         const entry: ShapeOverlay = {
           lines: shapeLines(sh),
-          color: layer.color,
+          color: layerColor,
           box: null,
           anchors: [],
           selectedAnchors: [],
           handles: []
         }
-        if (selected && (direct || sh.kind === 'path')) {
+        if (selected && sh.kind !== 'group' && (direct || sh.kind === 'path')) {
           const path = displayPath(sh)
           path.subpaths.forEach((sp, si) =>
             sp.anchors.forEach((a, i) => {
@@ -581,6 +637,7 @@ export class ShapeTools {
         out.push(entry)
       }
     }
+    for (const layer of s.image.layers) if (layer.visible) visit(layer.color, layer.shapes)
     if (this.pen) {
       const shape = this.penShape()
       out.push({
@@ -593,7 +650,8 @@ export class ShapeTools {
       })
     }
     const selBox = tool === 'sel' && s.selectedShapes.length ? shapesBox(s, s.selectedShapes) : null
-    return { shapes: out, selBox }
+    const rw = tool === 'sel' || tool === 'dsel' ? this.radiusWidget() : null
+    return { shapes: out, selBox, radiusWidget: rw?.pos ?? null }
   }
 
   private neighbourSelected(id: ID, si: number, i: number, n: number): boolean {

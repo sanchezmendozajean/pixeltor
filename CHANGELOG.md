@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
-## [Sin publicar] — F2 · Formas vectoriales (en curso)
+## [0.3.0] — F2 · Formas vectoriales
 
 ### Añadido
 
@@ -16,11 +16,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Selección directa** (`A`): seleccionar anclas (Mayús suma), arrastrar anclas y tiradores (los suaves mantienen la simetría); editar una forma paramétrica la convierte en trazado. Herramientas Añadir, Eliminar y Convertir ancla. Objeto › Convertir en trazado (rectángulo, polígono y estrella conservan los píxeles; la elipse y los radios se aproximan con Bézier).
 - **Escalar con la caja** (`V`): ocho tiradores, Mayús proporcional y Alt desde el centro; rectángulos, elipses, líneas y trazados hornean la escala en sus parámetros.
 
-### Pendiente de F2
+- **Rotar con la caja** (`V`, cerca de una esquina por fuera; Mayús = pasos de 15°) alrededor del centro de la selección.
+- **Mover formas a otra capa** arrastrando su fila del panel Capas sobre la capa destino.
+- **Grupos**: Agrupar / Desagrupar (`Ctrl+G`, `Ctrl+Shift+G`), mostrados con sangría en el panel Capas. El grupo se compone aparte y después se aplica su opacidad, modo y transformación. **Modo aislamiento** con doble clic (`V`) y `Esc` para salir. Organizar, eliminar, duplicar y estampar funcionan con grupos anidados.
+- **Widget de radio de esquina**: círculo interior del rectángulo seleccionado; arrastrar redondea las cuatro esquinas y Alt solo la superior izquierda.
+- **Rendimiento**: las formas se rasterizan solo en su caja (más el margen de los contornos) y con caminos rápidos para rellenos opacos. Arrastrar un ancla de una elipse de 600×500 con dos contornos en 1000×1000 tarda ≈ 21 ms por fotograma (objetivo ≥ 30 fps), medido en una prueba con umbral en `tests/core/bench`.
 
-- Rotar con la caja, modo aislamiento y grupos, mover formas a otra capa desde la interfaz y los widgets de radio.
+### Pendiente o limitado
+
+- En modo aislamiento, editar anclas de un hijo dentro de un grupo con rotación o escala puede desplazarse mal; conviene desagrupar antes. Mover y escalar sí componen bien con la transformación del grupo.
+- Desagrupar reparte la opacidad del grupo entre los hijos, así que con hijos solapados el aspecto puede variar.
 - `antialias` y trazos discontinuos no están implementados; el desplazamiento de contorno solo actúa con alineación interior/exterior.
-- Medir el objetivo de 30 fps al editar anclas en 1000×1000 (hoy cada forma se rasteriza a tamaño completo de imagen, con caché por contenido).
+- Convertir una elipse o un rectángulo redondeado en trazado aproxima el borde con Bézier y puede cambiar algún píxel.
+- La medida de 30 fps es de CPU en Node, no del renderer completo en una máquina de referencia.
+- Linux sigue sin verificar.
 
 ## [0.2.0] — F1 · Núcleo ráster
 

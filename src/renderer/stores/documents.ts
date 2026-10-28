@@ -3,6 +3,7 @@ import { computed, markRaw, ref, shallowRef } from 'vue'
 import {
   DocumentSession,
   type ID,
+  type Shape,
   type Layer,
   type PixeltorDocument,
   type Bitmap
@@ -16,6 +17,31 @@ export interface DocTab {
   dirty: boolean
 }
 
+export interface ShapeRow {
+  id: ID
+  name: string
+  visible: boolean
+  selected: boolean
+  depth: number
+  group: boolean
+}
+
+function flattenShapes(list: Shape[], depth: number, selected: ID[]): ShapeRow[] {
+  const rows: ShapeRow[] = []
+  for (const sh of [...list].reverse()) {
+    rows.push({
+      id: sh.id,
+      name: sh.name,
+      visible: sh.visible,
+      selected: selected.includes(sh.id),
+      depth,
+      group: sh.kind === 'group'
+    })
+    if (sh.kind === 'group') rows.push(...flattenShapes(sh.children, depth + 1, selected))
+  }
+  return rows
+}
+
 export interface LayerRow {
   id: ID
   name: string
@@ -26,8 +52,8 @@ export interface LayerRow {
   blendMode: Layer['blendMode']
   color: string
   active: boolean
-  /** De arriba abajo. */
-  shapes: { id: ID; name: string; visible: boolean; selected: boolean }[]
+  /** De arriba abajo; los hijos de un grupo siguen a su grupo con `depth` mayor. */
+  shapes: ShapeRow[]
 }
 
 export interface HistoryRow {
@@ -72,12 +98,7 @@ export const useDocumentsStore = defineStore('documents', () => {
       blendMode: l.blendMode,
       color: l.color,
       active: l.id === s.activeLayerId,
-      shapes: [...l.shapes].reverse().map((sh) => ({
-        id: sh.id,
-        name: sh.name,
-        visible: sh.visible,
-        selected: s.selectedShapes.includes(sh.id)
-      }))
+      shapes: flattenShapes(l.shapes, 0, s.selectedShapes)
     }))
   })
 

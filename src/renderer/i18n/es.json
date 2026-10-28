@@ -258,7 +258,8 @@
   "notice": {
     "hidden": "La capa activa está oculta",
     "locked": "La capa activa está bloqueada",
-    "floating": "Fija o cancela los píxeles flotantes antes de pintar"
+    "floating": "Fija o cancela los píxeles flotantes antes de pintar",
+    "isolation": "Modo aislamiento: Esc para salir"
   },
   "errors": {
     "openFailed": "No se pudo abrir el archivo."

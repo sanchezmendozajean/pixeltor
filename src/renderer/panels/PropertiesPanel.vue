@@ -94,52 +94,54 @@ function setOpacity(e: Event): void {
 <template>
   <div v-if="shape" class="props">
     <div class="pt-sectitle">{{ shape.name }}</div>
-    <div class="row">
-      <label class="chk">
-        <input type="checkbox" :checked="!!fill" @change="toggle('fill')" />
-        {{ t('properties.fill') }}
-      </label>
-      <input
-        v-if="fill && fill.paint.type === 'solid'"
-        type="color"
-        :value="hex(fill.paint.color)"
-        :aria-label="t('properties.fill')"
-        @input="setColor('fill', $event)"
-      />
-    </div>
-    <div class="row">
-      <label class="chk">
-        <input type="checkbox" :checked="!!stroke" @change="toggle('stroke')" />
-        {{ t('properties.stroke') }}
-      </label>
-      <template v-if="stroke && stroke.paint.type === 'solid'">
+    <template v-if="shape.kind !== 'group'">
+      <div class="row">
+        <label class="chk">
+          <input type="checkbox" :checked="!!fill" @change="toggle('fill')" />
+          {{ t('properties.fill') }}
+        </label>
         <input
+          v-if="fill && fill.paint.type === 'solid'"
           type="color"
-          :value="hex(stroke.paint.color)"
-          :aria-label="t('properties.stroke')"
-          @input="setColor('stroke', $event)"
+          :value="hex(fill.paint.color)"
+          :aria-label="t('properties.fill')"
+          @input="setColor('fill', $event)"
         />
-        <input
-          class="pt-input w"
-          type="number"
-          min="1"
-          max="64"
-          :value="stroke.width"
-          :aria-label="t('properties.width')"
-          @change="setWidth"
-        />
-        <select
-          class="pt-select"
-          :value="stroke.align"
-          :aria-label="t('properties.align')"
-          @change="setAlign"
-        >
-          <option value="center">{{ t('properties.alignCenter') }}</option>
-          <option value="inside">{{ t('properties.alignInside') }}</option>
-          <option value="outside">{{ t('properties.alignOutside') }}</option>
-        </select>
-      </template>
-    </div>
+      </div>
+      <div class="row">
+        <label class="chk">
+          <input type="checkbox" :checked="!!stroke" @change="toggle('stroke')" />
+          {{ t('properties.stroke') }}
+        </label>
+        <template v-if="stroke && stroke.paint.type === 'solid'">
+          <input
+            type="color"
+            :value="hex(stroke.paint.color)"
+            :aria-label="t('properties.stroke')"
+            @input="setColor('stroke', $event)"
+          />
+          <input
+            class="pt-input w"
+            type="number"
+            min="1"
+            max="64"
+            :value="stroke.width"
+            :aria-label="t('properties.width')"
+            @change="setWidth"
+          />
+          <select
+            class="pt-select"
+            :value="stroke.align"
+            :aria-label="t('properties.align')"
+            @change="setAlign"
+          >
+            <option value="center">{{ t('properties.alignCenter') }}</option>
+            <option value="inside">{{ t('properties.alignInside') }}</option>
+            <option value="outside">{{ t('properties.alignOutside') }}</option>
+          </select>
+        </template>
+      </div>
+    </template>
     <div v-if="shape.kind === 'rect'" class="row">
       <label>{{ t('properties.radius') }}</label>
       <input

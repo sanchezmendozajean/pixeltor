@@ -4,7 +4,7 @@ import { cloneShape } from './shapes'
 import type { ID, Layer, PixeltorDocument, PxImage } from './types'
 import { MAX_SIZE } from './types'
 
-export const APP_NAME = 'Pixeltor 0.2.0'
+export const APP_NAME = 'Pixeltor 0.3.0'
 
 const LAYER_COLORS = ['#4c8dff', '#ff6b6b', '#4ecb8d', '#ffb454', '#b07cff', '#3dd6d0']
 

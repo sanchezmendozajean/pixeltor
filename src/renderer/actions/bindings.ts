@@ -12,6 +12,9 @@ import {
   selectAll,
   SelectionMove,
   arrangeShapes,
+  groupShapes,
+  ungroupShapes,
+  isolateGroup,
   convertToPath,
   getShape,
   moveShapes,
@@ -148,11 +151,13 @@ export function registerAppActions(): void {
     enabled: () =>
       has() &&
       (!!activeController?.shapes.penActive ||
+        !!ses().isolatedGroup ||
         !!ses().selection.floating ||
         !!ses().selection.mask ||
         ses().selectedShapes.length > 0),
     run: () => {
       if (activeController?.shapes.penActive) activeController.shapes.cancelPen()
+      else if (ses().isolatedGroup) isolateGroup(ses(), null)
       else if (ses().selection.floating) cancelFloating(ses())
       else if (ses().selection.mask) deselect(ses())
       else selectShapes(ses(), [])
@@ -182,6 +187,15 @@ export function registerAppActions(): void {
 
   // ---------- Objeto ----------
   const shapesSelected = () => has() && (docs.rev, ses().selectedShapes.length > 0)
+  registerHandler('object.group', {
+    enabled: () => has() && (docs.rev, ses().selectedShapes.length > 1),
+    run: () => void groupShapes(ses(), ses().selectedShapes)
+  })
+  registerHandler('object.ungroup', {
+    enabled: () =>
+      shapesSelected() && ses().selectedShapes.some((i) => getShape(ses(), i)?.kind === 'group'),
+    run: () => void ungroupShapes(ses(), ses().selectedShapes)
+  })
   registerHandler('object.convertToPath', {
     enabled: () =>
       shapesSelected() && ses().selectedShapes.some((i) => getShape(ses(), i)?.kind !== 'path'),

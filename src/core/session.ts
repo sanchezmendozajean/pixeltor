@@ -157,6 +157,8 @@ export class DocumentSession {
   selection: SelectionState = { mask: null, floating: null }
   /** Formas seleccionadas (herramienta Selección). */
   selectedShapes: ID[] = []
+  /** Grupo en modo aislamiento (solo se editan sus hijos). No forma parte del historial. */
+  isolatedGroup: ID | null = null
   private listeners = new Set<(e: ChangeEvent) => void>()
 
   constructor(

@@ -46,3 +46,26 @@ describe('rotar y mover entre capas', () => {
     expect(s.image.layers.find((l) => l.id === l1)!.shapes).toHaveLength(1)
   })
 })
+
+describe('widget de radio', () => {
+  it('arrastrar el widget redondea todas las esquinas y Alt solo una; se deshace', async () => {
+    const { RectRadiusDrag, getShape: get } = await import('@core/index')
+    const s = DocumentSession.create(32, 32)
+    const r = makeRect(4, 4, 20, 20, makeAppearance(RED, null))
+    addShape(s, r)
+    const d = new RectRadiusDrag(s, r.id)
+    d.moveTo(4 + 6, 4 + 6)
+    d.end()
+    const a = get(s, r.id)!
+    expect(a.kind === 'rect' && a.radius).toEqual([6, 6, 6, 6])
+    const d2 = new RectRadiusDrag(s, r.id)
+    d2.moveTo(4 + 99, 4 + 99, true)
+    d2.end()
+    const b = get(s, r.id)!
+    expect(b.kind === 'rect' && b.radius).toEqual([10, 6, 6, 6])
+    s.undo()
+    s.undo()
+    const c = get(s, r.id)!
+    expect(c.kind === 'rect' && c.radius).toEqual([0, 0, 0, 0])
+  })
+})

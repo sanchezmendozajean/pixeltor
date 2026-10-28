@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Visor 1: WebGL2 para la imagen + Canvas2D para el overlay (selección, cursor de pincel).
 // Toda la lógica de herramientas vive en tools/controller.ts.
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PtIcon from '@/components/PtIcon.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import { useDocumentsStore } from '@/stores/documents'
@@ -21,6 +21,8 @@ const stage = ref<HTMLDivElement>()
 const glCanvas = ref<HTMLCanvasElement>()
 const ovCanvas = ref<HTMLCanvasElement>()
 const notice = ref<Notice>(null)
+// El grupo aislado no es reactivo: se relee cada vez que cambia la revisión del documento.
+const isolated = computed(() => (docs.rev, docs.session?.isolatedGroup ?? null))
 
 let gl: GlView | null = null
 let ws: Workspace | null = null
@@ -124,6 +126,18 @@ function onMove(e: PointerEvent): void {
 function onUp(e: PointerEvent): void {
   controller.up()
   if (stage.value?.hasPointerCapture(e.pointerId)) stage.value.releasePointerCapture(e.pointerId)
+  schedule()
+}
+function onDouble(e: MouseEvent): void {
+  const box = stage.value!.getBoundingClientRect()
+  controller.doubleClick({
+    sx: e.clientX - box.left,
+    sy: e.clientY - box.top,
+    button: 0,
+    shift: e.shiftKey,
+    alt: e.altKey,
+    ctrl: e.ctrlKey
+  })
   schedule()
 }
 function onLeave(): void {
@@ -243,6 +257,7 @@ const cursorClass = () =>
       @pointerup="onUp"
       @pointercancel="onUp"
       @pointerleave="onLeave"
+      @dblclick="onDouble"
       @wheel="onWheel"
       @contextmenu.prevent
     >
@@ -261,7 +276,10 @@ const cursorClass = () =>
         "
       />
       <canvas ref="ovCanvas" class="layer" aria-hidden="true" />
-      <p v-if="notice" class="notice" role="status">{{ t(`notice.${notice}`) }}</p>
+      <p v-if="isolated" class="notice" role="status">
+        {{ t('notice.isolation') }}
+      </p>
+      <p v-else-if="notice" class="notice" role="status">{{ t(`notice.${notice}`) }}</p>
     </div>
   </section>
 </template>

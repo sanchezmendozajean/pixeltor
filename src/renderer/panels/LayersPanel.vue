@@ -149,7 +149,7 @@ function onDrop(rowIndex: number) {
           @dragend="((dragShape = null), (dropIndex = null))"
           @click="onShapeClick(l.id, sh.id, $event)"
         >
-          <span class="indent" />
+          <span class="indent" :style="{ width: `${38 + sh.depth * 14}px` }" />
           <span class="pt-lbar" :style="{ background: l.color }" />
           <span class="pt-lname">{{ sh.name }}</span>
         </li>

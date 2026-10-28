@@ -129,3 +129,31 @@ test('rotar con la caja y mover una forma a otra capa arrastrando su fila', asyn
   await expect(page.locator('.layers .pt-srow')).toHaveCount(1)
   void lower
 })
+
+test('agrupar, aislar con doble clic y desagrupar', async () => {
+  await page.keyboard.press('Control+n')
+  await page.locator('#nw').fill('64')
+  await page.locator('#nh').fill('64')
+  await page.getByRole('button', { name: 'Crear', exact: true }).click()
+  await page.keyboard.press('m')
+  await drag(-80, -80, -30, -30)
+  await drag(-20, -20, 30, 30)
+  await page.keyboard.press('v')
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  await page.mouse.click(cx - 50, cy - 50)
+  await page.keyboard.down('Shift')
+  await page.mouse.click(cx + 5, cy + 5)
+  await page.keyboard.up('Shift')
+  await page.keyboard.press('Control+g')
+  await expect(page.locator('.layers .pt-srow', { hasText: 'Grupo' })).toHaveCount(1)
+  await page.mouse.dblclick(cx - 50, cy - 50)
+  await page.screenshot({ path: 'test-results/f2-aislar.png' })
+  await expect(page.locator('.notice')).toContainText('aislamiento')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.notice')).toHaveCount(0)
+  await page.keyboard.press('Control+Shift+g')
+  await expect(page.locator('.layers .pt-srow', { hasText: 'Grupo' })).toHaveCount(0)
+  await page.screenshot({ path: 'test-results/f2-grupos.png' })
+})
