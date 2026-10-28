@@ -8,6 +8,7 @@ import { cloneLayerMeta, createDocument, createLayer, findLayer } from './model/
 import { newId } from './model/ids'
 import type { Guide, ID, Layer, PixeltorDocument, PxImage } from './model/types'
 import { MAX_LAYERS } from './model/types'
+import { type Palette, clonePalette } from './palette/palette'
 import { Bitmap, type Rect, clipRect, unionRect } from './raster/bitmap'
 import type { FloatingPixels, PixelMask } from './raster/mask'
 
@@ -22,6 +23,10 @@ export interface Snapshot {
   imageId: ID
   layers: Layer[]
   guides: Guide[]
+  /** Paletas del documento (nivel documento, no de imagen). */
+  palettes: Palette[]
+  /** Capas de otras imágenes afectadas por la edición (p. ej. muestras globales). */
+  extra?: { imageId: ID; layers: Layer[] }[]
   activeLayerId: ID
   selection: SelectionState
   shapes: ID[]
@@ -210,8 +215,16 @@ export class DocumentSession {
     for (const fn of this.listeners) fn(e)
   }
 
+  /** Imágenes no activas cuyas capas se guardan también en el instantáneo (muestras globales). */
+  snapshotExtra: ID[] = []
+
   snapshot(): Snapshot {
     return {
+      palettes: (this.doc.palettes ?? []).map(clonePalette),
+      extra: this.snapshotExtra
+        .map((id) => this.doc.images.find((i) => i.id === id))
+        .filter((i): i is PxImage => !!i)
+        .map((i) => ({ imageId: i.id, layers: i.layers.map(cloneLayerMeta) })),
       imageId: this.activeImageId,
       layers: this.image.layers.map(cloneLayerMeta),
       guides: (this.image.guides ?? []).map((g) => ({ ...g })),
@@ -226,6 +239,11 @@ export class DocumentSession {
     const img = this.image
     img.layers = snap.layers.map(cloneLayerMeta)
     img.guides = snap.guides.map((g) => ({ ...g }))
+    this.doc.palettes = snap.palettes.map(clonePalette)
+    for (const e of snap.extra ?? []) {
+      const other = this.doc.images.find((i) => i.id === e.imageId)
+      if (other) other.layers = e.layers.map(cloneLayerMeta)
+    }
     this.activeLayerId = snap.activeLayerId
     this.selection = { ...snap.selection }
     this.selectedShapes = [...snap.shapes]

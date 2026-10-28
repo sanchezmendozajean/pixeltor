@@ -41,3 +41,6 @@ export { colorAt, ditherThreshold, gradientSampler, gradientT, sortedStops } fro
 export { defaultGradient } from './render/shape'
 export * from './tools/align'
 export * from './tools/snap'
+export * from './palette/palette'
+export * from './palette/library'
+export * from './tools/palettes'

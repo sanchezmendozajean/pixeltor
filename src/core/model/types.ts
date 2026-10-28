@@ -27,6 +27,7 @@ export const BLEND_MODES: readonly BlendMode[] = [
 ]
 
 import type { Shape } from './shapes'
+import type { Palette } from '../palette/palette'
 
 export interface RasterRef {
   id: ID
@@ -77,6 +78,8 @@ export interface PixeltorDocument {
   formatVersion: string
   name: string
   images: PxImage[]
+  /** Paletas del documento; la primera es la activa del panel Muestras. */
+  palettes?: Palette[]
   animation: { loop: 'loop' | 'pingpong' | 'once' }
   settings: DocumentSettings
   metadata: { createdAt: string; modifiedAt: string; app: string }

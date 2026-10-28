@@ -100,6 +100,44 @@ export function registerFileHandlers(): void {
     }
   )
 
+  ipcMain.handle(IPC.paletteImport, async (e): Promise<OpenedFile | null> => {
+    const win = parentOf(e)
+    const opts: Electron.OpenDialogOptions = {
+      filters: [{ name: 'Paleta', extensions: ['gpl', 'pal', 'hex', 'png'] }],
+      properties: ['openFile']
+    }
+    const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+    if (r.canceled || !r.filePaths[0]) return null
+    const buf = await readFile(r.filePaths[0])
+    return { path: r.filePaths[0], bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) }
+  })
+
+  ipcMain.handle(
+    IPC.paletteExport,
+    async (
+      e,
+      req: { suggestedName: string; bytes: Record<'gpl' | 'pal' | 'hex' | 'png', Uint8Array> }
+    ) => {
+      const win = parentOf(e)
+      const opts: Electron.SaveDialogOptions = {
+        defaultPath: `${req.suggestedName}.gpl`,
+        filters: [
+          { name: 'GIMP (.gpl)', extensions: ['gpl'] },
+          { name: 'JASC (.pal)', extensions: ['pal'] },
+          { name: 'Hex (.hex)', extensions: ['hex'] },
+          { name: 'PNG (1 px por color)', extensions: ['png'] }
+        ]
+      }
+      const r = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts)
+      if (r.canceled || !r.filePath) return null
+      const ext = extname(r.filePath).slice(1).toLowerCase() as keyof typeof req.bytes
+      const bytes = req.bytes[ext] ?? req.bytes.gpl
+      const target = req.bytes[ext] ? r.filePath : ensureExt(r.filePath, '.gpl')
+      await writeAtomic(target, bytes, false)
+      return target
+    }
+  )
+
   ipcMain.handle(IPC.confirmClose, async (e, name: string): Promise<CloseChoice> => {
     const win = parentOf(e)
     // Orden de botones propio de cada plataforma: en Windows «Guardar» va primero.

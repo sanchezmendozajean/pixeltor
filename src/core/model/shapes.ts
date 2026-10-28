@@ -20,6 +20,8 @@ export interface SubPath {
 export interface SolidPaint {
   type: 'solid'
   color: RGBA
+  /** Muestra global enlazada: al editarla cambia el color de todas las formas que la usan. */
+  swatchId?: ID
 }
 export interface GradientStop {
   /** 0..1 */

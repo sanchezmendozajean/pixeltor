@@ -15,6 +15,8 @@ export const IPC = {
   fileOpen: 'file:open',
   fileSave: 'file:save',
   fileExport: 'file:export',
+  paletteImport: 'palette:import',
+  paletteExport: 'palette:export',
   confirmClose: 'dialog:confirmClose',
   autosaveWrite: 'autosave:write',
   autosaveRemove: 'autosave:remove',
@@ -63,6 +65,15 @@ export interface PixeltorApi {
       path: string | null
       suggestedName: string
       bytes: Uint8Array
+    }): Promise<string | null>
+  }
+  palettes: {
+    /** Pide un archivo de paleta (.gpl, .pal, .hex, .png); null si se cancela. */
+    import(): Promise<OpenedFile | null>
+    /** Guarda la paleta en el formato que dé la extensión elegida (se envían todos). Devuelve la ruta o null. */
+    export(req: {
+      suggestedName: string
+      bytes: Record<'gpl' | 'pal' | 'hex' | 'png', Uint8Array>
     }): Promise<string | null>
   }
   dialogs: {

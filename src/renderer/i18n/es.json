@@ -326,7 +326,26 @@
   "swatches": {
     "add": "Añadir el color actual a las muestras",
     "remove": "Quitar muestra",
-    "apply": "Aplicar muestra {hex}"
+    "apply": "Aplicar muestra {hex}",
+    "palette": "Paleta del documento",
+    "library": "Biblioteca",
+    "import": "Importar",
+    "export": "Exportar",
+    "edit": "Editar el color de la muestra",
+    "usage": "{n} enlazadas",
+    "link": "Enlazar a la selección",
+    "unlink": "Desenlazar",
+    "sortHue": "Por tono",
+    "sortLight": "Por luz",
+    "extractBtn": "Extraer de la imagen",
+    "extract": "Extraer colores",
+    "extracted": "{n} colores añadidos",
+    "rampN": "Tonos",
+    "rampShift": "Giro de tono",
+    "ramp": "Rampa",
+    "rampTip": "Genera una rampa entre el color de relleno y el de contorno",
+    "badFormat": "Formato de paleta no válido",
+    "imported": "Paleta importada"
   },
   "navigator": {
     "label": "Vista general del lienzo"

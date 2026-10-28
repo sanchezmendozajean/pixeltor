@@ -16,13 +16,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Panel Alinear**: alinear (izquierda, centro, derecha, arriba, centro, abajo) y distribuir (bordes y centros, horizontal y vertical) respecto a la selección, a un **objeto clave** (clic en una forma ya seleccionada, trazo grueso) o al lienzo; **espaciado fijo** en píxeles. Usa los límites de píxeles visibles; todo movimiento es entero.
 - **Reglas y guías**: reglas en píxeles de imagen; arrastrar desde una regla crea una guía, con `V` se mueve y devolverla a la regla la elimina (Ctrl+; las oculta). Las guías se guardan en el documento y son deshacibles.
 - **Ajuste (snapping) al mover formas**: a bordes y centros de otras formas (guías inteligentes, líneas magenta), a los bordes y centro del lienzo y a las guías (cian), con los interruptores de la barra de estado y un radio de 4 px de pantalla.
+- **Paletas y muestras globales**: la paleta vive en el documento (se guarda en el `.pixeltor`; PICO-8 por defecto) y es deshacible. Panel Muestras: añadir (sin duplicar), quitar (clic derecho), reordenar arrastrando, ordenar por tono o luz, **extraer colores de la imagen**, **rampas** entre relleno y contorno con giro de tono (*hue shifting*), biblioteca de la app (PICO-8, Game Boy, Sweetie 16, Endesga 32) e **importar/exportar `.gpl`, `.pal`, `.hex` y `.png`**. **Muestras globales**: enlazar un relleno o contorno sólido a una muestra y, al editarla, se recolorean todas las formas enlazadas de todas las imágenes en un solo paso de historial (deshacible).
 - Las pestañas del dock se acortan en vez de ensanchar la columna.
 
 ### Pendiente de F3
 
 - Snapping de anclas y trazados, y al dibujar o escalar (hoy solo al mover); guías inteligentes con medidas y ángulos.
 - Contorno de trazo, desplazamiento de trazado, simplificar y trazados compuestos.
-- Muestras globales y paletas (importar/exportar, rampas) y editor del modo «paleta» de los degradados.
+- Editor del modo «paleta» de los degradados y muestras globales también en las paradas de degradado (hoy solo en pinturas sólidas); varias paletas simultáneas en el panel (el modelo ya las admite).
 - Simetría en pincel y lápiz.
 - Paleta de comandos.
 

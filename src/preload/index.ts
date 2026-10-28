@@ -13,6 +13,10 @@ const api: PixeltorApi = {
     save: (req) => ipcRenderer.invoke(IPC.fileSave, req),
     exportPng: (req) => ipcRenderer.invoke(IPC.fileExport, req)
   },
+  palettes: {
+    import: () => ipcRenderer.invoke(IPC.paletteImport),
+    export: (req) => ipcRenderer.invoke(IPC.paletteExport, req)
+  },
   dialogs: {
     confirmClose: (name) => ipcRenderer.invoke(IPC.confirmClose, name)
   },
