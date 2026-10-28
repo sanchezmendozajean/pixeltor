@@ -190,3 +190,29 @@ describe('puntos medios', () => {
     ).toBe(64)
   })
 })
+
+describe('edición viva', () => {
+  it('muchos cambios en vivo crean un único paso de historial, al confirmar', async () => {
+    const { DocumentSession, addShape, commitLiveEdit, getShape, liveUpdateShape } =
+      await import('@core/index')
+    const s = DocumentSession.create(16, 16)
+    const r = gradRect(0, 0, 8, 8, {})
+    addShape(s, r)
+    const n = s.history.entries.length
+    for (let i = 1; i <= 20; i++)
+      liveUpdateShape(s, r.id, 'k', 'Editar degradado', (sh) => {
+        const p = sh.appearance.fills[0]!.paint
+        if (p.type !== 'solid') p.stops[1] = { offset: i / 20, color: WHITE }
+      })
+    expect(s.history.entries.length).toBe(n) // todavía no hay paso
+    const mid = getShape(s, r.id)!.appearance.fills[0]!.paint
+    expect(mid.type !== 'solid' && mid.stops[1]!.offset).toBe(1)
+    commitLiveEdit(s, 'k')
+    expect(s.history.entries.length).toBe(n + 1)
+    s.undo()
+    const back = getShape(s, r.id)!.appearance.fills[0]!.paint
+    expect(back.type !== 'solid' && back.stops[1]!.offset).toBe(1)
+    commitLiveEdit(s, 'k') // sin edición pendiente: no hace nada
+    expect(s.history.entries.length).toBe(n + 1)
+  })
+})

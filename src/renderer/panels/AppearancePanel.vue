@@ -11,7 +11,9 @@ import {
   type RGBA,
   type Shape,
   defaultGradient,
+  commitLiveEdit,
   getShape,
+  liveUpdateShape,
   newId,
   solidFill,
   solidStroke,
@@ -78,20 +80,31 @@ function cssPaint(p: Paint): string {
       : `conic-gradient(${stops})`
 }
 
-function edit(label: string, key: string, fn: (s: Shape) => void): void {
+/** Con `live` el cambio se ve al instante y el paso de historial se crea en `endLive(live)`. */
+function edit(label: string, key: string, fn: (s: Shape) => void, live?: string): void {
   const sh = shape.value
-  if (sh && docs.session) updateShape(docs.session, sh.id, fn, label, `app:${sh.id}:${key}`)
+  if (!sh || !docs.session) return
+  if (live) liveUpdateShape(docs.session, sh.id, live, label, fn)
+  else updateShape(docs.session, sh.id, fn, label, `app:${sh.id}:${key}`)
+}
+function endLive(live: string): void {
+  if (docs.session) commitLiveEdit(docs.session, live)
 }
 function attrOf(s: Shape, id: string): Fill | Stroke | undefined {
   return (
     s.appearance.fills.find((x) => x.id === id) ?? s.appearance.strokes.find((x) => x.id === id)
   )
 }
-const mutate = (id: string, key: string, fn: (a: Fill | Stroke) => void) =>
-  edit(t('appearance.edit'), `${id}:${key}`, (s) => {
-    const a = attrOf(s, id)
-    if (a) fn(a)
-  })
+const mutate = (id: string, key: string, fn: (a: Fill | Stroke) => void, live?: string) =>
+  edit(
+    t('appearance.edit'),
+    `${id}:${key}`,
+    (s) => {
+      const a = attrOf(s, id)
+      if (a) fn(a)
+    },
+    live
+  )
 
 // ---------- pila ----------
 function add(kind: 'fill' | 'stroke'): void {
@@ -164,9 +177,14 @@ const grad = (a: Fill | Stroke): GradientPaint | null => (a.paint.type === 'soli
 
 function setSolid(row: Row, e: Event): void {
   const h = (e.target as HTMLInputElement).value
-  mutate(row.id, 'color', (a) => {
-    if (a.paint.type === 'solid') a.paint = { type: 'solid', color: rgb(h, a.paint.color.a) }
-  })
+  mutate(
+    row.id,
+    'color',
+    (a) => {
+      if (a.paint.type === 'solid') a.paint = { type: 'solid', color: rgb(h, a.paint.color.a) }
+    },
+    'app-color'
+  )
 }
 function setSolidAlpha(row: Row, e: Event): void {
   const v = Math.min(
@@ -178,11 +196,21 @@ function setSolidAlpha(row: Row, e: Event): void {
       if (a.paint.type === 'solid') a.paint = { type: 'solid', color: { ...a.paint.color, a: v } }
     })
 }
-function setStop(row: Row, i: number, patch: { offset?: number; color?: RGBA }): void {
-  mutate(row.id, `stop${i}`, (a) => {
-    const g = grad(a)
-    if (g && g.stops[i]) g.stops[i] = { ...g.stops[i]!, ...patch }
-  })
+function setStop(
+  row: Row,
+  i: number,
+  patch: { offset?: number; color?: RGBA },
+  live?: string
+): void {
+  mutate(
+    row.id,
+    `stop${i}`,
+    (a) => {
+      const g = grad(a)
+      if (g && g.stops[i]) g.stops[i] = { ...g.stops[i]!, ...patch }
+    },
+    live
+  )
 }
 function addStop(row: Row): void {
   mutate(row.id, 'addstop', (a) => {
@@ -361,6 +389,7 @@ const modeOf = (g: GradientPaint): ModeId =>
           :value="hex(open.attr.paint.color)"
           :aria-label="t('appearance.color')"
           @input="setSolid(open, $event)"
+          @change="endLive('app-color')"
         />
         <input
           class="pt-input w"
@@ -382,8 +411,14 @@ const modeOf = (g: GradientPaint): ModeId =>
             :value="hex(s.color)"
             :aria-label="t('appearance.color')"
             @input="
-              setStop(open, i, { color: rgb(($event.target as HTMLInputElement).value, s.color.a) })
+              setStop(
+                open,
+                i,
+                { color: rgb(($event.target as HTMLInputElement).value, s.color.a) },
+                'app-stop-color'
+              )
             "
+            @change="endLive('app-stop-color')"
           />
           <input
             class="pt-input w"

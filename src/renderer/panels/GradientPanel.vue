@@ -10,7 +10,9 @@ import {
   type Shape,
   colorAt,
   defaultGradient,
+  commitLiveEdit,
   getShape,
+  liveUpdateShape,
   gradientSampler,
   sortedStops,
   updateShape
@@ -62,20 +64,20 @@ const rgb = (h: string, a: number): RGBA => {
 }
 
 // ---------- edición ----------
-function mutate(key: string, fn: (g: GradientPaint, shape: Shape) => void): void {
+/** Con `live`, el cambio se ve al instante pero el paso de historial se crea al llamar a `endLive`. */
+function mutate(key: string, fn: (g: GradientPaint, shape: Shape) => void, live?: string): void {
   const sh = shape.value
   const a = attr.value
   if (!sh || !a || !docs.session) return
-  updateShape(
-    docs.session,
-    sh.id,
-    (s) => {
-      const at = [...s.appearance.fills, ...s.appearance.strokes].find((x) => x.id === a.id)
-      if (at && at.paint.type !== 'solid') fn(at.paint, s)
-    },
-    t('gradient.edit'),
-    `grad:${sh.id}:${a.id}:${key}`
-  )
+  const apply = (s: Shape): void => {
+    const at = [...s.appearance.fills, ...s.appearance.strokes].find((x) => x.id === a.id)
+    if (at && at.paint.type !== 'solid') fn(at.paint, s)
+  }
+  if (live) liveUpdateShape(docs.session, sh.id, live, t('gradient.edit'), apply)
+  else updateShape(docs.session, sh.id, apply, t('gradient.edit'), `grad:${sh.id}:${a.id}:${key}`)
+}
+function endLive(live: string): void {
+  if (docs.session) commitLiveEdit(docs.session, live)
 }
 
 /** Las paradas se mantienen ordenadas; `sel` sigue a la parada movida. */
@@ -145,18 +147,22 @@ function setAngle(e: Event): void {
   })
 }
 
-function setStopField(patch: { offset?: number; color?: RGBA }): void {
+function setStopField(patch: { offset?: number; color?: RGBA }, live?: string): void {
   if (!current.value) return
-  mutate(`stop${sel.value}`, (g) => {
-    g.stops = sortedStops(g.stops)
-    const s = g.stops[sel.value]
-    if (!s) return
-    if (patch.offset !== undefined) s.offset = Math.min(1, Math.max(0, patch.offset))
-    if (patch.color) s.color = patch.color
-    const moved = s
-    g.stops = sortedStops(g.stops)
-    sel.value = g.stops.indexOf(moved)
-  })
+  mutate(
+    `stop${sel.value}`,
+    (g) => {
+      g.stops = sortedStops(g.stops)
+      const s = g.stops[sel.value]
+      if (!s) return
+      if (patch.offset !== undefined) s.offset = Math.min(1, Math.max(0, patch.offset))
+      if (patch.color) s.color = patch.color
+      const moved = s
+      g.stops = sortedStops(g.stops)
+      sel.value = g.stops.indexOf(moved)
+    },
+    live
+  )
 }
 function onLocation(e: Event): void {
   const v = Number.parseFloat((e.target as HTMLInputElement).value)
@@ -170,7 +176,8 @@ function onOpacity(e: Event): void {
 }
 function onColor(e: Event): void {
   const c = current.value?.color
-  if (c) setStopField({ color: rgb((e.target as HTMLInputElement).value, c.a) })
+  // @input llega mientras se elige el color: se aplica en vivo y se registra al cerrar el selector
+  if (c) setStopField({ color: rgb((e.target as HTMLInputElement).value, c.a) }, 'stop-color')
 }
 function removeStop(): void {
   if (sorted.value.length <= 2) return
@@ -266,11 +273,13 @@ function dragStop(i: number, e: PointerEvent): void {
   sel.value = i
   const el = e.currentTarget as HTMLElement
   el.setPointerCapture(e.pointerId)
-  el.onpointermove = (ev) => setStopField({ offset: fraction(ev) })
+  el.onpointermove = (ev) => setStopField({ offset: fraction(ev) }, 'drag-stop')
   el.onpointerup = () => {
     el.onpointermove = null
     el.onpointerup = null
+    endLive('drag-stop')
   }
+  el.onpointercancel = el.onpointerup
 }
 
 function dragMid(i: number, e: PointerEvent): void {
@@ -280,16 +289,22 @@ function dragMid(i: number, e: PointerEvent): void {
     const a = sorted.value[i]!
     const b = sorted.value[i + 1]!
     const k = (fraction(ev) - a.offset) / Math.max(1e-6, b.offset - a.offset)
-    mutate(`mid${i}`, (g) => {
-      const s = sortedStops(g.stops)
-      g.stops = s
-      s[i]!.mid = Math.min(0.95, Math.max(0.05, k))
-    })
+    mutate(
+      `mid${i}`,
+      (g) => {
+        const s = sortedStops(g.stops)
+        g.stops = s
+        s[i]!.mid = Math.min(0.95, Math.max(0.05, k))
+      },
+      'drag-mid'
+    )
   }
   el.onpointerup = () => {
     el.onpointermove = null
     el.onpointerup = null
+    endLive('drag-mid')
   }
+  el.onpointercancel = el.onpointerup
 }
 
 /** Clic en el hueco bajo la barra: nueva parada con el color del degradado en ese punto. */
@@ -449,6 +464,7 @@ const TYPES: { id: GradientPaint['type']; icon: string }[] = [
               :value="hex(current.color)"
               :aria-label="t('gradient.color')"
               @input="onColor"
+              @change="endLive('stop-color')"
             />
           </div>
           <div class="row">

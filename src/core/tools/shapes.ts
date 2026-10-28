@@ -440,3 +440,58 @@ export function shapesPixelSize(s: DocumentSession, ids: ID[]): { w: number; h: 
   }
   return x0 === Infinity ? null : { w: x1 - x0, h: y1 - y0 }
 }
+
+// ---------- Edición viva (arrastres de paneles) ----------
+
+/**
+ * Edición de una forma que se aplica en vivo pero se registra en el historial UNA sola vez, al
+ * terminar (soltar el ratón, cerrar el selector de color…).
+ */
+class LiveEdit {
+  private readonly tx
+
+  constructor(
+    private readonly s: DocumentSession,
+    private readonly id: ID,
+    label: string
+  ) {
+    this.tx = s.begin(label)
+  }
+
+  update(fn: (shape: Shape) => void): void {
+    const f = findShape(this.s, this.id)
+    if (!f) return
+    fn(f.shape)
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+  }
+
+  end(): boolean {
+    return this.tx.commit({ model: true })
+  }
+}
+
+const liveEdits = new WeakMap<DocumentSession, Map<string, LiveEdit>>()
+
+/** Aplica `fn` a la forma sin crear paso de historial; el paso se crea en `commitLiveEdit(key)`. */
+export function liveUpdateShape(
+  s: DocumentSession,
+  id: ID,
+  key: string,
+  label: string,
+  fn: (shape: Shape) => void
+): void {
+  let m = liveEdits.get(s)
+  if (!m) liveEdits.set(s, (m = new Map()))
+  let live = m.get(key)
+  if (!live) m.set(key, (live = new LiveEdit(s, id, label)))
+  live.update(fn)
+}
+
+/** Cierra la edición viva: un único paso de historial con todo lo aplicado desde el principio. */
+export function commitLiveEdit(s: DocumentSession, key: string): void {
+  const m = liveEdits.get(s)
+  const live = m?.get(key)
+  if (!live) return
+  m!.delete(key)
+  live.end()
+}

@@ -1,7 +1,15 @@
 <script setup lang="ts">
 // Panel Propiedades contextual: apariencia simple (un relleno y un contorno sólidos) de la forma seleccionada.
 import { computed } from 'vue'
-import { type Shape, getShape, solidFill, solidStroke, updateShape } from '@core/index'
+import {
+  type Shape,
+  commitLiveEdit,
+  getShape,
+  liveUpdateShape,
+  solidFill,
+  solidStroke,
+  updateShape
+} from '@core/index'
 import { useDocumentsStore } from '@/stores/documents'
 import { hexToRgba, rgbaToHex } from '@/stores/colorUtil'
 import { t } from '@/i18n'
@@ -25,22 +33,32 @@ const stroke = computed(() => (docs.rev, shape.value?.appearance.strokes[0] ?? n
 const hex = (c: { r: number; g: number; b: number; a: number }) =>
   rgbaToHex(((c.r << 24) | (c.g << 16) | (c.b << 8) | c.a) >>> 0).slice(0, 7)
 
-function edit(label: string, key: string, fn: (s: Shape) => void): void {
+function edit(label: string, key: string, fn: (s: Shape) => void, live?: string): void {
   const sh = shape.value
-  if (sh && docs.session) updateShape(docs.session, sh.id, fn, label, `prop:${sh.id}:${key}`)
+  if (!sh || !docs.session) return
+  if (live) liveUpdateShape(docs.session, sh.id, live, label, fn)
+  else updateShape(docs.session, sh.id, fn, label, `prop:${sh.id}:${key}`)
+}
+function endLive(live: string): void {
+  if (docs.session) commitLiveEdit(docs.session, live)
 }
 
 function setColor(which: 'fill' | 'stroke', e: Event): void {
   const v = hexToRgba((e.target as HTMLInputElement).value)
   const c = { r: (v >>> 24) & 255, g: (v >>> 16) & 255, b: (v >>> 8) & 255, a: 255 }
-  edit(which === 'fill' ? t('properties.fill') : t('properties.stroke'), which, (s) => {
-    const a = which === 'fill' ? s.appearance.fills[0] : s.appearance.strokes[0]
-    if (a)
-      a.paint = {
-        type: 'solid',
-        color: { ...c, a: a.paint.type === 'solid' ? a.paint.color.a : 255 }
-      }
-  })
+  edit(
+    which === 'fill' ? t('properties.fill') : t('properties.stroke'),
+    which,
+    (s) => {
+      const a = which === 'fill' ? s.appearance.fills[0] : s.appearance.strokes[0]
+      if (a)
+        a.paint = {
+          type: 'solid',
+          color: { ...c, a: a.paint.type === 'solid' ? a.paint.color.a : 255 }
+        }
+    },
+    `prop-${which}`
+  )
 }
 function toggle(which: 'fill' | 'stroke'): void {
   edit(t(`properties.${which}`), `${which}-toggle`, (s) => {
@@ -110,6 +128,7 @@ function setOpacity(e: Event): void {
           :value="hex(fill.paint.color)"
           :aria-label="t('properties.fill')"
           @input="setColor('fill', $event)"
+          @change="endLive('prop-fill')"
         />
       </div>
       <div class="row">
@@ -123,6 +142,7 @@ function setOpacity(e: Event): void {
             :value="hex(stroke.paint.color)"
             :aria-label="t('properties.stroke')"
             @input="setColor('stroke', $event)"
+            @change="endLive('prop-stroke')"
           />
           <input
             class="pt-input w"

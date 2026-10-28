@@ -85,3 +85,22 @@ test('panel Degradado: añadir parada, ubicación, tipo y modo de píxel', async
   await panel.getByRole('button', { name: 'Eliminar parada' }).click()
   await expect(stops).toHaveCount(before)
 })
+
+test('arrastrar una parada solo crea un paso de historial, al soltar', async () => {
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  const entries = page.locator('.hist button')
+  const before = await entries.count()
+  await page.locator('.pt-ptab', { hasText: 'Degradado' }).click()
+  const stop = page.locator('.gradient-panel .stop').nth(1)
+  const sb = (await stop.boundingBox())!
+  await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(sb.x + sb.width / 2 + 20, sb.y + 6, { steps: 4 })
+  // durante el arrastre el historial no cambia
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).isVisible()
+  await page.mouse.move(sb.x + sb.width / 2 + 40, sb.y + 6, { steps: 4 })
+  await page.mouse.up()
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  await expect(entries).toHaveCount(before + 1)
+  await expect(entries.last()).toContainText('Editar degradado')
+})
