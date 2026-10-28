@@ -24,7 +24,14 @@ export { saveDocument, loadDocument, exportImagePng, FormatError } from './io/pi
 export { brushOffsets, linePoints } from './raster/draw'
 export * from './model/shapes'
 export * from './tools/shapes'
-export { renderShape, renderShapeCached, shapeLines } from './render/shape'
+export {
+  renderShape,
+  renderShapeCached,
+  renderShapeRegion,
+  shapeAlphaAt,
+  shapeLines,
+  type ShapeBitmap
+} from './render/shape'
 export { ellipseOutline, ellipseMasks } from './raster/ellipse'
 export { fillPolygons } from './raster/scan'
 export * from './tools/paths'

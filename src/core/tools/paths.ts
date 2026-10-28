@@ -464,3 +464,44 @@ export class ShapeScale {
     return this.tx.commit({ model: true })
   }
 }
+
+/** Rotación interactiva de la selección alrededor del centro de su caja. */
+export class ShapeRotate {
+  private readonly tx
+  private readonly originals = new Map<ID, Shape>()
+  readonly center: Vec2
+
+  constructor(
+    private readonly s: DocumentSession,
+    ids: ID[],
+    box: Box
+  ) {
+    this.tx = s.begin('Rotar')
+    this.center = { x: box.x + box.w / 2, y: box.y + box.h / 2 }
+    for (const id of ids) {
+      const f = findShape(s, id)
+      if (f) this.originals.set(id, cloneShape(f.shape))
+    }
+  }
+
+  /** Ángulo (rad) respecto al estado inicial. */
+  rotateTo(angle: number): void {
+    const c = Math.cos(angle)
+    const sn = Math.sin(angle)
+    const { x, y } = this.center
+    // rotación alrededor del centro: R · (p − c) + c
+    const m: Mat2D = [c, sn, -sn, c, x - c * x + sn * y, y - sn * x - c * y]
+    for (const [id, orig] of this.originals) {
+      const f = findShape(this.s, id)
+      if (!f) continue
+      const copy = cloneShape(orig)
+      copy.transform = multiply(m, copy.transform)
+      f.layer.shapes[f.index] = copy
+    }
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+  }
+
+  end(): boolean {
+    return this.tx.commit({ model: true })
+  }
+}

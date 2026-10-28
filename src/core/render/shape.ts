@@ -173,8 +173,7 @@ function paintBitmap(
   return bmp
 }
 
-/** Renderiza la apariencia de la forma (rellenos y contornos en el orden de la pila). */
-export function renderShape(s: Shape, w: number, h: number): Bitmap {
+function renderShapeFull(s: Shape, w: number, h: number): Bitmap {
   const out = new Bitmap(w, h)
   const lines = shapeLines(s)
   const masks = fillMask(s, lines, w, h)
@@ -185,25 +184,99 @@ export function renderShape(s: Shape, w: number, h: number): Bitmap {
     const attr = f ?? st
     if (!attr || !attr.enabled) continue
     const cov = f ? masks.fill : strokeMask(st!, lines, masks, w, h)
-    compositeOver(out, paintBitmap(cov, attr.paint.color, w, h), attr.blendMode, attr.opacity)
+    const c = attr.paint.color
+    if (attr.blendMode === 'normal' && attr.opacity === 1 && c.a === 255) {
+      // Relleno opaco: se escribe directo en el bitmap.
+      const d = out.data
+      for (let i = 0; i < cov.length; i++) {
+        if (!cov[i]) continue
+        d[i * 4] = c.r
+        d[i * 4 + 1] = c.g
+        d[i * 4 + 2] = c.b
+        d[i * 4 + 3] = 255
+      }
+    } else compositeOver(out, paintBitmap(cov, c, w, h), attr.blendMode, attr.opacity)
   }
   return out
 }
 
-const cache = new Map<string, Bitmap>()
+/** Resultado de rasterizar una forma: bitmap recortado a su caja, colocado en (x, y) de la imagen. */
+export interface ShapeBitmap {
+  x: number
+  y: number
+  bitmap: Bitmap
+}
+
+/**
+ * Rasteriza solo la caja de la forma (más el margen que necesitan sus contornos), recortada a la
+ * imagen. El borde de la región coincide con el de la imagen o queda vacío, así que el resultado
+ * es idéntico al de rasterizar la imagen entera.
+ */
+export function renderShapeRegion(s: Shape, w: number, h: number): ShapeBitmap | null {
+  let x0 = Infinity
+  let y0 = Infinity
+  let x1 = -Infinity
+  let y1 = -Infinity
+  for (const l of shapeLines(s))
+    for (const p of l.pts) {
+      x0 = Math.min(x0, p.x)
+      y0 = Math.min(y0, p.y)
+      x1 = Math.max(x1, p.x)
+      y1 = Math.max(y1, p.y)
+    }
+  if (x0 === Infinity) return null
+  let margin = 2
+  for (const st of s.appearance.strokes) {
+    if (!st.enabled) continue
+    const reach = Math.max(st.width + st.offset, (st.width * Math.max(1, st.miterLimit)) / 2)
+    margin = Math.max(margin, Math.ceil(reach) + 2)
+  }
+  const rx = Math.max(0, Math.floor(x0) - margin)
+  const ry = Math.max(0, Math.floor(y0) - margin)
+  const rw = Math.min(w, Math.ceil(x1) + margin + 1) - rx
+  const rh = Math.min(h, Math.ceil(y1) + margin + 1) - ry
+  if (rw <= 0 || rh <= 0) return null
+  const t = s.transform
+  const shifted: Shape = { ...s, transform: [t[0], t[1], t[2], t[3], t[4] - rx, t[5] - ry] }
+  return { x: rx, y: ry, bitmap: renderShapeFull(shifted, rw, rh) }
+}
+
+/** Rasteriza la forma a una imagen completa (estampado y pruebas). */
+export function renderShape(s: Shape, w: number, h: number): Bitmap {
+  const out = new Bitmap(w, h)
+  const r = renderShapeRegion(s, w, h)
+  if (!r) return out
+  for (let y = 0; y < r.bitmap.height; y++)
+    out.data.set(
+      r.bitmap.data.subarray(y * r.bitmap.width * 4, (y + 1) * r.bitmap.width * 4),
+      ((r.y + y) * w + r.x) * 4
+    )
+  return out
+}
+
+/** Alfa del ShapeBitmap en el píxel (x, y) de la imagen. */
+export function shapeAlphaAt(r: ShapeBitmap | null, x: number, y: number): number {
+  if (!r) return 0
+  const px = x - r.x
+  const py = y - r.y
+  if (px < 0 || py < 0 || px >= r.bitmap.width || py >= r.bitmap.height) return 0
+  return r.bitmap.data[(py * r.bitmap.width + px) * 4 + 3]!
+}
+
+const cache = new Map<string, ShapeBitmap | null>()
 const CACHE_MAX = 64
 
-/** Como `renderShape`, con caché por contenido (la forma es JSON puro). */
-export function renderShapeCached(s: Shape, w: number, h: number): Bitmap {
+/** Como `renderShapeRegion`, con caché por contenido (la forma es JSON puro). */
+export function renderShapeCached(s: Shape, w: number, h: number): ShapeBitmap | null {
   const key = `${w}x${h}|${JSON.stringify(s)}`
-  const hit = cache.get(key)
-  if (hit) {
+  if (cache.has(key)) {
+    const hit = cache.get(key)!
     cache.delete(key)
     cache.set(key, hit)
     return hit
   }
-  const bmp = renderShape(s, w, h)
-  cache.set(key, bmp)
+  const r = renderShapeRegion(s, w, h)
+  cache.set(key, r)
   if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value!)
-  return bmp
+  return r
 }

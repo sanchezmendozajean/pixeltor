@@ -100,3 +100,32 @@ test('escalar con la caja, convertir en trazado y mover un ancla', async () => {
   await expect(page.getByRole('button', { name: 'Mover ancla' })).toBeVisible()
   await page.screenshot({ path: 'test-results/f2-anclas.png' })
 })
+
+test('rotar con la caja y mover una forma a otra capa arrastrando su fila', async () => {
+  await page.keyboard.press('Control+n')
+  await page.locator('#nw').fill('64')
+  await page.locator('#nh').fill('64')
+  await page.getByRole('button', { name: 'Crear', exact: true }).click()
+  await page.keyboard.press('m')
+  await drag(-60, -60, 0, 0)
+  await page.keyboard.press('v')
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  // fuera de la esquina inferior derecha de la caja (zona de rotación)
+  await page.mouse.move(cx + 22, cy + 22)
+  await page.mouse.down()
+  await page.mouse.move(cx - 40, cy + 40, { steps: 8 })
+  await page.mouse.up()
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  await expect(page.getByRole('button', { name: 'Rotar' })).toBeVisible()
+
+  await page.locator('.pt-ptab', { hasText: 'Capas' }).click()
+  await page.keyboard.press('Control+Shift+n')
+  await expect(page.locator('.layers li:not(.pt-srow)')).toHaveCount(2)
+  const shapeRow = page.locator('.layers .pt-srow').first()
+  const lower = page.locator('.layers li:not(.pt-srow)').last()
+  await shapeRow.dragTo(page.locator('.layers li:not(.pt-srow)').first())
+  await expect(page.locator('.layers .pt-srow')).toHaveCount(1)
+  void lower
+})

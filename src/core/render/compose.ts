@@ -1,8 +1,8 @@
 import type { ID, PxImage } from '../model/types'
 import { Bitmap, type Rect, clipRect } from '../raster/bitmap'
-import { compositeOver } from '../raster/blend'
+import { compositeAt, compositeOver } from '../raster/blend'
 import type { Shape } from '../model/shapes'
-import { renderShape, renderShapeCached } from './shape'
+import { renderShapeCached, renderShapeRegion } from './shape'
 import type { FloatingPixels } from '../raster/mask'
 
 export interface ComposeExtras {
@@ -41,22 +41,11 @@ export function composeImage(
       shapeScratch.data.set(src.data)
       for (const sh of layer.shapes) {
         if (!sh.visible) continue
-        compositeOver(
-          shapeScratch,
-          renderShapeCached(sh, img.width, img.height),
-          sh.blendMode,
-          sh.opacity,
-          r
-        )
+        const sb = renderShapeCached(sh, img.width, img.height)
+        if (sb) compositeAt(shapeScratch, sb.bitmap, sb.x, sb.y, sh.blendMode, sh.opacity, r)
       }
-      if (pv)
-        compositeOver(
-          shapeScratch,
-          renderShape(pv, img.width, img.height),
-          pv.blendMode,
-          pv.opacity,
-          r
-        )
+      const pb = pv ? renderShapeRegion(pv, img.width, img.height) : null
+      if (pv && pb) compositeAt(shapeScratch, pb.bitmap, pb.x, pb.y, pv.blendMode, pv.opacity, r)
       src = shapeScratch
     }
     const f = extras.floating

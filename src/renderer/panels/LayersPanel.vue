@@ -2,7 +2,7 @@
 // Panel Capas: lista (arriba = capa superior), visibilidad, bloqueo, renombrar, reordenar
 // arrastrando, y opacidad / modo de fusión / bloqueo de transparencia de la capa activa.
 import { computed, nextTick, ref } from 'vue'
-import { BLEND_MODES, type BlendMode, selectShapes } from '@core/index'
+import { BLEND_MODES, type BlendMode, moveShapesToLayer, selectShapes } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import LayerThumb from './LayerThumb.vue'
@@ -13,6 +13,8 @@ const docs = useDocumentsStore()
 const editing = ref<string | null>(null)
 const draft = ref('')
 const dragId = ref<string | null>(null)
+/** Forma arrastrada hacia otra capa. */
+const dragShape = ref<string | null>(null)
 const dropIndex = ref<number | null>(null)
 
 const active = computed(() => docs.layers.find((l) => l.active))
@@ -57,6 +59,18 @@ function onOpacity(e: Event) {
 
 // Reordenar: la lista está invertida (la fila 0 es la capa de más arriba).
 function onDrop(rowIndex: number) {
+  if (dragShape.value) {
+    const s = docs.session
+    const target = docs.layers[rowIndex]
+    const ids =
+      s && dragShape.value && s.selectedShapes.includes(dragShape.value)
+        ? s.selectedShapes
+        : [dragShape.value]
+    dragShape.value = null
+    dropIndex.value = null
+    if (s && target) moveShapesToLayer(s, ids, target.id)
+    return
+  }
   const s = docs.session
   const id = dragId.value
   dragId.value = null
@@ -130,6 +144,9 @@ function onDrop(rowIndex: number) {
           :key="sh.id"
           class="pt-lrow pt-srow"
           :class="{ 'is-selected': sh.selected, 'is-hidden': !sh.visible }"
+          draggable="true"
+          @dragstart.stop="dragShape = sh.id"
+          @dragend="((dragShape = null), (dropIndex = null))"
           @click="onShapeClick(l.id, sh.id, $event)"
         >
           <span class="indent" />

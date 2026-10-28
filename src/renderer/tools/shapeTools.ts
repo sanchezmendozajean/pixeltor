@@ -13,6 +13,7 @@ import {
   type Vec2,
   AnchorDrag,
   ShapeMove,
+  ShapeRotate,
   ShapeScale,
   addAnchorAt,
   addShape,
@@ -123,6 +124,7 @@ export class ShapeTools {
     box: Box
     mods: Mods
   } | null = null
+  private rotating: { rot: ShapeRotate; start: number } | null = null
   private anchorDrag: { ad: AnchorDrag; x0: number; y0: number; started: boolean } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
   /** Anclas seleccionadas con la Selección directa. */
@@ -259,10 +261,36 @@ export class ShapeTools {
     return null
   }
 
+  /** Zona de rotación: fuera de la caja, cerca de una esquina (6–26 px de pantalla). */
+  private hitRotateZone(p: Pointer): Box | null {
+    const ws = this.getWs()
+    if (!ws || !ws.session.selectedShapes.length) return null
+    const box = shapesBox(ws.session, ws.session.selectedShapes)
+    if (!box) return null
+    for (const [hx, hy] of [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1]
+    ] as const) {
+      const a = ws.viewport.toScreen(box.x + hx * box.w, box.y + hy * box.h)
+      const d = Math.hypot(a.x - p.sx, a.y - p.sy)
+      const outside = (hx === 0 ? p.sx < a.x : p.sx > a.x) || (hy === 0 ? p.sy < a.y : p.sy > a.y)
+      if (d >= HIT && d <= 26 && outside) return box
+    }
+    return null
+  }
+
   private downSelect(p: Pointer, mods: Mods): void {
     const ws = this.getWs()!
     const s = ws.session
     const h = this.hitBoxHandle(p)
+    const rot = h ? null : this.hitRotateZone(p)
+    if (rot) {
+      const rt = new ShapeRotate(s, s.selectedShapes, rot)
+      this.rotating = { rot: rt, start: Math.atan2(p.fy - rt.center.y, p.fx - rt.center.x) }
+      return
+    }
     if (h) {
       this.scaling = {
         sc: new ShapeScale(s, s.selectedShapes, h.box),
@@ -365,6 +393,14 @@ export class ShapeTools {
   move(tool: string, p: Pointer, mods: Mods): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.rotating) {
+      const r = this.rotating
+      let ang = Math.atan2(p.fy - r.rot.center.y, p.fx - r.rot.center.x) - r.start
+      // Mayús: pasos de 15°
+      if (mods.shift) ang = Math.round(ang / (Math.PI / 12)) * (Math.PI / 12)
+      r.rot.rotateTo(ang)
+      return
+    }
     if (this.scaling) {
       this.scaleTo(p, mods)
       return
@@ -431,6 +467,11 @@ export class ShapeTools {
   up(tool: string): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.rotating) {
+      this.rotating.rot.end()
+      this.rotating = null
+      return
+    }
     if (this.scaling) {
       this.scaling.sc.end()
       this.scaling = null
@@ -482,6 +523,8 @@ export class ShapeTools {
     this.moving = null
     this.scaling?.sc.end()
     this.scaling = null
+    this.rotating?.rot.end()
+    this.rotating = null
     if (this.anchorDrag?.started) this.anchorDrag.ad.end()
     this.anchorDrag = null
   }

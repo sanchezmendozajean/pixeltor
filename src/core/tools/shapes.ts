@@ -5,7 +5,7 @@ import { cloneShape } from '../model/shapes'
 import { newId } from '../model/ids'
 import type { ID, Layer } from '../model/types'
 import { compositeOver } from '../raster/blend'
-import { renderShape, renderShapeCached } from '../render/shape'
+import { renderShape, renderShapeCached, shapeAlphaAt } from '../render/shape'
 import type { DocumentSession } from '../session'
 
 export function findShape(
@@ -233,14 +233,14 @@ export function hitShape(s: DocumentSession, x: number, y: number, reach = 1): I
       const sh = layer.shapes[si]!
       if (!sh.visible || sh.locked) continue
       const bmp = renderShapeCached(sh, w, h)
+      if (!bmp) continue
       for (let dy = -reach; dy <= reach; dy++)
         for (let dx = -reach; dx <= reach; dx++) {
           const px = x + dx
           const py = y + dy
           if (px < 0 || py < 0 || px >= w || py >= h) continue
           // el centro cuenta siempre; los vecinos solo para formas de contorno fino
-          if ((dx === 0 && dy === 0) || thinOnly(sh))
-            if (bmp.data[(py * w + px) * 4 + 3]) return sh.id
+          if ((dx === 0 && dy === 0) || thinOnly(sh)) if (shapeAlphaAt(bmp, px, py)) return sh.id
         }
     }
   }
