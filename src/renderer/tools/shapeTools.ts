@@ -19,6 +19,9 @@ import {
   ShapeRotate,
   isolateGroup,
   resolveShape,
+  computeSnap,
+  shapeBounds,
+  type SnapLine,
   commitLiveEdit,
   defaultGradient,
   invert,
@@ -153,6 +156,10 @@ export class ShapeTools {
     stopIndex: number
   } | null = null
   private keyCandidate: ID | null = null
+  /** Límites de píxeles de la selección al empezar a moverla (para ajustar). */
+  private moveBounds: { x: number; y: number; w: number; h: number } | null = null
+  /** Líneas de ajuste visibles mientras se arrastra. */
+  snapLines: SnapLine[] = []
   private radiusDrag: RectRadiusDrag | null = null
   private rotating: { rot: ShapeRotate; start: number } | null = null
   private anchorDrag: { ad: AnchorDrag; x0: number; y0: number; started: boolean } | null = null
@@ -340,6 +347,42 @@ export class ShapeTools {
     return null
   }
 
+  /** Unión de los límites de píxeles de las formas seleccionadas. */
+  private selectionBounds(): { x: number; y: number; w: number; h: number } | null {
+    const ws = this.getWs()
+    if (!ws) return null
+    const list = ws.session.selectedShapes
+      .map((id) => shapeBounds(ws.session, id))
+      .filter((b): b is NonNullable<typeof b> => !!b)
+    if (!list.length) return null
+    const x0 = Math.min(...list.map((b) => b.x))
+    const y0 = Math.min(...list.map((b) => b.y))
+    return {
+      x: x0,
+      y: y0,
+      w: Math.max(...list.map((b) => b.x + b.w)) - x0,
+      h: Math.max(...list.map((b) => b.y + b.h)) - y0
+    }
+  }
+
+  /** Ajuste del desplazamiento (dx, dy) según los interruptores de la barra de estado. */
+  private snapMove(dx: number, dy: number): { dx: number; dy: number; lines: SnapLine[] } {
+    const ws = this.getWs()
+    const b = this.moveBounds
+    const ui = useUiStore()
+    if (!ws || !b || (!ui.snap.canvas && !ui.snap.smart && !ui.snap.guides)) {
+      return { dx: 0, dy: 0, lines: [] }
+    }
+    const radius = 4 / ws.viewport.zoom
+    return computeSnap(
+      ws.session,
+      { x: b.x + dx, y: b.y + dy, w: b.w, h: b.h },
+      ws.session.selectedShapes,
+      { canvas: ui.snap.canvas, objects: ui.snap.smart, guides: ui.snap.guides && ui.showGuides },
+      radius
+    )
+  }
+
   private downSelect(p: Pointer, mods: Mods): void {
     const ws = this.getWs()!
     const s = ws.session
@@ -374,6 +417,7 @@ export class ShapeTools {
       const layer = s.image.layers.find((l) => l.shapes.some((sh) => sh.id === id))
       if (layer && layer.id !== s.activeLayerId) s.setActiveLayer(layer.id)
       this.moving = { mv: new ShapeMove(s, s.selectedShapes), x0: p.x, y0: p.y, started: false }
+      this.moveBounds = this.selectionBounds()
     } else if (!mods.shift && s.selectedShapes.length) selectShapes(s, [])
   }
 
@@ -482,7 +526,15 @@ export class ShapeTools {
     if (this.moving) {
       const m = this.moving
       if (!m.started && (p.x !== m.x0 || p.y !== m.y0)) m.started = true
-      if (m.started) m.mv.moveBy(p.x - m.x0, p.y - m.y0)
+      if (m.started) {
+        let dx = p.x - m.x0
+        let dy = p.y - m.y0
+        const sn = this.snapMove(dx, dy)
+        dx += sn.dx
+        dy += sn.dy
+        this.snapLines = sn.lines
+        m.mv.moveBy(dx, dy)
+      }
       return
     }
     if (this.anchorDrag) {
@@ -569,6 +621,8 @@ export class ShapeTools {
       }
       this.keyCandidate = null
       this.moving = null
+      this.snapLines = []
+      this.moveBounds = null
       return
     }
     if (this.anchorDrag) {
@@ -654,9 +708,11 @@ export class ShapeTools {
     selBox: Box | null
     radiusWidget: Vec2 | null
     gradientBar: OverlayGradientBar | null
+    snapLines: SnapLine[]
   } {
     const ws = this.getWs()
-    if (!ws) return { shapes: [], selBox: null, radiusWidget: null, gradientBar: null }
+    if (!ws)
+      return { shapes: [], selBox: null, radiusWidget: null, gradientBar: null, snapLines: [] }
     const s = ws.session
     const out: ShapeOverlay[] = []
     const direct =
@@ -714,7 +770,8 @@ export class ShapeTools {
       shapes: out,
       selBox,
       radiusWidget: rw?.pos ?? null,
-      gradientBar: this.gradientBar(tool)
+      gradientBar: this.gradientBar(tool),
+      snapLines: this.snapLines
     }
   }
 

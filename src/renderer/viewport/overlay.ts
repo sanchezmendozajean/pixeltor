@@ -67,6 +67,10 @@ export interface ShapeOverlay {
 
 export interface OverlayState {
   shapes?: ShapeOverlay[]
+  /** Guías del lienzo (px de imagen). */
+  guides?: { axis: 'h' | 'v'; pos: number }[]
+  /** Líneas de ajuste temporales (guías inteligentes) en coordenadas de imagen. */
+  snapLines?: { axis: 'v' | 'h'; pos: number; from: number; to: number; kind: string }[]
   /** Anotador del degradado de la herramienta G (coordenadas de imagen). */
   gradientBar?: {
     from: { x: number; y: number }
@@ -99,6 +103,42 @@ export function drawOverlay(
     ctx.scale(vp.zoom, vp.zoom)
     fn()
     ctx.restore()
+  }
+
+  for (const g of st.guides ?? []) {
+    ctx.setLineDash([])
+    ctx.lineWidth = 1
+    ctx.strokeStyle = '#2fd3e0'
+    ctx.beginPath()
+    if (g.axis === 'v') {
+      const x = Math.round(vp.toScreen(g.pos, 0).x) + 0.5
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, vp.height)
+    } else {
+      const y = Math.round(vp.toScreen(0, g.pos).y) + 0.5
+      ctx.moveTo(0, y)
+      ctx.lineTo(vp.width, y)
+    }
+    ctx.stroke()
+  }
+
+  for (const l of st.snapLines ?? []) {
+    ctx.setLineDash([])
+    ctx.lineWidth = 1
+    ctx.strokeStyle = l.kind === 'guide' ? '#2fd3e0' : '#ff2bd6'
+    ctx.beginPath()
+    if (l.axis === 'v') {
+      const a = vp.toScreen(l.pos, l.from)
+      const b = vp.toScreen(l.pos, l.to)
+      ctx.moveTo(Math.round(a.x) + 0.5, a.y - 6)
+      ctx.lineTo(Math.round(b.x) + 0.5, b.y + 6)
+    } else {
+      const a = vp.toScreen(l.from, l.pos)
+      const b = vp.toScreen(l.to, l.pos)
+      ctx.moveTo(a.x - 6, Math.round(a.y) + 0.5)
+      ctx.lineTo(b.x + 6, Math.round(b.y) + 0.5)
+    }
+    ctx.stroke()
   }
 
   for (const sh of st.shapes ?? []) {

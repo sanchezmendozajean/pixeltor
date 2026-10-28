@@ -11,9 +11,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Panel Degradado** (como el de Illustrator): vista previa, tipo, ángulo, barra con el resultado pixelado real (bandas o tramado), paradas debajo (arrastrar, clic en el hueco para añadir), puntos medios (rombos) encima, color, opacidad y ubicación de la parada seleccionada, cuentagotas de pantalla y eliminar parada. Las paradas admiten punto medio en el modelo.
 - **Barra de estado**: tamaño W × H en píxeles de la forma que se dibuja o está seleccionada.
 
+- **Herramienta Degradado (`G`)**: anotador sobre el lienzo (línea inicio → fin, extremos y paradas arrastrables); arrastrar en el vacío define un degradado nuevo (convierte el relleno si era sólido). Un solo paso de historial al soltar.
+- **Edición viva**: los arrastres de los paneles (paradas, puntos medios) y los selectores de color registran **un único paso al soltar**, no uno por movimiento.
+- **Panel Alinear**: alinear (izquierda, centro, derecha, arriba, centro, abajo) y distribuir (bordes y centros, horizontal y vertical) respecto a la selección, a un **objeto clave** (clic en una forma ya seleccionada, trazo grueso) o al lienzo; **espaciado fijo** en píxeles. Usa los límites de píxeles visibles; todo movimiento es entero.
+- **Reglas y guías**: reglas en píxeles de imagen; arrastrar desde una regla crea una guía, con `V` se mueve y devolverla a la regla la elimina (Ctrl+; las oculta). Las guías se guardan en el documento y son deshacibles.
+- **Ajuste (snapping) al mover formas**: a bordes y centros de otras formas (guías inteligentes, líneas magenta), a los bordes y centro del lienzo y a las guías (cian), con los interruptores de la barra de estado y un radio de 4 px de pantalla.
+- Las pestañas del dock se acortan en vez de ensanchar la columna.
+
 ### Pendiente de F3
 
-- Herramienta Degradado en el lienzo (`G`), alinear y distribuir, snapping y guías inteligentes, reglas y guías, contorno de trazo, desplazamiento de trazado, simplificar, trazados compuestos, muestras globales y paletas (importar/exportar, rampas), simetría y paleta de comandos.
+- Snapping de anclas y trazados, y al dibujar o escalar (hoy solo al mover); guías inteligentes con medidas y ángulos.
+- Contorno de trazo, desplazamiento de trazado, simplificar y trazados compuestos.
+- Muestras globales y paletas (importar/exportar, rampas) y editor del modo «paleta» de los degradados.
+- Simetría en pincel y lápiz.
+- Paleta de comandos.
 
 ## [0.3.0] — F2 · Formas vectoriales
 

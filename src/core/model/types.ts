@@ -49,6 +49,13 @@ export interface Layer {
   effects: unknown[]
 }
 
+/** Guía de la imagen: línea horizontal (`h`, posición y) o vertical (`v`, posición x), en px. */
+export interface Guide {
+  id: ID
+  axis: 'h' | 'v'
+  pos: number
+}
+
 export interface PxImage {
   id: ID
   name: string
@@ -57,6 +64,7 @@ export interface PxImage {
   durationMs: number
   includeInAnimation: boolean
   layers: Layer[]
+  guides?: Guide[]
 }
 
 export interface DocumentSettings {

@@ -62,3 +62,25 @@ test('alinear a la izquierda, distribuir y objeto clave', async () => {
     page.locator('.hist').getByRole('button', { name: /Distribuir espaciado/ })
   ).toHaveCount(1)
 })
+
+test('reglas y guías: crear arrastrando desde la regla y eliminar devolviéndola', async () => {
+  await expect(page.locator('.ruler-h')).toBeVisible()
+  await expect(page.locator('.ruler-v')).toBeVisible()
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  // regla superior → guía horizontal
+  await page.mouse.move(box.x + 300, box.y + 8)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 300, box.y + 200, { steps: 6 })
+  await page.mouse.up()
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  await expect(page.locator('.hist').getByRole('button', { name: 'Crear guía' })).toHaveCount(1)
+  await page.screenshot({ path: 'test-results/f3-guias.png' })
+
+  // con V, arrastrar la guía de vuelta a la regla la elimina
+  await page.keyboard.press('v')
+  await page.mouse.move(box.x + 300, box.y + 200)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 300, box.y + 8, { steps: 6 })
+  await page.mouse.up()
+  await expect(page.locator('.hist').getByRole('button', { name: 'Mover guía' })).toHaveCount(1)
+})

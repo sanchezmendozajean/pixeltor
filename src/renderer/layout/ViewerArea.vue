@@ -10,6 +10,8 @@ import { useUiStore } from '@/stores/ui'
 import { CanvasController, type Notice, setActiveController } from '@/tools/controller'
 import { GlView } from '@/viewport/GlView'
 import { drawOverlay } from '@/viewport/overlay'
+import { RULER, drawRuler, rulerColors } from '@/viewport/rulers'
+import { GuideDrag } from '@core/index'
 import type { Workspace } from '@/session/workspace'
 import { t } from '@/i18n'
 
@@ -19,6 +21,8 @@ const tools = useToolsStore()
 
 const stage = ref<HTMLDivElement>()
 const glCanvas = ref<HTMLCanvasElement>()
+const rulerH = ref<HTMLCanvasElement>()
+const rulerV = ref<HTMLCanvasElement>()
 const ovCanvas = ref<HTMLCanvasElement>()
 const notice = ref<Notice>(null)
 // El grupo aislado no es reactivo: se relee cada vez que cambia la revisión del documento.
@@ -71,7 +75,50 @@ function frame(): void {
     ov.height = h
   }
   drawOverlay(ov.getContext('2d')!, vp, controller.overlayState(dash), dpr)
+  drawRulers(vp, dpr)
   if (docs.zoomPercent !== vp.zoomPercent) docs.zoomPercent = vp.zoomPercent
+}
+
+function drawRulers(vp: Workspace['viewport'], dpr: number): void {
+  const h = rulerH.value
+  const v = rulerV.value
+  if (!h || !v) return
+  const colors = rulerColors()
+  const hw = Math.round(vp.width * dpr)
+  const hh = Math.round(RULER * dpr)
+  if (h.width !== hw || h.height !== hh) {
+    h.width = hw
+    h.height = hh
+  }
+  const vh = Math.round(vp.height * dpr)
+  if (v.width !== hh || v.height !== vh) {
+    v.width = hh
+    v.height = vh
+  }
+  drawRuler(h, vp, 'h', colors, dpr)
+  drawRuler(v, vp, 'v', colors, dpr)
+}
+
+/** Arrastrar desde una regla crea una guía; soltarla sobre la misma regla la elimina. */
+function onRulerDown(axis: 'h' | 'v', e: PointerEvent): void {
+  if (!ws) return
+  const vp = ws.viewport
+  const stageBox = stage.value!.getBoundingClientRect()
+  const at = (ev: PointerEvent) => {
+    const pt = vp.toImage(ev.clientX - stageBox.left, ev.clientY - stageBox.top)
+    return axis === 'h' ? pt.y : pt.x
+  }
+  const el = e.currentTarget as HTMLElement
+  el.setPointerCapture(e.pointerId)
+  const gd = GuideDrag.create(ws.session, axis, at(e))
+  el.onpointermove = (ev) => gd.moveTo(at(ev))
+  el.onpointerup = (ev) => {
+    el.onpointermove = null
+    el.onpointerup = null
+    const over =
+      axis === 'h' ? ev.clientY - stageBox.top < RULER : ev.clientX - stageBox.left < RULER
+    gd.end(over)
+  }
 }
 
 function bind(next: Workspace | null): void {
@@ -121,6 +168,9 @@ function onDown(e: PointerEvent): void {
 }
 function onMove(e: PointerEvent): void {
   controller.moveTo(info(e))
+  // cursor de redimensionar sobre una guía (herramienta V)
+  stage.value!.style.cursor =
+    controller.guideHover === 'v' ? 'ew-resize' : controller.guideHover === 'h' ? 'ns-resize' : ''
   schedule()
 }
 function onUp(e: PointerEvent): void {
@@ -276,6 +326,16 @@ const cursorClass = () =>
         "
       />
       <canvas ref="ovCanvas" class="layer" aria-hidden="true" />
+      <canvas
+        ref="rulerH"
+        class="ruler ruler-h"
+        @pointerdown.stop.prevent="onRulerDown('h', $event)"
+      />
+      <canvas
+        ref="rulerV"
+        class="ruler ruler-v"
+        @pointerdown.stop.prevent="onRulerDown('v', $event)"
+      />
       <p v-if="isolated" class="notice" role="status">
         {{ t('notice.isolation') }}
       </p>
@@ -304,6 +364,20 @@ const cursorClass = () =>
   inset: 0;
   width: 100%;
   height: 100%;
+}
+.ruler {
+  position: absolute;
+  left: 0;
+  top: 0;
+  cursor: crosshair;
+}
+.ruler-h {
+  width: 100%;
+  height: 16px;
+}
+.ruler-v {
+  height: 100%;
+  width: 16px;
 }
 .stage.cross {
   cursor: crosshair;

@@ -40,3 +40,4 @@ export { apply, invert, multiply, IDENTITY, translation } from './geometry/geome
 export { colorAt, ditherThreshold, gradientSampler, gradientT, sortedStops } from './render/paint'
 export { defaultGradient } from './render/shape'
 export * from './tools/align'
+export * from './tools/snap'

@@ -9,6 +9,8 @@ export const useUiStore = defineStore('ui', {
     panelsHidden: 'none' as PanelsHidden,
     pixelGrid: true,
     showPaths: true,
+    /** Mostrar las guías del lienzo (Ctrl+;). */
+    showGuides: true,
     /** Diálogo modal abierto. */
     dialog: null as null | 'new' | 'export' | 'recovery',
     /** Mensaje breve no bloqueante (errores y avisos). */

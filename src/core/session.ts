@@ -6,7 +6,7 @@ import { deflateSync, inflateSync } from 'fflate'
 import { History, type HistoryCommand } from './history/history'
 import { cloneLayerMeta, createDocument, createLayer, findLayer } from './model/document'
 import { newId } from './model/ids'
-import type { ID, Layer, PixeltorDocument, PxImage } from './model/types'
+import type { Guide, ID, Layer, PixeltorDocument, PxImage } from './model/types'
 import { MAX_LAYERS } from './model/types'
 import { Bitmap, type Rect, clipRect, unionRect } from './raster/bitmap'
 import type { FloatingPixels, PixelMask } from './raster/mask'
@@ -21,6 +21,7 @@ export interface SelectionState {
 export interface Snapshot {
   imageId: ID
   layers: Layer[]
+  guides: Guide[]
   activeLayerId: ID
   selection: SelectionState
   shapes: ID[]
@@ -213,6 +214,7 @@ export class DocumentSession {
     return {
       imageId: this.activeImageId,
       layers: this.image.layers.map(cloneLayerMeta),
+      guides: (this.image.guides ?? []).map((g) => ({ ...g })),
       activeLayerId: this.activeLayerId,
       selection: { ...this.selection },
       shapes: [...this.selectedShapes]
@@ -223,6 +225,7 @@ export class DocumentSession {
     this.activeImageId = snap.imageId
     const img = this.image
     img.layers = snap.layers.map(cloneLayerMeta)
+    img.guides = snap.guides.map((g) => ({ ...g }))
     this.activeLayerId = snap.activeLayerId
     this.selection = { ...snap.selection }
     this.selectedShapes = [...snap.shapes]

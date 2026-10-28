@@ -9,6 +9,7 @@ import {
   brushOffsets,
   bucketFill,
   commitFloating,
+  GuideDrag,
   deselect,
   paintBlockReason,
   pickColor,
@@ -21,6 +22,8 @@ import { useColorsStore } from '@/stores/colors'
 import { hexToRgba, rgbaToHex } from '@/stores/colorUtil'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
+import { useUiStore } from '@/stores/ui'
+import { RULER } from '@/viewport/rulers'
 import type { OverlayState } from '@/viewport/overlay'
 import { SHAPE_TOOLS, ShapeTools } from './shapeTools'
 
@@ -53,6 +56,11 @@ export class CanvasController {
   private lastPaintPoint = new WeakMap<Workspace, { x: number; y: number }>()
   readonly shapes: ShapeTools
   private shapeActive: string | null = null
+  /** Guía que se está arrastrando con la herramienta V. */
+  private guideDrag: { gd: GuideDrag; axis: 'h' | 'v' } | null = null
+  /** Eje de la guía bajo el cursor (herramienta V), para el cursor del ratón. */
+  guideHover: 'h' | 'v' | null = null
+  private lastScreen = { x: 0, y: 0 }
   spaceDown = false
   hover: { x: number; y: number } | null = null
 
@@ -96,6 +104,7 @@ export class CanvasController {
     const m = this.marquee
     return {
       ...this.shapes.overlay(t.active),
+      guides: useUiStore().showGuides ? (s.image.guides ?? []) : [],
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : null,
       cursor,
@@ -122,6 +131,15 @@ export class CanvasController {
     if (p.alt && (PAINT_TOOLS.has(tool) || tool === 'bucket') && tool !== 'eraser') {
       this.eyedrop(ws, x, y, p.button, p.ctrl)
       return
+    }
+
+    // V sobre una guía la arrastra (tiene prioridad sobre las formas)
+    if (tool === 'sel') {
+      const g = this.guideAt(ws, p.sx, p.sy)
+      if (g) {
+        this.guideDrag = { gd: new GuideDrag(s, g.id), axis: g.axis }
+        return
+      }
     }
 
     if (SHAPE_TOOLS.has(tool)) {
@@ -236,6 +254,13 @@ export class CanvasController {
     const x = Math.floor(pt.x)
     const y = Math.floor(pt.y)
     this.hover = { x, y }
+    this.lastScreen = { x: p.sx, y: p.sy }
+    this.guideHover =
+      this.tools.active === 'sel' ? (this.guideAt(ws, p.sx, p.sy)?.axis ?? null) : null
+    if (this.guideDrag) {
+      this.guideDrag.gd.moveTo(this.guideDrag.axis === 'v' ? pt.x : pt.y)
+      return
+    }
     this.shapes.hover(x, y, this.tools.active)
     useDocumentsStore().cursor = { x, y }
 
@@ -275,6 +300,13 @@ export class CanvasController {
   up(): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.guideDrag) {
+      // soltar sobre la regla elimina la guía
+      const onRuler = this.lastScreen.x < RULER || this.lastScreen.y < RULER
+      this.guideDrag.gd.end(onRuler)
+      this.guideDrag = null
+      return
+    }
     if (this.shapeActive) {
       this.shapes.up(this.shapeActive)
       this.shapeActive = null
@@ -314,7 +346,23 @@ export class CanvasController {
     if (c !== null && (c & 255) !== 0) this.setColor(button, c)
   }
 
+  /** Guía a menos de 4 px de pantalla del puntero, si las guías son visibles. */
+  private guideAt(ws: Workspace, sx: number, sy: number): { id: string; axis: 'h' | 'v' } | null {
+    if (!useUiStore().showGuides) return null
+    const vp = ws.viewport
+    for (const g of ws.session.image.guides ?? []) {
+      const d =
+        g.axis === 'v'
+          ? Math.abs(vp.toScreen(g.pos, 0).x - sx)
+          : Math.abs(vp.toScreen(0, g.pos).y - sy)
+      if (d < 4) return { id: g.id, axis: g.axis }
+    }
+    return null
+  }
+
   cancelInteraction(): void {
+    this.guideDrag?.gd.end()
+    this.guideDrag = null
     this.shapes.cancel()
     this.shapeActive = null
     this.stroke?.end()

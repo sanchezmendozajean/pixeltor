@@ -80,6 +80,10 @@ export function registerAppActions(): void {
     run: () => (ui.showPaths = !ui.showPaths),
     checked: () => !ui.showPaths
   })
+  registerHandler('view.guides', {
+    run: () => (ui.showGuides = !ui.showGuides),
+    checked: () => ui.showGuides
+  })
   registerHandler('view.smartGuides', {
     run: () => (ui.snap.smart = !ui.snap.smart),
     checked: () => ui.snap.smart
