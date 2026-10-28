@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PtIcon from '@/components/PtIcon.vue'
+import { closeWorkspace } from '@/app/documentOps'
 import { useDocumentsStore } from '@/stores/documents'
 import { t } from '@/i18n'
 
@@ -16,12 +17,20 @@ const docs = useDocumentsStore()
       :class="{ 'is-active': tab.id === docs.activeId }"
       role="tab"
       :aria-selected="tab.id === docs.activeId"
-      @click="docs.activeId = tab.id"
+      @click="docs.activate(tab.id)"
+      @auxclick.middle.prevent="closeWorkspace(tab.id)"
     >
       {{ tab.name }}.pixeltor
-      <span class="pt-doctab__zoom">@ {{ tab.zoom }} %</span>
+      <span v-if="tab.id === docs.activeId" class="pt-doctab__zoom"
+        >@ {{ docs.zoomPercent }} %</span
+      >
       <span v-if="tab.dirty" class="pt-dirty" :data-tip="t('docs.unsaved')" />
-      <span class="pt-iconbtn" role="button" :aria-label="t('docs.close')">
+      <span
+        class="pt-iconbtn"
+        role="button"
+        :aria-label="t('docs.close')"
+        @click.stop="closeWorkspace(tab.id)"
+      >
         <PtIcon name="close" class="x" />
       </span>
     </button>

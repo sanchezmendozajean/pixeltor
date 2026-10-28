@@ -144,6 +144,19 @@
     "brush": {
       "sizeDown": "Reducir tamaño de pincel",
       "sizeUp": "Aumentar tamaño de pincel"
+    },
+    "selection": {
+      "commit": "Fijar píxeles flotantes",
+      "cancel": "Cancelar selección flotante",
+      "left": "Desplazar 1 px a la izquierda",
+      "right": "Desplazar 1 px a la derecha",
+      "up": "Desplazar 1 px arriba",
+      "down": "Desplazar 1 px abajo",
+      "left10": "Desplazar 10 px a la izquierda",
+      "right10": "Desplazar 10 px a la derecha",
+      "up10": "Desplazar 10 px arriba",
+      "down10": "Desplazar 10 px abajo",
+      "fill": "Rellenar con el color de relleno"
     }
   },
   "titlebar": {
@@ -176,7 +189,9 @@
     "untitled": "Sin título-{n}",
     "close": "Cerrar documento",
     "unsaved": "Cambios sin guardar",
-    "canvasLabel": "Lienzo {w} × {h} px al {zoom} %"
+    "canvasLabel": "Lienzo {w} × {h} px al {zoom} %",
+    "noDocument": "Sin documento abierto",
+    "empty": "Crea o abre un documento para empezar"
   },
   "viewer": {
     "image": "Imagen",
@@ -220,8 +235,8 @@
     "emptyProperties": "Sin selección",
     "emptyLayers": "Sin capas",
     "emptyAppearance": "Sin forma seleccionada",
-    "emptyColor": "El selector de color llega en F1",
-    "emptySwatches": "Las muestras llegan en F1",
+    "emptyColor": "Sin documento",
+    "emptySwatches": "Sin muestras",
     "emptyGeneric": "Este panel llega en una fase posterior"
   },
   "status": {
@@ -239,5 +254,88 @@
     "snapCanvas": "Ajustar a bordes y centro del lienzo",
     "snapLabel": "Ajustar a",
     "none": "—"
+  },
+  "notice": {
+    "hidden": "La capa activa está oculta",
+    "locked": "La capa activa está bloqueada",
+    "floating": "Fija o cancela los píxeles flotantes antes de pintar"
+  },
+  "errors": {
+    "openFailed": "No se pudo abrir el archivo."
+  },
+  "dialogs": {
+    "new": {
+      "title": "Nuevo documento",
+      "width": "Ancho",
+      "height": "Alto",
+      "preset": "Tamaños frecuentes",
+      "create": "Crear",
+      "cancel": "Cancelar",
+      "px": "px",
+      "limit": "Entre 1 y 2048 px"
+    },
+    "export": {
+      "title": "Exportar como PNG",
+      "scale": "Escala",
+      "size": "Tamaño final: {w} × {h} px",
+      "export": "Exportar",
+      "cancel": "Cancelar"
+    },
+    "recovery": {
+      "title": "Recuperar documentos",
+      "intro": "Pixeltor se cerró de forma inesperada. Estos documentos tenían cambios sin guardar:",
+      "recover": "Recuperar",
+      "discard": "Descartar",
+      "later": "Cerrar"
+    }
+  },
+  "layers": {
+    "opacity": "Opacidad",
+    "blend": "Fusión",
+    "visible": "Mostrar u ocultar capa",
+    "lock": "Bloquear capa",
+    "lockAlpha": "Bloquear transparencia",
+    "rename": "Renombrar capa",
+    "moveUp": "Subir capa",
+    "moveDown": "Bajar capa",
+    "modes": {
+      "normal": "Normal",
+      "multiply": "Multiplicar",
+      "screen": "Pantalla",
+      "overlay": "Superponer",
+      "darken": "Oscurecer",
+      "lighten": "Aclarar",
+      "add": "Sumar",
+      "subtract": "Restar",
+      "difference": "Diferencia"
+    }
+  },
+  "history": {
+    "initial": "Estado inicial",
+    "empty": "Sin documento"
+  },
+  "color": {
+    "hue": "Tono",
+    "hex": "Valor hexadecimal",
+    "primary": "Color de relleno",
+    "secondary": "Color de contorno",
+    "saturationValue": "Saturación y brillo"
+  },
+  "swatches": {
+    "add": "Añadir el color actual a las muestras",
+    "remove": "Quitar muestra",
+    "apply": "Aplicar muestra {hex}"
+  },
+  "navigator": {
+    "label": "Vista general del lienzo"
+  },
+  "tooloptions": {
+    "size": "Tamaño",
+    "shape": "Forma",
+    "square": "Cuadrada",
+    "round": "Redonda",
+    "tolerance": "Tolerancia",
+    "contiguous": "Contiguo",
+    "sampleAll": "Todas las capas"
   }
 }

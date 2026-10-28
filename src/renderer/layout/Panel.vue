@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Grupo de paneles con pestañas, menú ≡ y colapso. En F0 los cuerpos son estados vacíos.
+// Grupo de paneles con pestañas, menú ≡ y colapso. Cada pestaña puede aportar su contenido
+// por un slot con su id; sin él se muestra el estado vacío.
 import { ref } from 'vue'
 import PtIcon from '@/components/PtIcon.vue'
 import { t, type I18nKey } from '@/i18n'
@@ -65,9 +66,14 @@ const collapsed = ref(false)
         class="body pt-scroll"
         :style="bodyHeight ? { height: `${bodyHeight}px`, flex: 'none' } : undefined"
       >
-        <p v-for="tab in tabs" v-show="tab.id === active" :key="tab.id" class="empty pt-sec2">
-          {{ t(tab.empty) }}
-        </p>
+        <template v-for="tab in tabs" :key="tab.id">
+          <div v-if="$slots[tab.id]" v-show="tab.id === active" class="content">
+            <slot :name="tab.id" />
+          </div>
+          <p v-else v-show="tab.id === active" class="empty pt-sec2">
+            {{ t(tab.empty) }}
+          </p>
+        </template>
       </div>
       <slot name="foot" />
     </template>
@@ -89,6 +95,12 @@ const collapsed = ref(false)
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.content {
+  align-self: stretch;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 .empty {
   margin: 0;

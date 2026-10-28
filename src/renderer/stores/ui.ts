@@ -9,6 +9,10 @@ export const useUiStore = defineStore('ui', {
     panelsHidden: 'none' as PanelsHidden,
     pixelGrid: true,
     showPaths: true,
+    /** Diálogo modal abierto. */
+    dialog: null as null | 'new' | 'export' | 'recovery',
+    /** Mensaje breve no bloqueante (errores y avisos). */
+    toast: '',
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {

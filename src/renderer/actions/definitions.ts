@@ -97,6 +97,18 @@ export const ACTIONS: ActionDef[] = [
   // Ayuda
   a('help.commandPalette', 'Ctrl+K', 'search'),
   a('help.about', undefined, 'info'),
+  // Selección de píxeles (Intro fija, Esc cancela, flechas desplazan)
+  a('selection.commit', 'Enter'),
+  a('selection.cancel', 'Escape'),
+  a('selection.left', 'ArrowLeft'),
+  a('selection.right', 'ArrowRight'),
+  a('selection.up', 'ArrowUp'),
+  a('selection.down', 'ArrowDown'),
+  a('selection.left10', 'Shift+ArrowLeft'),
+  a('selection.right10', 'Shift+ArrowRight'),
+  a('selection.up10', 'Shift+ArrowUp'),
+  a('selection.down10', 'Shift+ArrowDown'),
+  a('selection.fill', 'Alt+Delete'),
   // Herramientas
   a('tool.sel', 'V', 'sel'),
   a('tool.dsel', 'A', 'dsel'),
