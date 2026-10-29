@@ -6,6 +6,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import {
   type GradientPaint,
   type RGBA,
+  activePalette,
   type Shape,
   colorAt,
   defaultGradient,
@@ -323,11 +324,11 @@ const midPos = (i: number): number => {
   return a.offset + (a.mid ?? 0.5) * (b.offset - a.offset)
 }
 
-type ModeId = 'smooth' | 'bands' | 'dither'
+type ModeId = 'smooth' | 'bands' | 'dither' | 'palette'
 const modeOf = computed<ModeId>(() => {
   void docs.rev
   const m = grad.value?.pixelMode.mode
-  return m === 'bands' || m === 'dither' ? m : 'smooth'
+  return m === 'bands' || m === 'dither' || m === 'palette' ? m : 'smooth'
 })
 function setMode(e: Event): void {
   const mode = (e.target as HTMLSelectElement).value as ModeId
@@ -338,7 +339,30 @@ function setMode(e: Event): void {
         ? { mode: 'smooth' }
         : mode === 'bands'
           ? { mode: 'bands', steps }
-          : { mode: 'dither', matrix: 'bayer4', steps }
+          : mode === 'palette'
+            ? { mode: 'palette', colors: paletteColors(), dither: false }
+            : { mode: 'dither', matrix: 'bayer4', steps }
+  })
+}
+
+/** Copia de los colores de la paleta activa del documento (el degradado no queda enlazado). */
+function paletteColors(): RGBA[] {
+  const s = docs.session
+  return s
+    ? activePalette(s)
+        .swatches.slice(0, 256)
+        .map((x) => ({ ...x.color }))
+    : []
+}
+function refreshPalette(): void {
+  mutate('palette', (g) => {
+    if (g.pixelMode.mode === 'palette') g.pixelMode.colors = paletteColors()
+  })
+}
+function setPaletteDither(e: Event): void {
+  const on = (e.target as HTMLInputElement).checked
+  mutate('palette', (g) => {
+    if (g.pixelMode.mode === 'palette') g.pixelMode.dither = on
   })
 }
 function setSteps(e: Event): void {
@@ -502,7 +526,20 @@ const TYPES: { id: GradientPaint['type']; icon: string }[] = [
           <option value="smooth">{{ t('appearance.mode.smooth') }}</option>
           <option value="bands">{{ t('appearance.mode.bands') }}</option>
           <option value="dither">{{ t('appearance.mode.dither') }}</option>
+          <option value="palette">{{ t('appearance.mode.palette') }}</option>
         </select>
+      </div>
+      <div v-if="grad.pixelMode.mode === 'palette'" class="row pm">
+        <label class="pt-check-label">
+          <input type="checkbox" :checked="grad.pixelMode.dither" @change="setPaletteDither" />
+          {{ t('appearance.mode.dither') }}
+        </label>
+        <span class="pt-sec2">{{
+          t('appearance.paletteColors', { n: grad.pixelMode.colors.length })
+        }}</span>
+        <button type="button" class="pt-btn pt-btn--secondary" @click="refreshPalette">
+          {{ t('appearance.paletteRefresh') }}
+        </button>
       </div>
       <div v-if="'steps' in grad.pixelMode" class="row pm">
         <label>{{ t('appearance.steps') }}</label>

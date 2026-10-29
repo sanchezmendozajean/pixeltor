@@ -423,8 +423,11 @@
     "mode": {
       "smooth": "Suave",
       "bands": "Bandas",
-      "dither": "Tramado"
+      "dither": "Tramado",
+      "palette": "Paleta"
     },
+    "paletteColors": "{n} colores",
+    "paletteRefresh": "Actualizar desde la paleta",
     "matrices": {
       "bayer2": "Bayer 2×2",
       "bayer4": "Bayer 4×4",
