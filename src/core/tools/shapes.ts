@@ -8,11 +8,11 @@ import type { ID, Layer } from '../model/types'
 import { compositeOver } from '../raster/blend'
 import {
   pixelBounds,
-  renderShape,
   renderShapeCached,
   renderShapeRegion,
   shapeAlphaAt
 } from '../render/shape'
+import { renderShapeFx } from '../render/compose'
 import type { DocumentSession } from '../session'
 
 export interface ShapeLocation {
@@ -307,7 +307,7 @@ export function stampShapes(s: DocumentSession, ids: ID[]): StampResult | null {
       if (want.has(x.id)) top = i
     })
     // Formas no pedidas por debajo de la más alta pedida
-    const bitmaps = list.map((x) => (x.visible ? renderShape(x, w, h) : null))
+    const bitmaps = list.map((x) => (x.visible ? renderShapeFx(x, w, h) : null))
     let conflict = false
     for (let i = 0; i <= top && !conflict; i++) {
       if (want.has(list[i]!.id)) continue

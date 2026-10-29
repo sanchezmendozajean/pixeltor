@@ -16,6 +16,7 @@ import {
   ungroupShapes,
   isolateGroup,
   addEffect,
+  rasterizeLayerEffects,
   convertToPath,
   makeCompound,
   offsetPaths,
@@ -35,7 +36,7 @@ import { registerHandler } from './registry'
 import { closeWorkspace, exportPng, openFile, saveWorkspace } from '@/app/documentOps'
 import { useColorsStore } from '@/stores/colors'
 import { hexToRgba } from '@/stores/colorUtil'
-import { EFFECT_DEFS } from '@core/effects/defs'
+import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
@@ -282,6 +283,12 @@ export function registerAppActions(): void {
   registerHandler('layer.delete', {
     enabled: () => has() && (docs.rev, ses().image.layers.length > 1),
     run: () => void ses().deleteLayer(ses().activeLayerId)
+  })
+  registerHandler('layer.rasterizeEffects', {
+    enabled: () =>
+      has() &&
+      (docs.rev, ses().activeLayer.shapes.length > 0 || ses().activeLayer.effects.length > 0),
+    run: () => void rasterizeLayerEffects(ses(), ses().activeLayerId)
   })
   registerHandler('layer.lockAlpha', {
     enabled: has,

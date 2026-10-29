@@ -13,6 +13,8 @@ import {
   updateEffect,
   removeEffect,
   effectsInfluence,
+  rasterizeLayerEffects,
+  stampShapes,
   type Effect
 } from '@core/index'
 
@@ -35,7 +37,7 @@ function squareDoc() {
 
 describe('efectos', () => {
   it('catálogo: todos los efectos tienen valores por defecto válidos', () => {
-    expect(EFFECTS.size).toBeGreaterThanOrEqual(15)
+    expect(EFFECTS.size).toBeGreaterThanOrEqual(23)
     for (const d of EFFECTS.values())
       expect(() =>
         addEffect(DocumentSession.create(4, 4), { kind: 'layer', id: 'x' }, d.type)
@@ -118,6 +120,40 @@ describe('efectos', () => {
     expect(sum / 255).toBeLessThan(73)
   })
 
+  it('iluminación direccional aclara el lado que mira a la luz y oscurece el opuesto', () => {
+    const { s, r } = squareDoc()
+    const T = { kind: 'shape', id: r.id } as const
+    const fx = addEffect(s, T, 'directional-light')!
+    updateEffect(s, T, fx.id, { params: { angle: 180, intensity: 100, steps: 0 } })
+    const out = compose(s)
+    // luz desde la izquierda (180°): el borde izquierdo más claro que el derecho
+    expect(px(out, 12, 16)[0]).toBeGreaterThan(px(out, 19, 16)[0]!)
+    expect(px(out, 16, 16)).toEqual([255, 0, 0, 255]) // el centro no cambia
+  })
+
+  it('reemplazar colores y mapa de degradado recolorean sin tocar el alfa', () => {
+    const { s, r } = squareDoc()
+    const T = { kind: 'shape', id: r.id } as const
+    const fx = addEffect(s, T, 'color-replace')!
+    updateEffect(s, T, fx.id, { params: { from: '#ff0000', to: '#00ff00' } })
+    expect(px(compose(s), 15, 15)).toEqual([0, 255, 0, 255])
+    updateEffect(s, T, fx.id, { enabled: false })
+    addEffect(s, T, 'gradient-map')
+    const o = px(compose(s), 15, 15)
+    expect(o[3]).toBe(255)
+    expect(o.slice(0, 3)).not.toEqual([255, 0, 0])
+  })
+
+  it('torsión, ondulación y desenfoque de movimiento no fallan y son deterministas', () => {
+    const run = (type: string) => {
+      const { s, r } = squareDoc()
+      addEffect(s, { kind: 'shape', id: r.id }, type)
+      return Array.from(compose(s).data)
+    }
+    for (const t of ['twirl', 'ripple', 'motion-blur', 'bevel', 'inner-glow'])
+      expect(run(t)).toEqual(run(t))
+  })
+
   it('«Salida» con umbral deja el alfa binaria', () => {
     const { s, r } = squareDoc()
     const T = { kind: 'shape', id: r.id } as const
@@ -153,5 +189,28 @@ describe('efectos', () => {
     expect(getEffects(s, T)[0]!.enabled).toBe(true)
     s.undo()
     expect(getEffects(s, T)).toHaveLength(0)
+  })
+
+  it('estampar una forma con efectos y rasterizar los de capa conservan el render', () => {
+    const { s, r } = squareDoc()
+    const T = { kind: 'shape', id: r.id } as const
+    const sh = addEffect(s, T, 'drop-shadow')!
+    updateEffect(s, T, sh.id, { params: { dx: 2, dy: 2, blur: 2, opacity: 90 } })
+    addEffect(s, T, 'pixel-outline')
+    const before = Array.from(compose(s).data)
+    stampShapes(s, [r.id])
+    expect(s.activeLayer.shapes).toHaveLength(0)
+    expect(Array.from(compose(s).data)).toEqual(before)
+
+    const L = { kind: 'layer', id: s.activeLayer.id } as const
+    const g = addEffect(s, L, 'gaussian-blur')!
+    updateEffect(s, L, g.id, { params: { radius: 2 } })
+    const withLayerFx = Array.from(compose(s).data)
+    expect(rasterizeLayerEffects(s, s.activeLayer.id)).toBe(true)
+    expect(getEffects(s, L)).toHaveLength(0)
+    expect(Array.from(compose(s).data)).toEqual(withLayerFx)
+    s.undo()
+    expect(getEffects(s, L)).toHaveLength(1)
+    expect(Array.from(compose(s).data)).toEqual(withLayerFx)
   })
 })

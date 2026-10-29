@@ -109,7 +109,10 @@ export function registerFileHandlers(): void {
     const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
     if (r.canceled || !r.filePaths[0]) return null
     const buf = await readFile(r.filePaths[0])
-    return { path: r.filePaths[0], bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) }
+    return {
+      path: r.filePaths[0],
+      bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+    }
   })
 
   ipcMain.handle(

@@ -2,7 +2,7 @@
 // Los atajos siguen specs/04-herramientas.md. Ctrl es el modificador en Windows y Linux.
 // Formato canónico: modificadores en orden Ctrl+Alt+Shift y luego la tecla (p. ej. "Ctrl+Alt+Shift+S").
 
-import { EFFECT_DEFS } from '@core/effects/defs'
+import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 
 export interface ActionDef {
   id: string

@@ -7,13 +7,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 ### Añadido
 
 - **Motor de efectos** (`src/core/effects`): registro con esquema de parámetros (rangos y valores por defecto), radio de influencia, cadena de aplicación que solo calcula lo necesario por etapa y sección **Salida** (umbral/tramado del alfa y ajuste a paleta). Efectos en **formas y capas** que se componen en vivo sin tocar el ráster base (prueba de invariante) y regiones sucias ampliadas por el radio de influencia (prueba: componer por cuadrantes = componer todo).
-- **15 efectos**: sombra paralela, interior y larga; resplandor exterior; contorno de píxel (4/8 conexiones, exterior/interior); desenfoque gaussiano y de caja; onda, desplazamiento (con envoltura) y mosaico; tono/saturación/luminosidad, brillo/contraste, posterizar, invertir y superposición de color.
+- **23 efectos**: sombra paralela, interior y larga; resplandor exterior e interior; iluminación direccional y bisel (sombreado automático por mapa de alturas, con escalones); contorno de píxel (4/8 conexiones, exterior/interior); desenfoque gaussiano, de caja y de movimiento; onda, ondulación, torsión, desplazamiento (con envoltura) y mosaico; tono/saturación/luminosidad, brillo/contraste, mapa de degradado, reemplazar colores, posterizar, invertir y superposición de color.
+- **Rasterizar efectos de capa** (`Ctrl+Alt+E`): estampa las formas, aplica los efectos de la capa y los vacía sin cambiar el render. Estampar una forma conserva sus efectos.
+- **Golden por efecto** (huella FNV de cada efecto sobre una imagen fija) y benchmark a 1000×1000: desenfoque gaussiano ≈ 146 ms, sombra ≈ 115 ms, contorno ≈ 145 ms (Node, una sola hebra).
 - **Menú Efecto** por categorías (también en la paleta de comandos) y **panel Efectos** con parámetros en línea, activar/desactivar, reordenar, duplicar, eliminar y Salida; los deslizadores se ven en vivo y registran un solo paso al soltar.
 
 ### Pendiente de F4
 
-- Efectos restantes: iluminación direccional, bisel, resplandor interior, desenfoque de movimiento, ondulación, torsión, mapa de degradado, reemplazar colores.
-- Pool de workers y cachés por versión; presets; Aplicar efecto / Rasterizar efectos de capa; icono fx en Capas y Apariencia; efectos por atributo; golden tests por efecto y medidas de rendimiento (scrubbing de desenfoque 1000×1000 < 150 ms).
+- Pool de workers y cachés por versión (los efectos se calculan hoy en el hilo principal y solo en la región sucia); presets; «Aplicar efecto» hasta uno concreto; icono fx en Capas y Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.
 
 ## [0.4.0] — F3 · Apariencia avanzada y precisión
 

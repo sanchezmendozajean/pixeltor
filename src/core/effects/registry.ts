@@ -5,8 +5,12 @@ import type { Effect, EffectOutput } from '../model/types'
 import type { Rect } from '../raster/bitmap'
 import { ditherThreshold } from '../render/paint'
 import { EFFECT_DEFS } from './defs'
+import './defs2'
 import { type Region, cropRegion, expandRect } from './region'
 import type { EffectContext, EffectDef, ParamValue } from './types'
+
+/** Catálogo completo de efectos. */
+export const EFFECT_LIST: readonly EffectDef[] = EFFECT_DEFS
 
 export const EFFECTS: ReadonlyMap<string, EffectDef> = new Map(EFFECT_DEFS.map((d) => [d.type, d]))
 

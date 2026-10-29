@@ -2,25 +2,30 @@
 // con +, −, × y ÷ de doble precisión (determinista entre plataformas).
 
 import type { RGBA } from '../model/types'
-import { type Region, regionIndex } from './region'
+import type { Region } from './region'
 import type { Rect } from '../raster/bitmap'
 
-export type Plane = Float64Array
+export type Plane = Float32Array
 
 /** Plano de un canal (0..255) de `src` sobre `rect`; fuera de la región vale 0. */
 export function channelPlane(src: Region, rect: Rect, ch: number): Plane {
-  const out = new Float64Array(rect.w * rect.h)
-  for (let y = 0; y < rect.h; y++)
-    for (let x = 0; x < rect.w; x++) {
-      const i = regionIndex(src, rect.x + x, rect.y + y)
-      if (i >= 0) out[y * rect.w + x] = src.data[i + ch]!
-    }
+  const out = new Float32Array(rect.w * rect.h)
+  const x0 = Math.max(rect.x, src.rect.x)
+  const x1 = Math.min(rect.x + rect.w, src.rect.x + src.rect.w)
+  if (x1 <= x0) return out
+  const y0 = Math.max(rect.y, src.rect.y)
+  const y1 = Math.min(rect.y + rect.h, src.rect.y + src.rect.h)
+  for (let y = y0; y < y1; y++) {
+    let si = ((y - src.rect.y) * src.rect.w + (x0 - src.rect.x)) * 4 + ch
+    let oi = (y - rect.y) * rect.w + (x0 - rect.x)
+    for (let x = x0; x < x1; x++, si += 4, oi++) out[oi] = src.data[si]!
+  }
   return out
 }
 
 /** Copia desplazada: out(x, y) = p(x − dx, y − dy). */
 export function shiftPlane(p: Plane, w: number, h: number, dx: number, dy: number): Plane {
-  const out = new Float64Array(p.length)
+  const out = new Float32Array(p.length)
   for (let y = 0; y < h; y++) {
     const sy = y - dy
     if (sy < 0 || sy >= h) continue
@@ -34,7 +39,7 @@ export function shiftPlane(p: Plane, w: number, h: number, dx: number, dy: numbe
 
 /** Un paso de dilatación (máximo) con vecindad 8 (cuadrada) o 4 (cruz). */
 export function dilateStep(p: Plane, w: number, h: number, eight: boolean): Plane {
-  const out = new Float64Array(p.length)
+  const out = new Float32Array(p.length)
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       let m = p[y * w + x]!
@@ -60,7 +65,7 @@ export function dilate(p: Plane, w: number, h: number, n: number, eight = true):
 }
 
 export function invertPlane(p: Plane, max = 255): Plane {
-  const out = new Float64Array(p.length)
+  const out = new Float32Array(p.length)
   for (let i = 0; i < p.length; i++) out[i] = max - p[i]!
   return out
 }
@@ -69,7 +74,7 @@ export function invertPlane(p: Plane, max = 255): Plane {
 function boxPass(p: Plane, w: number, h: number, rx: number, ry: number): Plane {
   let cur = p
   if (rx > 0) {
-    const out = new Float64Array(cur.length)
+    const out = new Float32Array(cur.length)
     const d = 2 * rx + 1
     for (let y = 0; y < h; y++) {
       let sum = 0
@@ -85,18 +90,18 @@ function boxPass(p: Plane, w: number, h: number, rx: number, ry: number): Plane 
     cur = out
   }
   if (ry > 0) {
-    const out = new Float64Array(cur.length)
+    // por filas (acceso secuencial): una suma deslizante por columna
+    const out = new Float32Array(cur.length)
     const d = 2 * ry + 1
-    for (let x = 0; x < w; x++) {
-      let sum = 0
-      for (let y = -ry; y <= ry; y++) if (y >= 0 && y < h) sum += cur[y * w + x]!
-      for (let y = 0; y < h; y++) {
-        out[y * w + x] = sum / d
-        const add = y + ry + 1
-        const sub = y - ry
-        if (add < h) sum += cur[add * w + x]!
-        if (sub >= 0) sum -= cur[sub * w + x]!
-      }
+    const sum = new Float32Array(w)
+    for (let y = 0; y <= Math.min(ry, h - 1); y++)
+      for (let x = 0; x < w; x++) sum[x]! += cur[y * w + x]!
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) out[y * w + x] = sum[x]! / d
+      const add = y + ry + 1
+      const sub = y - ry
+      if (add < h) for (let x = 0; x < w; x++) sum[x]! += cur[add * w + x]!
+      if (sub >= 0) for (let x = 0; x < w; x++) sum[x]! -= cur[sub * w + x]!
     }
     cur = out
   }

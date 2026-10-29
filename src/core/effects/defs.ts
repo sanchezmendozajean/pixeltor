@@ -226,7 +226,7 @@ const pixelOutline: EffectDef = {
     const e = expandRect(out, t)
     const a = channelPlane(input, e, 3)
     const solid = a.map((v) => (v > 0 ? 255 : 0))
-    const ring = new Float64Array(a.length)
+    const ring = new Float32Array(a.length)
     if (p['position'] === 'outer') {
       const d = dilate(solid, e.w, e.h, t, eight)
       for (let i = 0; i < ring.length; i++) ring[i] = d[i]! > 0 && solid[i] === 0 ? 255 : 0
@@ -263,7 +263,7 @@ function blurRegion(
     return ch
   })
   const blurredA = blur(a, e.w, e.h)
-  const bp = pr.map((p) => blur(p, e.w, e.h))
+  const bp = mode === 'alpha' ? pr : pr.map((p) => blur(p, e.w, e.h))
   const res = makeRegion(out)
   for (let y = 0; y < out.h; y++)
     for (let x = 0; x < out.w; x++) {
@@ -569,7 +569,7 @@ const longShadow: EffectDef = {
       seen.add(key)
       steps.push([sx, sy, p['fade'] ? 1 - (k - 1) / len : 1])
     }
-    const plane = new Float64Array(out.w * out.h)
+    const plane = new Float32Array(out.w * out.h)
     for (let y = 0; y < out.h; y++)
       for (let x = 0; x < out.w; x++) {
         let m = 0

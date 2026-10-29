@@ -1,5 +1,5 @@
 // Estructura de los menús. Cada entrada apunta a una acción del registro (definitions.ts).
-import { EFFECT_DEFS } from '@core/effects/defs'
+import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import type { I18nKey } from '@/i18n'
 
 export type MenuNode =

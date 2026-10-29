@@ -79,7 +79,15 @@
         "brightness-contrast": "Brillo/Contraste",
         "posterize": "Posterizar",
         "invert": "Invertir",
-        "color-overlay": "Superposición de color"
+        "color-overlay": "Superposición de color",
+        "inner-glow": "Resplandor interior",
+        "directional-light": "Iluminación direccional",
+        "bevel": "Bisel",
+        "motion-blur": "Desenfoque de movimiento",
+        "ripple": "Ondulación",
+        "twirl": "Torsión",
+        "gradient-map": "Mapa de degradado",
+        "color-replace": "Reemplazar colores"
       }
     },
     "image": {
@@ -512,7 +520,15 @@
       "brightness-contrast": "Brillo/Contraste",
       "posterize": "Posterizar",
       "invert": "Invertir",
-      "color-overlay": "Superposición de color"
+      "color-overlay": "Superposición de color",
+      "inner-glow": "Resplandor interior",
+      "directional-light": "Iluminación direccional",
+      "bevel": "Bisel",
+      "motion-blur": "Desenfoque de movimiento",
+      "ripple": "Ondulación",
+      "twirl": "Torsión",
+      "gradient-map": "Mapa de degradado",
+      "color-replace": "Reemplazar colores"
     },
     "params": {
       "dx": "Desplazamiento X",
@@ -549,7 +565,21 @@
       "levels": "Niveles",
       "angle": "Ángulo",
       "length": "Longitud",
-      "fade": "Desvanecer"
+      "fade": "Desvanecer",
+      "width": "Ancho",
+      "intensity": "Intensidad",
+      "light": "Luz",
+      "shade": "Sombra",
+      "size": "Tamaño",
+      "depth": "Profundidad",
+      "distance": "Distancia",
+      "cx": "Centro X",
+      "cy": "Centro Y",
+      "dark": "Oscuros",
+      "mid": "Medios",
+      "from": "Origen",
+      "to": "Destino",
+      "tolerance": "Tolerancia"
     },
     "options": {
       "4": "4 conexiones",

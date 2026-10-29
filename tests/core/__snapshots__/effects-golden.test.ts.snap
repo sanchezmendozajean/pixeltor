@@ -1,0 +1,47 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden de efectos > bevel 1`] = `"92ce8ac8"`;
+
+exports[`golden de efectos > box-blur 1`] = `"ccc23810"`;
+
+exports[`golden de efectos > brightness-contrast 1`] = `"be35aa23"`;
+
+exports[`golden de efectos > color-overlay 1`] = `"88a2bcb4"`;
+
+exports[`golden de efectos > color-replace 1`] = `"be35aa23"`;
+
+exports[`golden de efectos > directional-light 1`] = `"f8a9d2cc"`;
+
+exports[`golden de efectos > drop-shadow 1`] = `"9a55306f"`;
+
+exports[`golden de efectos > gaussian-blur 1`] = `"762264ab"`;
+
+exports[`golden de efectos > gradient-map 1`] = `"039e7dc3"`;
+
+exports[`golden de efectos > hsl 1`] = `"be35aa23"`;
+
+exports[`golden de efectos > inner-glow 1`] = `"05cd565b"`;
+
+exports[`golden de efectos > inner-shadow 1`] = `"3a2096f8"`;
+
+exports[`golden de efectos > invert 1`] = `"7c325877"`;
+
+exports[`golden de efectos > long-shadow 1`] = `"ffa6a024"`;
+
+exports[`golden de efectos > mosaic 1`] = `"e4850dc5"`;
+
+exports[`golden de efectos > motion-blur 1`] = `"d214e230"`;
+
+exports[`golden de efectos > offset 1`] = `"a9174123"`;
+
+exports[`golden de efectos > outer-glow 1`] = `"350297cc"`;
+
+exports[`golden de efectos > pixel-outline 1`] = `"7c636dde"`;
+
+exports[`golden de efectos > posterize 1`] = `"58ba3564"`;
+
+exports[`golden de efectos > ripple 1`] = `"3ba87c38"`;
+
+exports[`golden de efectos > twirl 1`] = `"c9c4516d"`;
+
+exports[`golden de efectos > wave 1`] = `"2d604d53"`;

@@ -6,7 +6,10 @@ import type { Effect, EffectOutput, ID } from '../model/types'
 import { findLayer } from '../model/document'
 import type { DocumentSession, Transaction } from '../session'
 import { findShape } from '../tools/shapes'
-import { effectDef, newEffect, resolveParams } from './registry'
+import { compositeOver } from '../raster/blend'
+import { renderShapeFx } from '../render/compose'
+import { regionFromBitmap } from './region'
+import { applyEffects, effectDef, hasActiveEffects, newEffect, resolveParams } from './registry'
 import type { ParamValue } from './types'
 
 export type EffectTarget = { kind: 'shape'; id: ID } | { kind: 'layer'; id: ID }
@@ -145,4 +148,37 @@ export function commitEffectEdit(s: DocumentSession, key: string): void {
   if (!tx) return
   m!.delete(key)
   tx.commit({ model: true })
+}
+
+/**
+ * Rasterizar efectos de capa (Ctrl+Alt+E): estampa todas las formas visibles de la capa en su
+ * ráster, aplica los efectos de la capa y vacía la lista. El render de la imagen no cambia.
+ */
+export function rasterizeLayerEffects(s: DocumentSession, layerId: ID): boolean {
+  const layer = findLayer(s.image, layerId)
+  if (!layer || layer.locked || (!layer.shapes.length && !hasActiveEffects(layer.effects)))
+    return false
+  const { width: w, height: h } = s.image
+  const raster = s.bitmapOf(layer.id)
+  const tx = s.begin('Rasterizar efectos de capa')
+  tx.touch(layer.id, { x: 0, y: 0, w, h })
+  for (const sh of layer.shapes) {
+    if (!sh.visible) continue
+    const bmp = renderShapeFx(sh, w, h)
+    if (bmp) compositeOver(raster, bmp, sh.blendMode, sh.opacity)
+  }
+  layer.shapes = []
+  if (hasActiveEffects(layer.effects)) {
+    const fx = applyEffects(
+      layer.effects,
+      regionFromBitmap(raster.clone()),
+      { x: 0, y: 0, w, h },
+      { width: w, height: h, palettes: s.doc.palettes }
+    )
+    raster.data.set(fx.data)
+  }
+  layer.effects = []
+  s.selectedShapes = []
+  tx.commit({ model: true })
+  return true
 }

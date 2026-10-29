@@ -2,7 +2,7 @@ import type { ID, PxImage } from '../model/types'
 import { Bitmap, type Rect, clipRect } from '../raster/bitmap'
 import { compositeAt, compositeOver } from '../raster/blend'
 import type { Shape } from '../model/shapes'
-import { renderShapeCached, renderShapeRegion } from './shape'
+import { renderShape, renderShapeCached, renderShapeRegion } from './shape'
 import { applyEffects, effectsInfluence, hasActiveEffects } from '../effects/registry'
 import { type Region, regionFromBitmap } from '../effects/region'
 import type { FloatingPixels } from '../raster/mask'
@@ -27,6 +27,20 @@ export function effectsReach(img: PxImage): number {
     reach = Math.max(reach, shapes + effectsInfluence(layer.effects, ctx))
   }
   return reach
+}
+
+/** Forma con sus efectos, a tamaño de imagen (para estampar); null si queda vacía. */
+export function renderShapeFx(sh: Shape, w: number, h: number): Bitmap | null {
+  if (!hasActiveEffects(sh.effects)) return renderShape(sh, w, h)
+  const sb = renderShapeCached(sh, w, h)
+  if (!sb) return null
+  const fx = applyEffects(
+    sh.effects!,
+    regionFromBitmap(sb.bitmap, sb.x, sb.y),
+    { x: 0, y: 0, w, h },
+    { width: w, height: h }
+  )
+  return new Bitmap(w, h, fx.data)
 }
 
 function regionBitmap(r: Region): Bitmap {
