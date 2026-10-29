@@ -4,6 +4,9 @@ import {
   addShape,
   color,
   convertToPath,
+  addMidAnchors,
+  deleteAnchors,
+  convertAnchors,
   flattenSubpath,
   getShape,
   makeAppearance,
@@ -120,5 +123,55 @@ describe('operaciones de trazado', () => {
     expect(outlineStroke(s, [l.id])).toBe(true)
     expect(count(s, l.id)).toBe(30 * 4)
     expect(flattenSubpath(path(s, l.id).subpaths[0]!).closed).toBe(true)
+  })
+})
+
+describe('edición de anclas', () => {
+  const setup = () => {
+    const s = DocumentSession.create(40, 40)
+    const r = makeRect(5, 5, 20, 20, makeAppearance(RED, null))
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    return { s, id: r.id }
+  }
+
+  it('añadir puntos de ancla duplica las anclas sin cambiar el dibujo', () => {
+    const { s, id } = setup()
+    const before = count(s, id)
+    expect(addMidAnchors(s, [id])).toBe(true)
+    expect(path(s, id).subpaths[0]!.anchors).toHaveLength(8)
+    expect(count(s, id)).toBe(before)
+    s.undo()
+    expect(path(s, id).subpaths[0]!.anchors).toHaveLength(4)
+  })
+
+  it('eliminar varias anclas en un paso y deshacer', () => {
+    const { s, id } = setup()
+    addMidAnchors(s, [id])
+    const n = s.history.entries.length
+    const refs = [1, 3, 5].map((index) => ({ shapeId: id, subpath: 0, index }))
+    expect(deleteAnchors(s, refs)).toBe(true)
+    expect(s.history.entries.length).toBe(n + 1)
+    expect(path(s, id).subpaths[0]!.anchors).toHaveLength(5)
+    s.undo()
+    expect(path(s, id).subpaths[0]!.anchors).toHaveLength(8)
+  })
+
+  it('eliminar casi todas las anclas elimina la forma', () => {
+    const { s, id } = setup()
+    deleteAnchors(
+      s,
+      [0, 1, 2].map((index) => ({ shapeId: id, subpath: 0, index }))
+    )
+    expect(getShape(s, id)).toBeNull()
+  })
+
+  it('convertir anclas en suaves y de nuevo en esquina', () => {
+    const { s, id } = setup()
+    const refs = [0, 1, 2, 3].map((index) => ({ shapeId: id, subpath: 0, index }))
+    expect(convertAnchors(s, refs, true)).toBe(true)
+    expect(path(s, id).subpaths[0]!.anchors.every((a) => a.in && a.out)).toBe(true)
+    convertAnchors(s, refs, false)
+    expect(path(s, id).subpaths[0]!.anchors.every((a) => !a.in && !a.out)).toBe(true)
   })
 })

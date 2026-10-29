@@ -34,8 +34,10 @@ import {
   addShape,
   apply,
   convertAnchor,
+  convertAnchors,
   convertToPath,
   deleteAnchor,
+  deleteAnchors,
   getShape,
   hitShape,
   makeAppearance,
@@ -174,6 +176,9 @@ export class ShapeTools {
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
   /** Anclas seleccionadas con la Selección directa. */
   private anchorSel: AnchorSel[] = []
+  /** Marco de selección de anclas (Selección directa en vacío). */
+  private anchorMarquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null =
+    null
   hoverId: string | null = null
 
   constructor(private readonly getWs: () => Workspace | null) {}
@@ -185,6 +190,71 @@ export class ShapeTools {
       ? pixelBounds(renderShapeRegion(shape, ws.session.image.width, ws.session.image.height))
       : null
     useDocumentsStore().drawingSize = b ? { w: b.w, h: b.h } : null
+  }
+
+  /** Hay anclas seleccionadas con la Selección directa. */
+  get hasAnchorSelection(): boolean {
+    return this.anchorSel.length > 0
+  }
+
+  /** Rectángulo (px de imagen) del marco de anclas en curso, para dibujarlo. */
+  get anchorMarqueeRect(): { x: number; y: number; w: number; h: number } | null {
+    const m = this.anchorMarquee
+    if (!m) return null
+    const x = Math.min(m.x0, m.x1)
+    const y = Math.min(m.y0, m.y1)
+    return { x, y, w: Math.abs(m.x1 - m.x0) + 1, h: Math.abs(m.y1 - m.y0) + 1 }
+  }
+
+  /** Elimina las anclas seleccionadas (Supr con la Selección directa). */
+  deleteSelectedAnchors(): boolean {
+    const ws = this.getWs()
+    if (!ws || !this.anchorSel.length) return false
+    const ok = deleteAnchors(ws.session, this.anchorSel)
+    this.anchorSel = []
+    return ok
+  }
+
+  /** Convierte las anclas seleccionadas en suaves o en esquinas. */
+  convertSelectedAnchors(smooth: boolean): boolean {
+    const ws = this.getWs()
+    return !!ws && convertAnchors(ws.session, this.anchorSel, smooth)
+  }
+
+  /** Mueve las anclas seleccionadas (flechas del teclado). */
+  nudgeAnchors(dx: number, dy: number): boolean {
+    const ws = this.getWs()
+    if (!ws || !this.anchorSel.length) return false
+    const byShape = new Map<string, AnchorSel[]>()
+    for (const a of this.anchorSel) byShape.set(a.shapeId, [...(byShape.get(a.shapeId) ?? []), a])
+    for (const [id, list] of byShape) {
+      const d = new AnchorDrag(
+        ws.session,
+        id,
+        list.map((a) => ({ subpath: a.subpath, index: a.index, part: 'p' as const }))
+      )
+      d.moveBy(dx, dy)
+      d.end()
+    }
+    return true
+  }
+
+  /** Posición de lienzo de cada ancla de las formas indicadas. */
+  private anchorsOf(ids: ID[]): { ref: AnchorSel; pt: Vec2 }[] {
+    const ws = this.getWs()
+    if (!ws) return []
+    const out: { ref: AnchorSel; pt: Vec2 }[] = []
+    for (const id of ids) {
+      const sh = getShape(ws.session, id)
+      if (!sh || sh.kind === 'group') continue
+      const path = displayPath(sh)
+      path.subpaths.forEach((sp, si) =>
+        sp.anchors.forEach((a, i) =>
+          out.push({ ref: { shapeId: id, subpath: si, index: i }, pt: apply(path.transform, a.p) })
+        )
+      )
+    }
+    return out
   }
 
   get penActive(): boolean {
@@ -286,6 +356,22 @@ export class ShapeTools {
     const layer = s.activeLayer
     if (layer.locked || !layer.visible) return
     if (tool === 'pen') {
+      // Sobre un trazado seleccionado la pluma edita: clic en un segmento añade un ancla, clic en
+      // un ancla la elimina (con Alt la convierte). Fuera de ellos empieza un trazado nuevo.
+      if (!this.penActive && s.selectedShapes.length) {
+        const hit = this.hitAnchor(p, near)
+        if (hit && hit.part === 'p') {
+          if (mods.alt) {
+            const sp = displayPath(getShape(s, hit.shapeId)!).subpaths[hit.subpath]!.anchors[
+              hit.index
+            ]!
+            convertAnchors(s, [hit], !(sp.in || sp.out))
+          } else deleteAnchors(s, [hit])
+          return
+        }
+        for (const id of s.selectedShapes)
+          if (addAnchorAt(s, id, p.fx, p.fy, 6 / vp.zoom + 1)) return
+      }
       const pt = { x: p.x + 0.5, y: p.y + 0.5 }
       this.pen ??= { anchors: [], dragging: false }
       const first = this.pen.anchors[0]
@@ -505,6 +591,14 @@ export class ShapeTools {
       return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT
     }
     const hit = this.hitAnchor(p, near)
+    if (hit && hit.part === 'p' && mods.alt) {
+      // Alt+clic: esquina ↔ suave
+      if (!s.selectedShapes.includes(hit.shapeId)) selectShapes(s, [hit.shapeId])
+      const a = displayPath(getShape(s, hit.shapeId)!).subpaths[hit.subpath]!.anchors[hit.index]!
+      convertAnchors(s, [hit], !(a.in || a.out))
+      this.anchorSel = [{ shapeId: hit.shapeId, subpath: hit.subpath, index: hit.index }]
+      return
+    }
     if (hit) {
       if (!s.selectedShapes.includes(hit.shapeId)) selectShapes(s, [hit.shapeId])
       if (hit.part === 'p') {
@@ -534,9 +628,9 @@ export class ShapeTools {
       return
     }
     const id = hitShape(s, p.x, p.y)
-    this.anchorSel = []
+    if (!mods.shift) this.anchorSel = []
     if (id) selectShapes(s, [id])
-    else if (s.selectedShapes.length) selectShapes(s, [])
+    else this.anchorMarquee = { x0: p.x, y0: p.y, x1: p.x, y1: p.y, add: mods.shift }
   }
 
   move(tool: string, p: Pointer, mods: Mods): void {
@@ -574,6 +668,11 @@ export class ShapeTools {
         this.snapLines = sn.lines
         m.mv.moveBy(dx, dy)
       }
+      return
+    }
+    if (this.anchorMarquee) {
+      this.anchorMarquee.x1 = p.x
+      this.anchorMarquee.y1 = p.y
       return
     }
     if (this.anchorDrag) {
@@ -676,6 +775,29 @@ export class ShapeTools {
       this.moveBounds = null
       return
     }
+    if (this.anchorMarquee) {
+      const m = this.anchorMarquee
+      this.anchorMarquee = null
+      const x0 = Math.min(m.x0, m.x1)
+      const x1 = Math.max(m.x0, m.x1) + 1
+      const y0 = Math.min(m.y0, m.y1)
+      const y1 = Math.max(m.y0, m.y1) + 1
+      const s = ws.session
+      const scope = s.selectedShapes.length
+        ? s.selectedShapes
+        : s.activeLayer.shapes.filter((x) => x.visible && !x.locked).map((x) => x.id)
+      const inside = this.anchorsOf(scope).filter(
+        ({ pt }) => pt.x >= x0 && pt.x <= x1 && pt.y >= y0 && pt.y <= y1
+      )
+      const picked = inside.map((i) => i.ref)
+      this.anchorSel = m.add ? [...this.anchorSel, ...picked] : picked
+      // el marco sobre formas no seleccionadas las selecciona
+      const owners = [...new Set(picked.map((r) => r.shapeId))]
+      if (owners.length && !owners.every((id) => s.selectedShapes.includes(id)))
+        selectShapes(s, owners)
+      else if (!owners.length && !m.add && s.selectedShapes.length) selectShapes(s, [])
+      return
+    }
     if (this.anchorDrag) {
       if (this.anchorDrag.started) this.anchorDrag.ad.end()
       this.anchorDrag = null
@@ -715,6 +837,7 @@ export class ShapeTools {
 
   cancel(): void {
     this.drag = null
+    this.anchorMarquee = null
     this.snapLines = []
     this.cancelPen()
     if (this.moving?.started) this.moving.mv.end()

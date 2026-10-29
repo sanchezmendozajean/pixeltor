@@ -51,7 +51,8 @@
       "simplify": "Simplificar trazado",
       "offsetOut": "Expandir trazado 1 px",
       "offsetIn": "Contraer trazado 1 px",
-      "outlineStroke": "Contorno de trazo"
+      "outlineStroke": "Contorno de trazo",
+      "addAnchors": "Añadir puntos de ancla"
     },
     "layer": {
       "new": "Nueva capa",
@@ -183,6 +184,11 @@
       "up10": "Desplazar 10 px arriba",
       "down10": "Desplazar 10 px abajo",
       "fill": "Rellenar con el color de relleno"
+    },
+    "anchor": {
+      "delete": "Eliminar anclas",
+      "toCorner": "Anclas en esquina",
+      "toSmooth": "Anclas suaves"
     }
   },
   "titlebar": {

@@ -2,7 +2,7 @@
 // Barra de control contextual: opciones de la herramienta activa, colores y opacidad de la capa.
 import { computed } from 'vue'
 import PtIcon from '@/components/PtIcon.vue'
-import { actionIcon, actionLabel } from '@/actions/registry'
+import { actionIcon, actionLabel, execute } from '@/actions/registry'
 import { useColorsStore } from '@/stores/colors'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
@@ -14,6 +14,9 @@ const docs = useDocumentsStore()
 
 const usesSize = computed(() => tools.active === 'brush' || tools.active === 'eraser')
 const usesShape = usesSize
+const anchorTool = computed(() =>
+  ['dsel', 'pen', 'addAnchor', 'delAnchor', 'convAnchor'].includes(tools.active)
+)
 const usesSymmetry = computed(() => ['pencil', 'brush', 'eraser'].includes(tools.active))
 const usesFill = computed(() => tools.active === 'bucket' || tools.active === 'wand')
 const isShape = computed(() =>
@@ -62,6 +65,17 @@ function onTolerance(e: Event): void {
           <span class="pt-unit">px</span>
         </span>
       </label>
+    </template>
+    <template v-if="anchorTool">
+      <button
+        v-for="id in ['anchor.toCorner', 'anchor.toSmooth', 'anchor.delete', 'object.addAnchors']"
+        :key="id"
+        type="button"
+        class="pt-btn pt-btn--secondary"
+        @click="execute(id)"
+      >
+        {{ actionLabel(id) }}
+      </button>
     </template>
     <template v-if="usesSymmetry">
       <label class="pt-check-label">

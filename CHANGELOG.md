@@ -16,6 +16,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Interfaz**: barra de herramientas en **una o dos columnas** (se guarda en los ajustes y se recuerda); en el widget de relleno/contorno el elemento seleccionado queda **encima** (clic = elegir, doble clic = abrir el selector); **selector de color** modal con cuadrado S/B, barra de tono, modos RGB · HSB · HSL con deslizadores de color real, hexadecimal, «Solo colores web» y recuadros Web/Real, con Aceptar y Cancelar; al arrastrar una capa la línea indicadora va **debajo** de la fila destino cuando la capa baja (y al arrastrar formas se resalta la capa completa).
 
+- **Edición de anclas como en Illustrator**: con la **Pluma**, clic sobre un segmento de un trazado seleccionado añade un ancla y clic sobre un ancla la elimina (`Alt` la convierte entre esquina y suave); con la **Selección directa**, `Alt`+clic convierte, un **marco** en vacío selecciona anclas (`Mayús` suma), `Supr` elimina las anclas seleccionadas de una vez y las flechas las mueven. La barra de control muestra *Anclas en esquina*, *Anclas suaves*, *Eliminar anclas* y *Añadir puntos de ancla* (también en Objeto y en `Ctrl+K`).
+
 ### Pendiente de F4
 
 - Cachés de efectos por versión del modelo (hoy se firma por contenido de los píxeles que se leen); composición completa de imágenes grandes en worker; «Aplicar efecto» hasta uno concreto; indicador fx en el panel Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.

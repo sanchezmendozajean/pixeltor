@@ -111,7 +111,7 @@ export class CanvasController {
           : undefined,
       guides: useUiStore().showGuides ? (s.image.guides ?? []) : [],
       mask: s.selection.mask,
-      marquee: m ? marqueeRect(m) : null,
+      marquee: m ? marqueeRect(m) : this.shapes.anchorMarqueeRect,
       cursor,
       dashOffset
     }

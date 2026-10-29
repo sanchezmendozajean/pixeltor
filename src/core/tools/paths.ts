@@ -542,3 +542,105 @@ export class RectRadiusDrag {
     return this.tx.commit({ model: true })
   }
 }
+
+// ---------- Operaciones sobre varias anclas ----------
+
+/** Elimina varias anclas en un solo paso (un trazado con menos de 2 anclas desaparece). */
+export function deleteAnchors(s: DocumentSession, refs: AnchorRef[]): boolean {
+  if (!refs.length) return false
+  const byShape = new Map<ID, AnchorRef[]>()
+  for (const r of refs) byShape.set(r.shapeId, [...(byShape.get(r.shapeId) ?? []), r])
+  const tx = s.begin(refs.length > 1 ? `Eliminar ${refs.length} anclas` : 'Eliminar ancla')
+  let any = false
+  for (const [id, list] of byShape) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    const sh = f.list[f.index] as PathShape
+    // de mayor a menor índice para no desplazar los siguientes
+    for (const r of [...list].sort((a, b) => b.subpath - a.subpath || b.index - a.index)) {
+      const sp = sh.subpaths[r.subpath]
+      if (!sp || !sp.anchors[r.index]) continue
+      sp.anchors.splice(r.index, 1)
+      any = true
+    }
+    sh.subpaths = sh.subpaths.filter((sp) => sp.anchors.length >= 2)
+    if (!sh.subpaths.length) {
+      const cur = findShape(s, id)
+      if (cur) cur.list.splice(cur.index, 1)
+      s.selectedShapes = s.selectedShapes.filter((i) => i !== id)
+    }
+  }
+  if (!any) return false
+  tx.commit({ model: true })
+  return true
+}
+
+/** Convierte varias anclas en esquina o en suaves en un solo paso. */
+export function convertAnchors(s: DocumentSession, refs: AnchorRef[], smooth: boolean): boolean {
+  if (!refs.length) return false
+  const tx = s.begin(smooth ? 'Anclas suaves' : 'Anclas de esquina')
+  let any = false
+  for (const r of refs) {
+    const f = findShape(s, r.shapeId)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    const sh = f.list[f.index] as PathShape
+    const sp = sh.subpaths[r.subpath]
+    const a = sp?.anchors[r.index]
+    if (!sp || !a) continue
+    any = true
+    if (!smooth) {
+      a.in = null
+      a.out = null
+      a.type = 'corner'
+      continue
+    }
+    const n = sp.anchors.length
+    const prev = sp.anchors[(r.index - 1 + n) % n]!
+    const next = sp.anchors[(r.index + 1) % n]!
+    const dx = next.p.x - prev.p.x
+    const dy = next.p.y - prev.p.y
+    const len = Math.hypot(dx, dy) || 1
+    const k =
+      (Math.hypot(a.p.x - prev.p.x, a.p.y - prev.p.y) +
+        Math.hypot(next.p.x - a.p.x, next.p.y - a.p.y)) /
+      6
+    a.in = { x: a.p.x - (dx / len) * k, y: a.p.y - (dy / len) * k }
+    a.out = { x: a.p.x + (dx / len) * k, y: a.p.y + (dy / len) * k }
+    a.type = 'symmetric'
+  }
+  if (!any) return false
+  tx.commit({ model: true })
+  return true
+}
+
+/** Objeto › Trazado › Añadir puntos de ancla: una ancla nueva en el centro de cada segmento. */
+export function addMidAnchors(s: DocumentSession, ids: ID[]): boolean {
+  const tx = s.begin('Añadir puntos de ancla')
+  let any = false
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    const sh = f.list[f.index] as PathShape
+    for (const sp of sh.subpaths) {
+      const n = sp.anchors.length
+      const segs = sp.closed ? n : n - 1
+      const w = sp.anchors.map((x) => ({ ...x }))
+      const mids: Anchor[] = []
+      for (let i = 0; i < segs; i++) {
+        const j = (i + 1) % n
+        const r = splitCubic(w[i]!, w[j]!, 0.5)
+        w[i] = r.a
+        w[j] = r.b
+        mids.push(r.mid)
+        any = true
+      }
+      sp.anchors = w.flatMap((x, i) => (i < mids.length ? [x, mids[i]!] : [x]))
+    }
+  }
+  if (!any) return false
+  tx.commit({ model: true })
+  return true
+}

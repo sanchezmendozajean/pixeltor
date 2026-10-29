@@ -16,6 +16,7 @@ import {
   ungroupShapes,
   isolateGroup,
   addEffect,
+  addMidAnchors,
   rasterizeLayerEffects,
   convertToPath,
   makeCompound,
@@ -140,6 +141,8 @@ export function registerAppActions(): void {
   registerHandler('edit.delete', {
     enabled: has,
     run: () => {
+      // con anclas seleccionadas (Selección directa) Supr elimina las anclas, no la forma
+      if (activeController?.shapes.deleteSelectedAnchors()) return
       if (ses().selectedShapes.length) removeShapes(ses(), ses().selectedShapes)
       else deletePixels(ses())
     }
@@ -180,6 +183,7 @@ export function registerAppActions(): void {
     registerHandler(id, {
       enabled: () => has() && (!!ses().selection.mask || ses().selectedShapes.length > 0),
       run: () => {
+        if (activeController?.shapes.nudgeAnchors(dx, dy)) return
         if (!ses().selection.mask) {
           moveShapes(ses(), ses().selectedShapes, dx, dy, `nudge:${dx}:${dy}`)
           return
@@ -227,6 +231,23 @@ export function registerAppActions(): void {
       }
     })
   }
+  const anchorsReady = () => shapesSelected() && !!activeController?.shapes.hasAnchorSelection
+  registerHandler('anchor.delete', {
+    enabled: anchorsReady,
+    run: () => void activeController?.shapes.deleteSelectedAnchors()
+  })
+  registerHandler('anchor.toCorner', {
+    enabled: anchorsReady,
+    run: () => void activeController?.shapes.convertSelectedAnchors(false)
+  })
+  registerHandler('anchor.toSmooth', {
+    enabled: anchorsReady,
+    run: () => void activeController?.shapes.convertSelectedAnchors(true)
+  })
+  registerHandler('object.addAnchors', {
+    enabled: shapesSelected,
+    run: () => void addMidAnchors(ses(), ses().selectedShapes)
+  })
   registerHandler('object.compound', {
     enabled: () => has() && (docs.rev, ses().selectedShapes.length > 1),
     run: () => void makeCompound(ses(), ses().selectedShapes)
