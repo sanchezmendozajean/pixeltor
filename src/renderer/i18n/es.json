@@ -208,7 +208,9 @@
     "color": "Color",
     "gradient": "Degradado",
     "none": "Ninguno",
-    "screenMode": "Modo de pantalla"
+    "screenMode": "Modo de pantalla",
+    "oneColumn": "Barra de herramientas en una columna",
+    "twoColumns": "Barra de herramientas en dos columnas"
   },
   "docs": {
     "tabs": "Documentos",
@@ -616,5 +618,14 @@
     "presetApply": "Aplicar preset…",
     "presetName": "Nombre del preset",
     "presetSave": "Guardar"
+  },
+  "picker": {
+    "title": "Selector de color",
+    "webOnly": "Solo colores web",
+    "web": "Web",
+    "real": "Real",
+    "mode": "Modo de color",
+    "cancel": "Cancelar",
+    "accept": "Aceptar"
   }
 }

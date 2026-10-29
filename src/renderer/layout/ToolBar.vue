@@ -4,17 +4,34 @@ import PtIcon from '@/components/PtIcon.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import { TOOLBAR } from '@/tools/catalog'
 import { useColorsStore } from '@/stores/colors'
+import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
 
 const colors = useColorsStore()
+const ui = useUiStore()
 </script>
 
 <template>
-  <aside class="pt-toolbar" :aria-label="t('toolbar.label')">
-    <template v-for="(item, i) in TOOLBAR" :key="i">
-      <div v-if="item.kind === 'sep'" class="pt-tooldiv" />
-      <ToolButton v-else :group-id="item.id" :tools="item.tools" />
-    </template>
+  <aside
+    class="pt-toolbar"
+    :class="{ 'is-two': ui.toolbarColumns === 2 }"
+    :aria-label="t('toolbar.label')"
+  >
+    <button
+      type="button"
+      class="cols"
+      :data-tip="t(ui.toolbarColumns === 2 ? 'toolbar.oneColumn' : 'toolbar.twoColumns')"
+      :aria-label="t(ui.toolbarColumns === 2 ? 'toolbar.oneColumn' : 'toolbar.twoColumns')"
+      @click="ui.setToolbarColumns(ui.toolbarColumns === 2 ? 1 : 2)"
+    >
+      <PtIcon :name="ui.toolbarColumns === 2 ? 'chevLeft' : 'chevRight'" />
+    </button>
+    <div class="tools">
+      <template v-for="(item, i) in TOOLBAR" :key="i">
+        <div v-if="item.kind === 'sep'" class="pt-tooldiv" />
+        <ToolButton v-else :group-id="item.id" :tools="item.tools" />
+      </template>
+    </div>
 
     <div class="pt-spacer" />
 
@@ -22,14 +39,22 @@ const colors = useColorsStore()
       <button
         type="button"
         class="pt-fswidget__fill"
+        :class="{ 'is-top': colors.target === 'fill' }"
         :style="{ background: colors.fill }"
         :aria-label="`${t('controlbar.fill')} ${colors.fill}`"
+        :aria-pressed="colors.target === 'fill'"
+        @click="colors.target = 'fill'"
+        @dblclick="ui.colorPicker = 'fill'"
       />
       <button
         type="button"
         class="pt-fswidget__stroke"
+        :class="{ 'is-top': colors.target === 'stroke' }"
         :style="{ borderColor: colors.stroke }"
         :aria-label="`${t('controlbar.stroke')} ${colors.stroke}`"
+        :aria-pressed="colors.target === 'stroke'"
+        @click="colors.target = 'stroke'"
+        @dblclick="ui.colorPicker = 'stroke'"
       />
     </div>
     <div class="mini">
@@ -73,6 +98,41 @@ const colors = useColorsStore()
 </template>
 
 <style scoped>
+.tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.is-two .tools {
+  display: grid;
+  grid-template-columns: repeat(2, 32px);
+  gap: 0 2px;
+  justify-content: center;
+}
+.is-two .tools :deep(.pt-tooldiv) {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+.cols {
+  width: 32px;
+  height: 14px;
+  margin-bottom: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cols:hover {
+  color: var(--icon-active);
+  background: var(--bg-hover);
+}
+.cols :deep(svg) {
+  width: 12px;
+  height: 12px;
+}
 .mini {
   display: flex;
   gap: var(--space-1);

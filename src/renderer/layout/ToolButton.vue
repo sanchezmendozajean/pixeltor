@@ -17,12 +17,23 @@ const shown = () => store.shown[props.groupId] ?? props.tools[0]!
 const isActive = () => props.tools.includes(store.active)
 const hasFlyout = () => props.tools.length > 1
 
+/** El flyout sale por el borde derecho de la barra (una o dos columnas). */
+const flyLeft = ref(38)
+function openFly(): void {
+  const bar = root.value?.closest('.pt-toolbar')
+  if (bar && root.value)
+    flyLeft.value = Math.round(
+      bar.getBoundingClientRect().right - root.value.getBoundingClientRect().left + 2
+    )
+  open.value = true
+}
+
 function down(e: PointerEvent): void {
   if (e.button !== 0 || !hasFlyout()) return
   longPressed = false
   timer = setTimeout(() => {
     longPressed = true
-    open.value = true
+    openFly()
   }, LONG_PRESS_MS)
 }
 
@@ -31,7 +42,7 @@ function cancel(): void {
 }
 
 function onContext(): void {
-  if (hasFlyout()) open.value = true
+  if (hasFlyout()) openFly()
 }
 
 function onClickCapture(e: MouseEvent): void {
@@ -75,7 +86,7 @@ onBeforeUnmount(() => {
         @click="open = false"
       />
     </span>
-    <div v-if="open" class="pt-fly fly" role="menu">
+    <div v-if="open" class="pt-fly fly" role="menu" :style="{ left: `${flyLeft}px` }">
       <ActionButton
         v-for="tool in tools"
         :id="`tool.${tool}`"

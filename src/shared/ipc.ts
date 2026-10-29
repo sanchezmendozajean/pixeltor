@@ -4,9 +4,11 @@ export type ThemeId = 'oscuro' | 'gris' | 'claro'
 
 export interface Settings {
   theme: ThemeId
+  /** Columnas de la barra de herramientas. */
+  toolbarColumns: 1 | 2
 }
 
-export const DEFAULT_SETTINGS: Settings = { theme: 'oscuro' }
+export const DEFAULT_SETTINGS: Settings = { theme: 'oscuro', toolbarColumns: 1 }
 
 export const IPC = {
   settingsGet: 'settings:get',

@@ -16,6 +16,8 @@ function sanitize(raw: unknown): Settings {
   if (raw && typeof raw === 'object') {
     const theme = (raw as Partial<Settings>).theme
     if (theme && THEMES.includes(theme)) out.theme = theme
+    const cols = (raw as Partial<Settings>).toolbarColumns
+    if (cols === 1 || cols === 2) out.toolbarColumns = cols
   }
   return out
 }

@@ -57,6 +57,11 @@ function onOpacity(e: Event) {
     setProps(active.value.id, { opacity: Math.min(100, Math.max(0, v)) / 100 })
 }
 
+/** Arrastrando hacia abajo la capa queda tras la fila destino: la línea va debajo. */
+function dropAfter(i: number): boolean {
+  return docs.layers.findIndex((x) => x.id === dragId.value) < i
+}
+
 // Reordenar: la lista está invertida (la fila 0 es la capa de más arriba).
 function onDrop(rowIndex: number) {
   if (dragShape.value) {
@@ -91,7 +96,9 @@ function onDrop(rowIndex: number) {
           :class="{
             'is-current': l.active,
             'is-hidden': !l.visible,
-            'is-drop': dropIndex === i && dragId !== l.id
+            'is-drop': dropIndex === i && dragId !== null && dragId !== l.id && !dropAfter(i),
+            'is-drop-after': dropIndex === i && dragId !== null && dragId !== l.id && dropAfter(i),
+            'is-drop-into': dropIndex === i && dragShape !== null
           }"
           role="option"
           :aria-selected="l.active"

@@ -14,6 +14,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Golden por efecto** (huella FNV de cada efecto sobre una imagen fija) y benchmark a 1000×1000: desenfoque gaussiano ≈ 146 ms, sombra ≈ 115 ms, contorno ≈ 145 ms (Node, una sola hebra).
 - **Menú Efecto** por categorías (también en la paleta de comandos) y **panel Efectos** con parámetros en línea, activar/desactivar, reordenar, duplicar, eliminar y Salida; los deslizadores se ven en vivo y registran un solo paso al soltar.
 
+- **Interfaz**: barra de herramientas en **una o dos columnas** (se guarda en los ajustes y se recuerda); en el widget de relleno/contorno el elemento seleccionado queda **encima** (clic = elegir, doble clic = abrir el selector); **selector de color** modal con cuadrado S/B, barra de tono, modos RGB · HSB · HSL con deslizadores de color real, hexadecimal, «Solo colores web» y recuadros Web/Real, con Aceptar y Cancelar; al arrastrar una capa la línea indicadora va **debajo** de la fila destino cuando la capa baja (y al arrastrar formas se resalta la capa completa).
+
 ### Pendiente de F4
 
 - Cachés de efectos por versión del modelo (hoy se firma por contenido de los píxeles que se leen); composición completa de imágenes grandes en worker; «Aplicar efecto» hasta uno concreto; indicador fx en el panel Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.

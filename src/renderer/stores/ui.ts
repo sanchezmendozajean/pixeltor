@@ -27,12 +27,21 @@ export const useUiStore = defineStore('ui', {
     activeStop: 0,
     /** Objeto clave del panel Alinear (forma que no se mueve al alinear). */
     keyShape: '' as string,
+    /** Columnas de la barra de herramientas (se recuerda entre sesiones). */
+    toolbarColumns: 1 as 1 | 2,
+    /** Selector de color abierto para este destino. */
+    colorPicker: null as null | 'fill' | 'stroke',
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {
     async loadSettings() {
       const s = await window.pixeltor.settings.get()
       this.applyTheme(s.theme)
+      this.toolbarColumns = s.toolbarColumns
+    },
+    async setToolbarColumns(n: 1 | 2) {
+      this.toolbarColumns = n
+      await window.pixeltor.settings.set({ toolbarColumns: n })
     },
     applyTheme(theme: ThemeId) {
       this.theme = theme
