@@ -225,7 +225,12 @@
     "unsaved": "Cambios sin guardar",
     "canvasLabel": "Lienzo {w} × {h} px al {zoom} %",
     "noDocument": "Sin documento abierto",
-    "empty": "Crea o abre un documento para empezar"
+    "empty": "Crea o abre un documento para empezar",
+    "menu": {
+      "close": "Cerrar",
+      "closeOthers": "Cerrar otros",
+      "closeAll": "Cerrar todo"
+    }
   },
   "viewer": {
     "image": "Imagen",

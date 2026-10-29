@@ -82,6 +82,24 @@ export async function closeWorkspace(id: string): Promise<boolean> {
   return true
 }
 
+/** Cierra todas las pestañas salvo `keepId`; se detiene si el usuario cancela alguna. */
+export async function closeOthers(keepId: string): Promise<boolean> {
+  for (const tab of [...docs().tabs]) {
+    if (tab.id === keepId) continue
+    if (!(await closeWorkspace(tab.id))) return false
+  }
+  return true
+}
+
+/** Cierra todas las pestañas; se detiene si el usuario cancela alguna. */
+export async function closeAll(): Promise<boolean> {
+  for (const tab of [...docs().tabs]) {
+    docs().activate(tab.id)
+    if (!(await closeWorkspace(tab.id))) return false
+  }
+  return true
+}
+
 /** Cierre de la ventana: recorre los documentos con cambios y pide confirmación a cada uno. */
 export async function handleBeforeClose(): Promise<void> {
   for (const tab of [...docs().tabs]) {
