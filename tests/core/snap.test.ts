@@ -90,6 +90,20 @@ describe('ajuste (snapping)', () => {
   })
 })
 
+describe('ajuste de puntos', () => {
+  it('un punto (tamaño 0) engancha a bordes de objetos, al lienzo y a guías', () => {
+    const { s } = setup()
+    // a ocupa 10..18; el punto x=17 engancha a su borde derecho (18)
+    const r = computeSnap(s, { x: 17, y: 40, w: 0, h: 0 }, [], ALL, 2)
+    expect(r.dx).toBe(1)
+    // y=63 engancha al borde inferior del lienzo (64)
+    expect(r.dy).toBe(0)
+    expect(computeSnap(s, { x: 30, y: 63, w: 0, h: 0 }, [], ALL, 2).dy).toBe(1)
+    addGuide(s, 'v', 25)
+    expect(computeSnap(s, { x: 26, y: 40, w: 0, h: 0 }, [], ALL, 2).dx).toBe(-1)
+  })
+})
+
 describe('guías', () => {
   it('crear, mover en vivo (un paso al soltar) y eliminar; deshacer', () => {
     const { s } = setup()

@@ -162,7 +162,15 @@ export class ShapeTools {
   snapLines: SnapLine[] = []
   private radiusDrag: RectRadiusDrag | null = null
   private rotating: { rot: ShapeRotate; start: number } | null = null
-  private anchorDrag: { ad: AnchorDrag; x0: number; y0: number; started: boolean } | null = null
+  private anchorDrag: {
+    ad: AnchorDrag
+    x0: number
+    y0: number
+    started: boolean
+    /** Posición de lienzo del ancla arrastrada (null si se arrastra un tirador). */
+    pt0: Vec2 | null
+    shapeId: ID
+  } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
   /** Anclas seleccionadas con la Selección directa. */
   private anchorSel: AnchorSel[] = []
@@ -290,7 +298,8 @@ export class ShapeTools {
       this.setPreview(ws, this.penShape())
       return
     }
-    this.drag = { x0: p.x, y0: p.y, x1: p.x, y1: p.y, mods }
+    const q0 = this.snapPt(p.x, p.y, [])
+    this.drag = { x0: q0.x, y0: q0.y, x1: q0.x, y1: q0.y, mods }
     this.setPreview(ws, this.build(tool, this.drag))
   }
 
@@ -383,6 +392,25 @@ export class ShapeTools {
     )
   }
 
+  /** Ajusta un punto (esquina que se dibuja, tirador de escala, ancla) a lienzo, guías y objetos. */
+  private snapPt(x: number, y: number, exclude: ID[]): { x: number; y: number } {
+    const ws = this.getWs()
+    const ui = useUiStore()
+    if (!ws || (!ui.snap.canvas && !ui.snap.smart && !ui.snap.guides)) {
+      this.snapLines = []
+      return { x, y }
+    }
+    const r = computeSnap(
+      ws.session,
+      { x, y, w: 0, h: 0 },
+      exclude,
+      { canvas: ui.snap.canvas, objects: ui.snap.smart, guides: ui.snap.guides && ui.showGuides },
+      4 / ws.viewport.zoom
+    )
+    this.snapLines = r.lines
+    return { x: x + r.dx, y: y + r.dy }
+  }
+
   private downSelect(p: Pointer, mods: Mods): void {
     const ws = this.getWs()!
     const s = ws.session
@@ -419,6 +447,15 @@ export class ShapeTools {
       this.moving = { mv: new ShapeMove(s, s.selectedShapes), x0: p.x, y0: p.y, started: false }
       this.moveBounds = this.selectionBounds()
     } else if (!mods.shift && s.selectedShapes.length) selectShapes(s, [])
+  }
+
+  /** Posición de lienzo de un ancla. */
+  private anchorWorld(r: { shapeId: ID; subpath: number; index: number }): Vec2 | null {
+    const sh = getShape(this.getWs()!.session, r.shapeId)
+    if (!sh) return null
+    const path = displayPath(sh)
+    const a = path.subpaths[r.subpath]?.anchors[r.index]
+    return a ? apply(path.transform, a.p) : null
   }
 
   /** Ancla o tirador bajo el cursor entre las formas seleccionadas. */
@@ -490,7 +527,9 @@ export class ShapeTools {
         ad: new AnchorDrag(s, hit.shapeId, targets),
         x0: p.x,
         y0: p.y,
-        started: false
+        started: false,
+        pt0: hit.part === 'p' ? this.anchorWorld(hit) : null,
+        shapeId: hit.shapeId
       }
       return
     }
@@ -540,7 +579,16 @@ export class ShapeTools {
     if (this.anchorDrag) {
       const a = this.anchorDrag
       if (!a.started && (p.x !== a.x0 || p.y !== a.y0)) a.started = true
-      if (a.started) a.ad.moveBy(p.x - a.x0, p.y - a.y0)
+      if (a.started) {
+        let dx = p.x - a.x0
+        let dy = p.y - a.y0
+        if (a.pt0) {
+          const q = this.snapPt(Math.round(a.pt0.x + dx), Math.round(a.pt0.y + dy), [a.shapeId])
+          dx = q.x - a.pt0.x
+          dy = q.y - a.pt0.y
+        }
+        a.ad.moveBy(dx, dy)
+      }
       return
     }
     if (this.pen?.dragging) {
@@ -556,8 +604,9 @@ export class ShapeTools {
       return
     }
     if (this.drag) {
-      this.drag.x1 = p.x
-      this.drag.y1 = p.y
+      const q = this.snapPt(p.x, p.y, [])
+      this.drag.x1 = q.x
+      this.drag.y1 = q.y
       this.drag.mods = mods
       this.setPreview(ws, this.build(tool, this.drag))
     }
@@ -572,8 +621,9 @@ export class ShapeTools {
       ? { x: box.x + box.w / 2, y: box.y + box.h / 2 }
       : { x: box.x + (1 - hx) * box.w, y: box.y + (1 - hy) * box.h }
     const start: Vec2 = { x: box.x + hx * box.w, y: box.y + hy * box.h }
-    const cx = Math.round(p.fx)
-    const cy = Math.round(p.fy)
+    const q = this.snapPt(Math.round(p.fx), Math.round(p.fy), this.getWs()!.session.selectedShapes)
+    const cx = q.x
+    const cy = q.y
     const factor = (cur: number, st: number, fx: number) =>
       Math.abs(st - fx) < 1e-9 ? 1 : (cur - fx) / (st - fx)
     let sx = hx === 0.5 ? 1 : factor(cx, start.x, fixed.x)
@@ -611,6 +661,7 @@ export class ShapeTools {
     if (this.scaling) {
       this.scaling.sc.end()
       this.scaling = null
+      this.snapLines = []
       return
     }
     if (this.moving) {
@@ -628,6 +679,7 @@ export class ShapeTools {
     if (this.anchorDrag) {
       if (this.anchorDrag.started) this.anchorDrag.ad.end()
       this.anchorDrag = null
+      this.snapLines = []
       return
     }
     if (this.pen) {
@@ -637,6 +689,7 @@ export class ShapeTools {
     if (this.drag) {
       const shape = this.build(tool, this.drag)
       this.drag = null
+      this.snapLines = []
       this.setPreview(ws, null)
       if (shape) addShape(ws.session, shape)
     }
@@ -662,6 +715,7 @@ export class ShapeTools {
 
   cancel(): void {
     this.drag = null
+    this.snapLines = []
     this.cancelPen()
     if (this.moving?.started) this.moving.mv.end()
     this.moving = null

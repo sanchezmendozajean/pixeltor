@@ -20,11 +20,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Simetría** en lápiz, pincel y borrador: espejo horizontal y/o vertical y giro de 180° o 90° respecto al centro del lienzo (ejes magenta en el visor). Opera a nivel de píxel, así que el resultado es exacto también con puntas de tamaño par; un trazo = un paso de historial. Ejes personalizados, pendientes.
 - **Paleta de comandos** (`Ctrl+K`): busca cualquier acción habilitada del registro (sin tildes, por prefijo, palabra o letras en orden), muestra su atajo, se navega con flechas y Enter, Esc cierra.
 - **Operaciones de trazado** (menú Objeto y paleta de comandos): **trazado compuesto** (`Ctrl+8`, relleno par-impar con huecos) y liberarlo (`Ctrl+Alt+8`); **contorno de trazo** (convierte el contorno activo en una forma rellena con su pintura, respetando grosor y alineación; líneas abiertas con remates rectos); **expandir/contraer** el trazado 1 px (inglete con límite); **simplificar** anclas (Ramer–Douglas–Peucker, 1 px). Hornean la transformación y producen esquinas rectas; todo es deshacible y está cubierto por pruebas.
+- **Ajuste ampliado**: además de mover, ahora ajustan a lienzo, guías y bordes/centros de objetos la esquina que se dibuja, los tiradores de escala y las anclas que se arrastran (líneas magenta/cian).
 - Las pestañas del dock se acortan en vez de ensanchar la columna.
 
 ### Pendiente de F3
 
-- Snapping de anclas y trazados, y al dibujar o escalar (hoy solo al mover); guías inteligentes con medidas y ángulos.
+- Guías inteligentes con medidas y ángulos; ajuste a los trazados y no solo a los límites de los objetos; modo medio píxel.
 - Distancia de desplazamiento y tolerancia de simplificar configurables (hoy 1 px fijo); remates y uniones redondeados en el contorno de trazo; simplificar conservando curvas.
 - Editor del modo «paleta» de los degradados y muestras globales también en las paradas de degradado (hoy solo en pinturas sólidas); varias paletas simultáneas en el panel (el modelo ya las admite).
 
