@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, markRaw, ref, shallowRef } from 'vue'
 import {
   DocumentSession,
+  hasActiveEffects,
   type ID,
   type Shape,
   type Layer,
@@ -24,6 +25,8 @@ export interface ShapeRow {
   selected: boolean
   depth: number
   group: boolean
+  /** Tiene efectos activos. */
+  fx: boolean
 }
 
 function flattenShapes(list: Shape[], depth: number, selected: ID[]): ShapeRow[] {
@@ -35,7 +38,8 @@ function flattenShapes(list: Shape[], depth: number, selected: ID[]): ShapeRow[]
       visible: sh.visible,
       selected: selected.includes(sh.id),
       depth,
-      group: sh.kind === 'group'
+      group: sh.kind === 'group',
+      fx: hasActiveEffects(sh.effects)
     })
     if (sh.kind === 'group') rows.push(...flattenShapes(sh.children, depth + 1, selected))
   }
@@ -52,6 +56,8 @@ export interface LayerRow {
   blendMode: Layer['blendMode']
   color: string
   active: boolean
+  /** Tiene efectos activos. */
+  fx: boolean
   /** De arriba abajo; los hijos de un grupo siguen a su grupo con `depth` mayor. */
   shapes: ShapeRow[]
 }
@@ -100,6 +106,7 @@ export const useDocumentsStore = defineStore('documents', () => {
       blendMode: l.blendMode,
       color: l.color,
       active: l.id === s.activeLayerId,
+      fx: hasActiveEffects(l.effects),
       shapes: flattenShapes(l.shapes, 0, s.selectedShapes)
     }))
   })

@@ -40,7 +40,9 @@ describe('formatos de paleta', () => {
 
   it('lee un .gpl con nombres, comentarios y cabecera', () => {
     const p = parsePalette(
-      enc('GIMP Palette\nName: Mía\nColumns: 4\n# nota\n255   0   0\tRojo\n  0 255 0 Verde claro\n'),
+      enc(
+        'GIMP Palette\nName: Mía\nColumns: 4\n# nota\n255   0   0\tRojo\n  0 255 0 Verde claro\n'
+      ),
       'gpl',
       'f'
     )

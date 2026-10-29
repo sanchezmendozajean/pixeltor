@@ -120,6 +120,31 @@ export function updateEffect(
   )
 }
 
+/** Añade varios efectos (un preset) en un solo paso de historial. */
+export function applyEffectPreset(
+  s: DocumentSession,
+  t: EffectTarget,
+  preset: Omit<Effect, 'id'>[]
+): boolean {
+  return edit(s, t, 'Aplicar preset de efectos', (l) => {
+    let any = false
+    for (const p of preset) {
+      const def = effectDef(p.type)
+      if (!def) continue
+      const fx: Effect = {
+        id: newId(),
+        type: p.type,
+        enabled: p.enabled,
+        params: resolveParams(def, p.params)
+      }
+      if (p.output) fx.output = { ...p.output }
+      l.push(fx)
+      any = true
+    }
+    return any
+  })
+}
+
 // ---------- Edición viva ----------
 
 const lives = new WeakMap<DocumentSession, Map<string, Transaction>>()

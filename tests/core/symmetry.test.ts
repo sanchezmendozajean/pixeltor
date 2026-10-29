@@ -4,7 +4,12 @@ import { DocumentSession, Stroke, rgba, symmetryMaps } from '@core/index'
 const RED = rgba(255, 0, 0, 255)
 const px = (s: DocumentSession, x: number, y: number) => s.bitmapOf(s.activeLayer.id).get(x, y)
 
-function draw(s: DocumentSession, sym: { x: boolean; y: boolean; rot: 1 | 2 | 4 }, tool: 'pencil' | 'brush' = 'pencil', size = 1) {
+function draw(
+  s: DocumentSession,
+  sym: { x: boolean; y: boolean; rot: 1 | 2 | 4 },
+  tool: 'pencil' | 'brush' = 'pencil',
+  size = 1
+) {
   const st = new Stroke(s, { tool, color: RED, size, shape: 'square', symmetry: sym })
   st.move(2, 1)
   st.end()

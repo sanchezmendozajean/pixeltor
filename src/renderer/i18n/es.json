@@ -611,6 +611,9 @@
     "thresholdValue": "Valor de umbral",
     "palette": "Ajustar a paleta",
     "paletteNone": "Ninguna",
-    "noTarget": "Sin objetivo"
+    "noTarget": "Sin objetivo",
+    "presetApply": "Aplicar preset…",
+    "presetName": "Nombre del preset",
+    "presetSave": "Guardar"
   }
 }

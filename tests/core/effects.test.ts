@@ -13,6 +13,7 @@ import {
   updateEffect,
   removeEffect,
   effectsInfluence,
+  applyEffectPreset,
   rasterizeLayerEffects,
   stampShapes,
   type Effect
@@ -212,5 +213,19 @@ describe('efectos', () => {
     s.undo()
     expect(getEffects(s, L)).toHaveLength(1)
     expect(Array.from(compose(s).data)).toEqual(withLayerFx)
+  })
+
+  it('un preset añade varios efectos en un solo paso', () => {
+    const { s, r } = squareDoc()
+    const T = { kind: 'shape', id: r.id } as const
+    const n = s.history.entries.length
+    applyEffectPreset(s, T, [
+      { type: 'pixel-outline', enabled: true, params: { thickness: 2 } },
+      { type: 'drop-shadow', enabled: true, params: { dx: 1 } },
+      { type: 'no-existe', enabled: true, params: {} }
+    ])
+    expect(getEffects(s, T)).toHaveLength(2)
+    expect(s.history.entries.length).toBe(n + 1)
+    expect(getEffects(s, T)[0]!.params['thickness']).toBe(2)
   })
 })

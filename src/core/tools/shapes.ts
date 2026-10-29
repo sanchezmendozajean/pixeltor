@@ -6,12 +6,7 @@ import { cloneShape, makeGroup } from '../model/shapes'
 import { newId } from '../model/ids'
 import type { ID, Layer } from '../model/types'
 import { compositeOver } from '../raster/blend'
-import {
-  pixelBounds,
-  renderShapeCached,
-  renderShapeRegion,
-  shapeAlphaAt
-} from '../render/shape'
+import { pixelBounds, renderShapeCached, renderShapeRegion, shapeAlphaAt } from '../render/shape'
 import { renderShapeFx } from '../render/compose'
 import type { DocumentSession } from '../session'
 

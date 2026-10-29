@@ -46,6 +46,11 @@ test('añadir una sombra paralela desde la paleta de comandos y editarla', async
   await expect(card).toHaveCount(1)
   await expect(card.locator('strong')).toHaveText('Sombra paralela')
 
+  // la fila de la forma muestra el indicador fx
+  await page.locator('.pt-ptab', { hasText: 'Capas' }).click()
+  await expect(page.locator('.layers .fx-tag')).toHaveCount(1)
+  await page.locator('.pt-ptab', { hasText: 'Efectos' }).click()
+
   // arrastrar un deslizador: un solo paso de historial al soltar
   const slider = card.locator('input[type=range]').first()
   const hist = page.locator('.pt-ptab', { hasText: 'Historial' })

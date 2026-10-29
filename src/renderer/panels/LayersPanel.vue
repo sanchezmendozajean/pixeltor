@@ -129,6 +129,7 @@ function onDrop(rowIndex: number) {
             {{ l.name }}
             <em v-if="l.lockAlpha"> · α</em>
           </span>
+          <span v-if="l.fx" class="fx-tag" :title="t('effects.title')">fx</span>
           <button
             type="button"
             class="pt-lcol pt-lcol--lock"
@@ -152,6 +153,7 @@ function onDrop(rowIndex: number) {
           <span class="indent" :style="{ width: `${38 + sh.depth * 14}px` }" />
           <span class="pt-lbar" :style="{ background: l.color }" />
           <span class="pt-lname">{{ sh.name }}</span>
+          <span v-if="sh.fx" class="fx-tag" :title="t('effects.title')">fx</span>
         </li>
       </template>
     </ul>

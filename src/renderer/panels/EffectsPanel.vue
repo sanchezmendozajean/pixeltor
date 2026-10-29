@@ -2,13 +2,14 @@
 // Panel Efectos (specs/06): lista los efectos del objetivo (la forma seleccionada o, si no hay,
 // la capa activa) con sus parámetros en línea. Los ajustes se ven en vivo y registran un solo
 // paso de historial al soltar.
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   type Effect,
   type EffectTarget,
   type ParamDef,
   type ParamValue,
   activePalette,
+  applyEffectPreset,
   commitEffectEdit,
   duplicateEffect,
   effectDef,
@@ -83,6 +84,48 @@ function onNum(fx: Effect, d: ParamDef, e: Event): void {
   if (Number.isFinite(v)) live(fx, d.key, v)
 }
 
+// ---- presets (se recuerdan en este equipo) ----
+interface Preset {
+  name: string
+  effects: Omit<Effect, 'id'>[]
+}
+const PRESET_KEY = 'pixeltor.fxPresets'
+function loadPresets(): Preset[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PRESET_KEY) ?? '[]') as unknown
+    return Array.isArray(raw)
+      ? (raw as Preset[]).filter((p) => p && p.name && Array.isArray(p.effects))
+      : []
+  } catch {
+    return []
+  }
+}
+const presets = ref<Preset[]>(loadPresets())
+const presetName = ref('')
+function savePreset(): void {
+  const name = presetName.value.trim()
+  if (!name || !list.value.length) return
+  const effects = list.value.map(({ type, enabled, params, output }) => ({
+    type,
+    enabled,
+    params: { ...params },
+    ...(output ? { output: { ...output } } : {})
+  }))
+  presets.value = [...presets.value.filter((p) => p.name !== name), { name, effects }]
+  try {
+    localStorage.setItem(PRESET_KEY, JSON.stringify(presets.value))
+  } catch {
+    // sin almacenamiento: el preset dura la sesión
+  }
+  presetName.value = ''
+}
+function applyPreset(e: Event): void {
+  const sel = e.target as HTMLSelectElement
+  const p = presets.value.find((x) => x.name === sel.value)
+  sel.value = ''
+  if (p && docs.session && target.value) applyEffectPreset(docs.session, target.value, p.effects)
+}
+
 const outAlpha = (fx: Effect): string => fx.output?.alpha ?? 'keep'
 function setOutput(fx: Effect, alpha: string): void {
   setNow(fx, {
@@ -108,6 +151,32 @@ function setPalette(fx: Effect, e: Event): void {
   <div class="fx">
     <p class="who">{{ title }}</p>
     <p v-if="!list.length" class="pt-sec2 none">{{ t('effects.none') }}</p>
+    <div class="presets">
+      <select
+        class="pt-select"
+        value=""
+        :aria-label="t('effects.presetApply')"
+        @change="applyPreset"
+      >
+        <option value="" disabled>{{ t('effects.presetApply') }}</option>
+        <option v-for="p in presets" :key="p.name" :value="p.name">{{ p.name }}</option>
+      </select>
+      <input
+        v-model="presetName"
+        class="pt-input"
+        :placeholder="t('effects.presetName')"
+        :aria-label="t('effects.presetName')"
+        @keydown.enter="savePreset"
+      />
+      <button
+        type="button"
+        class="pt-btn pt-btn--secondary"
+        :disabled="!list.length || !presetName.trim()"
+        @click="savePreset"
+      >
+        {{ t('effects.presetSave') }}
+      </button>
+    </div>
     <section v-for="(fx, i) in list" :key="fx.id" class="card" :class="{ off: !fx.enabled }">
       <header>
         <input
@@ -294,6 +363,15 @@ header {
 .out summary {
   font-size: var(--fs-sm);
   color: var(--text-secondary);
+}
+.presets {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+.presets .pt-input {
+  flex: 1;
+  min-width: 60px;
 }
 .none {
   padding: var(--space-2) 0;
