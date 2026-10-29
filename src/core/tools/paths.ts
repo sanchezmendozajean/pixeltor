@@ -270,18 +270,27 @@ export class AnchorPull {
   }
 }
 
+export interface SegmentHit {
+  subpath: number
+  /** Índice del ancla de inicio del segmento. */
+  index: number
+  /** Parámetro 0..1 del punto más cercano dentro del segmento. */
+  t: number
+}
+
 /** Segmento del trazado más cercano a (x, y) si está a menos de reach px; sin modificar nada. */
-export function hitSegment(
+export function findSegment(
   s: DocumentSession,
   shapeId: ID,
   x: number,
   y: number,
   reach: number
-): boolean {
+): SegmentHit | null {
   const f = findShape(s, shapeId)
-  if (!f || f.shape.kind === 'group' || f.layer.locked) return false
+  if (!f || f.shape.kind === 'group' || f.layer.locked) return null
   const sh = f.shape.kind === 'path' ? f.shape : toPath(f.shape)
-  for (const sp of sh.subpaths) {
+  let best: (SegmentHit & { d: number }) | null = null
+  sh.subpaths.forEach((sp, spi) => {
     const n = sp.anchors.length
     const segs = sp.closed ? n : n - 1
     for (let i = 0; i < segs; i++) {
@@ -289,11 +298,73 @@ export function hitSegment(
       const b = sp.anchors[(i + 1) % n]!
       for (let k = 1; k < 32; k++) {
         const p = apply(sh.transform, cubicAt(a, b, k / 32))
-        if (Math.hypot(p.x - x, p.y - y) <= reach) return true
+        const d = Math.hypot(p.x - x, p.y - y)
+        if (d <= reach && (!best || d < best.d)) best = { subpath: spi, index: i, t: k / 32, d }
       }
     }
+  })
+  return best
+}
+
+export function hitSegment(
+  s: DocumentSession,
+  shapeId: ID,
+  x: number,
+  y: number,
+  reach: number
+): boolean {
+  return !!findSegment(s, shapeId, x, y, reach)
+}
+
+/**
+ * Curva un segmento arrastrándolo (Selección directa sobre un segmento): los extremos no se
+ * mueven y los tiradores de ambos lados se desplazan para que el punto agarrado siga al cursor.
+ */
+export class SegmentDrag {
+  private readonly tx
+  private readonly shape: PathShape
+  private readonly a: Anchor
+  private readonly b: Anchor
+  private readonly a0: Anchor
+  private readonly b0: Anchor
+  private readonly t: number
+
+  constructor(
+    private readonly s: DocumentSession,
+    shapeId: ID,
+    hit: SegmentHit
+  ) {
+    const f = findShape(s, shapeId)
+    if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
+    this.tx = s.begin('Curvar segmento')
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    this.shape = f.list[f.index] as PathShape
+    const sp = this.shape.subpaths[hit.subpath]!
+    this.a = sp.anchors[hit.index]!
+    this.b = sp.anchors[(hit.index + 1) % sp.anchors.length]!
+    this.a0 = { ...this.a }
+    this.b0 = { ...this.b }
+    // lejos de los extremos el desplazamiento de los tiradores no se dispara
+    this.t = Math.min(0.85, Math.max(0.15, hit.t))
   }
-  return false
+
+  /** Desplazamiento acumulado del cursor en coordenadas de imagen. */
+  moveBy(dx: number, dy: number): void {
+    const m = this.shape.transform
+    const inv = invert([m[0], m[1], m[2], m[3], 0, 0])
+    const d = inv ? apply(inv, { x: dx, y: dy }) : { x: dx, y: dy }
+    const k = 1 / (3 * this.t * (1 - this.t))
+    const sh = { x: d.x * k, y: d.y * k }
+    const p1 = this.a0.out ?? this.a0.p
+    const p2 = this.b0.in ?? this.b0.p
+    this.a.out = { x: p1.x + sh.x, y: p1.y + sh.y }
+    this.b.in = { x: p2.x + sh.x, y: p2.y + sh.y }
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+  }
+
+  end(): boolean {
+    return this.tx.commit({ model: true })
+  }
 }
 
 function splitCubic(a: Anchor, b: Anchor, t: number): { mid: Anchor; a: Anchor; b: Anchor } {

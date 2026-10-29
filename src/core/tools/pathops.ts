@@ -338,3 +338,187 @@ export function outlineStroke(s: DocumentSession, ids: ID[]): boolean {
     }
   })
 }
+
+// ---------- Cortar, unir y continuar trazados ----------
+
+export interface AnchorTarget {
+  shapeId: ID
+  subpath: number
+  index: number
+}
+
+const flip = (a: Anchor): Anchor => ({ ...a, in: a.out, out: a.in })
+
+/** Invierte el sentido de un subtrazado. */
+export function reverseAnchors(list: Anchor[]): Anchor[] {
+  return [...list].reverse().map(flip)
+}
+
+const cloneAnchor = (a: Anchor): Anchor => ({
+  ...a,
+  p: { ...a.p },
+  in: a.in ? { ...a.in } : null,
+  out: a.out ? { ...a.out } : null
+})
+
+/**
+ * Corta el trazado en las anclas indicadas (tijeras): cada pieza resultante es un trazado abierto.
+ * Las anclas de los extremos de un trazado abierto no cortan nada.
+ */
+export function cutAtAnchors(s: DocumentSession, refs: AnchorTarget[]): boolean {
+  const byShape = new Map<ID, AnchorTarget[]>()
+  for (const r of refs) byShape.set(r.shapeId, [...(byShape.get(r.shapeId) ?? []), r])
+  const tx = s.begin('Cortar en anclas')
+  let any = false
+  const created: ID[] = []
+  for (const [id, list] of byShape) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    const path = f.shape.kind === 'path' ? f.shape : toPath(f.shape)
+    const pieces: Anchor[][] = []
+    const keep: SubPath[] = []
+    path.subpaths.forEach((sp, spi) => {
+      const cuts = [...new Set(list.filter((r) => r.subpath === spi).map((r) => r.index))].sort(
+        (x, y) => x - y
+      )
+      const n = sp.anchors.length
+      const useful = sp.closed ? cuts : cuts.filter((c) => c > 0 && c < n - 1)
+      if (!useful.length) {
+        keep.push(sp)
+        return
+      }
+      // anclas de "from" a "to" (inclusive); en trazados cerrados puede dar la vuelta
+      const sub = (from: number, to: number): Anchor[] => {
+        // en un trazado cerrado con un solo corte (from === to) se da la vuelta completa
+        const count = from === to ? n + 1 : ((to - from + n) % n) + 1
+        const out: Anchor[] = []
+        for (let k = 0; k < count; k++) out.push(cloneAnchor(sp.anchors[(from + k) % n]!))
+        return out
+      }
+      if (sp.closed) {
+        for (let k = 0; k < useful.length; k++) {
+          const piece = sub(useful[k]!, useful[(k + 1) % useful.length]!)
+          piece[0]!.in = null
+          piece[piece.length - 1]!.out = null
+          pieces.push(piece)
+        }
+      } else {
+        const bounds = [0, ...useful, n - 1]
+        for (let k = 0; k < bounds.length - 1; k++) {
+          const piece = sub(bounds[k]!, bounds[k + 1]!)
+          if (k > 0) piece[0]!.in = null
+          if (k < bounds.length - 2) piece[piece.length - 1]!.out = null
+          pieces.push(piece)
+        }
+      }
+      any = true
+    })
+    if (!pieces.length) continue
+    const made = pieces.filter((p) => p.length >= 2)
+    if (keep.length) {
+      // hay otros subtrazados sin cortar: todo sigue en la misma forma
+      path.subpaths = [...keep, ...made.map((anchors) => ({ closed: false, anchors }))]
+      f.list[f.index] = path
+      continue
+    }
+    const shapes = made.map((anchors, i) => {
+      const copy = cloneShape(path)
+      copy.subpaths = [{ closed: false, anchors }]
+      if (i > 0) copy.id = newId()
+      return copy
+    })
+    f.list.splice(f.index, 1, ...shapes)
+    created.push(...shapes.map((x) => x.id))
+  }
+  if (!any) return false
+  if (created.length) s.selectedShapes = created
+  tx.commit({ model: true })
+  return true
+}
+
+/**
+ * Une dos extremos de trazados abiertos (Ctrl+J). Los dos extremos de un mismo trazado lo
+ * cierran; en trazados distintos (de la misma forma o de formas diferentes) se funden en uno.
+ * Si los extremos coinciden se fusionan en una sola ancla; si no, se unen con un segmento recto.
+ */
+export function joinAnchors(s: DocumentSession, refs: AnchorTarget[]): boolean {
+  if (refs.length !== 2) return false
+  const [r1, r2] = refs as [AnchorTarget, AnchorTarget]
+  const f1 = findShape(s, r1.shapeId)
+  const f2 = findShape(s, r2.shapeId)
+  if (!f1 || !f2 || f1.shape.kind === 'group' || f2.shape.kind === 'group') return false
+  if (f1.layer.locked || f2.layer.locked) return false
+  const p1 = bakedPath(f1.shape)
+  const p2 = f1.shape.id === f2.shape.id ? p1 : bakedPath(f2.shape)
+  const sp1 = p1.subpaths[r1.subpath]
+  const sp2 = p2.subpaths[r2.subpath]
+  if (!sp1 || !sp2 || sp1.closed || sp2.closed) return false
+  const end = (sp: SubPath, i: number): boolean => i === 0 || i === sp.anchors.length - 1
+  if (!end(sp1, r1.index) || !end(sp2, r2.index)) return false
+  const same = sp1 === sp2
+  if (same && r1.index === r2.index) return false
+  const near = (a: Anchor, b: Anchor): boolean => Math.hypot(a.p.x - b.p.x, a.p.y - b.p.y) < 0.5
+
+  const tx = s.begin('Unir anclas')
+  let result: SubPath
+  if (same) {
+    const list = sp1.anchors.map(cloneAnchor)
+    const first = list[0]!
+    const last = list[list.length - 1]!
+    if (near(first, last) && list.length > 2) {
+      first.in = last.in
+      list.pop()
+    }
+    result = { closed: true, anchors: list }
+  } else {
+    // A termina en el ancla a unir y B empieza por la suya
+    const a = r1.index === sp1.anchors.length - 1 ? sp1.anchors : reverseAnchors(sp1.anchors)
+    const b = r2.index === 0 ? sp2.anchors : reverseAnchors(sp2.anchors)
+    const la = cloneAnchor(a[a.length - 1]!)
+    const fb = cloneAnchor(b[0]!)
+    const merged: Anchor[] = a.slice(0, -1).map(cloneAnchor)
+    if (near(la, fb)) merged.push({ ...la, out: fb.out })
+    else merged.push(la, fb)
+    merged.push(...b.slice(1).map(cloneAnchor))
+    result = { closed: false, anchors: merged }
+  }
+  p1.subpaths[r1.subpath] = result
+  f1.list[f1.index] = p1
+  if (!same) {
+    if (f1.shape.id === f2.shape.id) p1.subpaths = p1.subpaths.filter((x) => x !== sp2)
+    else {
+      const cur2 = findShape(s, f2.shape.id)
+      if (cur2) {
+        if (p2.subpaths.length > 1) {
+          p2.subpaths = p2.subpaths.filter((x) => x !== sp2)
+          cur2.list[cur2.index] = p2
+        } else cur2.list.splice(cur2.index, 1)
+      }
+    }
+  }
+  s.selectedShapes = [p1.id]
+  tx.commit({ model: true })
+  return true
+}
+
+/**
+ * Sustituye un subtrazado por otro (la Pluma al continuar un trazado abierto). El resultado queda
+ * con la transformación horneada.
+ */
+export function replaceSubpath(
+  s: DocumentSession,
+  shapeId: ID,
+  subpath: number,
+  anchors: Anchor[],
+  closed: boolean
+): boolean {
+  const f = findShape(s, shapeId)
+  if (!f || f.shape.kind === 'group' || f.layer.locked) return false
+  const p = bakedPath(f.shape)
+  if (!p.subpaths[subpath]) return false
+  const tx = s.begin('Continuar trazado')
+  p.subpaths[subpath] = { closed, anchors }
+  f.list[f.index] = p
+  tx.commit({ model: true })
+  return true
+}

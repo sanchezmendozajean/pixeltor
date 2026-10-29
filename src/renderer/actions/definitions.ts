@@ -51,6 +51,8 @@ export const ACTIONS: ActionDef[] = [
   a('object.convertToPath'),
   a('object.addAnchors'),
   a('anchor.delete'),
+  a('anchor.cut', undefined, 'scissors'),
+  a('anchor.join', 'Ctrl+Shift+J', 'join'),
   a('anchor.toCorner'),
   a('anchor.toSmooth'),
   a('object.compound', 'Ctrl+8'),

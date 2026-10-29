@@ -15,6 +15,14 @@ import {
   type Vec2,
   AnchorDrag,
   AnchorPull,
+  SegmentDrag,
+  type SegmentHit,
+  bakedPath,
+  cutAtAnchors,
+  joinAnchors,
+  findSegment,
+  replaceSubpath,
+  reverseAnchors,
   hitSegment,
   ShapeMove,
   RectRadiusDrag,
@@ -179,6 +187,19 @@ export class ShapeTools {
     shapeId: ID
   } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
+  /** La pluma continúa un trazado abierto existente (se sustituye al terminar). */
+  private penCont: { shapeId: ID; subpath: number } | null = null
+  /** Arrastre de un segmento para curvarlo (Selección directa). */
+  private segDrag: {
+    /** Se crea al empezar a arrastrar (un clic sin mover no deja pasos de historial). */
+    sd: SegmentDrag | null
+    sid: ID
+    seg: SegmentHit
+    fx0: number
+    fy0: number
+    sx: number
+    sy: number
+  } | null = null
   /** Anclas seleccionadas con la Selección directa. */
   private anchorList: AnchorSel[] = []
   /** Arrastre para sacar tiradores de un ancla (se crea al mover; sin mover, un clic convierte). */
@@ -234,6 +255,44 @@ export class ShapeTools {
   convertSelectedAnchors(smooth: boolean): boolean {
     const ws = this.getWs()
     return !!ws && convertAnchors(ws.session, this.anchorSel, smooth)
+  }
+
+  /** Corta los trazados en las anclas seleccionadas (tijeras). */
+  cutSelectedAnchors(): boolean {
+    const ws = this.getWs()
+    if (!ws || !this.anchorSel.length) return false
+    const ok = cutAtAnchors(ws.session, this.anchorSel)
+    this.anchorSel = []
+    return ok
+  }
+
+  /** Une dos extremos seleccionados (Ctrl+J). */
+  joinSelectedAnchors(): boolean {
+    const ws = this.getWs()
+    if (!ws) return false
+    const ok = joinAnchors(ws.session, this.anchorSel)
+    if (ok) this.anchorSel = []
+    return ok
+  }
+
+  /**
+   * Si el ancla es un extremo de un trazado abierto, la pluma lo continúa desde ahí
+   * (el sentido se invierte si es el primero). Devuelve false si no es un extremo.
+   */
+  private continuePath(ref: AnchorSel): boolean {
+    const ws = this.getWs()
+    if (!ws) return false
+    const sh = getShape(ws.session, ref.shapeId)
+    if (!sh || sh.kind === 'group') return false
+    const baked = bakedPath(sh)
+    const sp = baked.subpaths[ref.subpath]
+    if (!sp || sp.closed || sp.anchors.length < 1) return false
+    const last = sp.anchors.length - 1
+    if (ref.index !== 0 && ref.index !== last) return false
+    const list = ref.index === last ? sp.anchors : reverseAnchors(sp.anchors)
+    this.pen = { anchors: list.map((a) => ({ ...a })), dragging: false }
+    this.penCont = { shapeId: ref.shapeId, subpath: ref.subpath }
+    return true
   }
 
   /** Mueve las anclas seleccionadas (flechas del teclado). */
@@ -376,6 +435,7 @@ export class ShapeTools {
         const hit = this.hitAnchor(p, near)
         if (hit && hit.part === 'p') {
           if (mods.alt) this.pull = { ref: hit, sx: p.sx, sy: p.sy, pu: null }
+          else if (this.continuePath(hit)) this.setPreview(ws, this.penShape())
           else deleteAnchors(s, [hit])
           return
         }
@@ -637,6 +697,24 @@ export class ShapeTools {
       }
       return
     }
+    // clic sobre un segmento de una forma seleccionada: arrastrarlo lo curva
+    if (!mods.shift) {
+      for (const sid of s.selectedShapes) {
+        const seg = findSegment(s, sid, p.fx, p.fy, 6 / vp.zoom + 1)
+        if (seg) {
+          this.segDrag = {
+            sd: null,
+            sid,
+            seg,
+            fx0: p.fx,
+            fy0: p.fy,
+            sx: p.sx,
+            sy: p.sy
+          }
+          return
+        }
+      }
+    }
     const id = hitShape(s, p.x, p.y)
     if (!mods.shift) this.anchorSel = []
     if (id) selectShapes(s, [id])
@@ -678,6 +756,13 @@ export class ShapeTools {
         this.snapLines = sn.lines
         m.mv.moveBy(dx, dy)
       }
+      return
+    }
+    if (this.segDrag) {
+      const g = this.segDrag
+      if (!g.sd && Math.hypot(p.sx - g.sx, p.sy - g.sy) > 3)
+        g.sd = new SegmentDrag(ws.session, g.sid, g.seg)
+      g.sd?.moveBy(p.fx - g.fx0, p.fy - g.fy0)
       return
     }
     if (this.pull) {
@@ -792,6 +877,16 @@ export class ShapeTools {
       this.moveBounds = null
       return
     }
+    if (this.segDrag) {
+      const g = this.segDrag
+      this.segDrag = null
+      if (g.sd) g.sd.end()
+      else {
+        const id = hitShape(ws.session, g.fx0, g.fy0)
+        if (id) selectShapes(ws.session, [id])
+      }
+      return
+    }
     if (this.pull) {
       const pl = this.pull
       this.pull = null
@@ -853,17 +948,26 @@ export class ShapeTools {
     const p = this.pen
     this.pen = null
     if (ws) this.setPreview(ws, null)
+    const cont = this.penCont
+    this.penCont = null
     if (!ws || !p || p.anchors.length < 2) return
+    if (cont) {
+      replaceSubpath(ws.session, cont.shapeId, cont.subpath, p.anchors, closed)
+      return
+    }
     addShape(ws.session, makePath([{ closed, anchors: p.anchors }], currentAppearance(closed)))
   }
 
   cancelPen(): void {
     this.pen = null
+    this.penCont = null
     const w = this.getWs()
     if (w) this.setPreview(w, null)
   }
 
   cancel(): void {
+    this.segDrag?.sd?.end()
+    this.segDrag = null
     this.pull?.pu?.end()
     this.pull = null
     this.drag = null

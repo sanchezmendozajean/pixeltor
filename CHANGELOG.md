@@ -22,6 +22,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Anclas más cerca de Illustrator**: barra de control con iconos (*Convertir:* esquina / suave, *Anclas:* añadir puntos / eliminar, deshabilitados sin anclas seleccionadas); **cursores propios** (pluma, pluma +/−/convertir según lo que hay bajo el puntero, flecha hueca de selección directa y con marca sobre ancla o tirador) que cambian al pulsar Ctrl/Alt sin mover el ratón; **Ctrl** con la pluma y sus compañeras = selección directa temporal; **Alt**+arrastrar un tirador lo mueve sin arrastrar al opuesto, y **Alt**/Convertir ancla + arrastrar sobre un ancla **saca los tiradores** (un clic alterna esquina/suave).
 
+- **Cortar, unir, curvar y continuar** (anclas): *Cortar en las anclas* (tijeras; el trazado cerrado queda abierto y cada corte da una pieza como forma independiente), *Unir anclas* (`Ctrl+J`: dos extremos de trazados abiertos, de la misma o de distintas formas; si coinciden se fusionan, si no se unen con un segmento recto, y los dos extremos de un mismo trazado lo cierran); **arrastrar un segmento** con la Selección directa lo curva moviendo los tiradores de ambos lados; la **Pluma continúa** un trazado abierto al hacer clic en uno de sus extremos.
+
 ### Pendiente de F4
 
 - Cachés de efectos por versión del modelo (hoy se firma por contenido de los píxeles que se leen); composición completa de imágenes grandes en worker; «Aplicar efecto» hasta uno concreto; indicador fx en el panel Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.

@@ -5,6 +5,12 @@ import {
   color,
   convertToPath,
   addMidAnchors,
+  cutAtAnchors,
+  joinAnchors,
+  findSegment,
+  SegmentDrag,
+  replaceSubpath,
+  reverseAnchors,
   AnchorDrag,
   AnchorPull,
   hitSegment,
@@ -214,5 +220,92 @@ describe('tiradores', () => {
     expect(hitSegment(s, r.id, 15, 15, 1)).toBe(false)
     s.undo()
     expect(path(s, r.id).subpaths[0]!.anchors[1]!.out).toBeNull()
+  })
+})
+
+describe('cortar, unir y curvar', () => {
+  const rectPath = () => {
+    const s = DocumentSession.create(40, 40)
+    const r = makeRect(5, 5, 20, 20, makeAppearance(RED, null))
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    return { s, id: r.id }
+  }
+
+  it('cortar un trazado cerrado en una ancla lo deja abierto; en dos, en dos piezas', () => {
+    const { s, id } = rectPath()
+    expect(cutAtAnchors(s, [{ shapeId: id, subpath: 0, index: 0 }])).toBe(true)
+    let p = path(s, id)
+    expect(p.subpaths[0]!.closed).toBe(false)
+    expect(p.subpaths[0]!.anchors).toHaveLength(5) // 4 + duplicada
+    s.undo()
+    expect(path(s, id).subpaths[0]!.closed).toBe(true)
+    cutAtAnchors(s, [
+      { shapeId: id, subpath: 0, index: 0 },
+      { shapeId: id, subpath: 0, index: 2 }
+    ])
+    expect(s.activeLayer.shapes).toHaveLength(2)
+    p = s.activeLayer.shapes[0] as PathShape
+    expect(p.subpaths[0]!.anchors).toHaveLength(3)
+  })
+
+  it('unir los extremos de un trazado abierto lo cierra, y unir dos trazados los funde', () => {
+    const { s, id } = rectPath()
+    cutAtAnchors(s, [{ shapeId: id, subpath: 0, index: 0 }])
+    // los extremos coinciden: unir fusiona y cierra con 4 anclas
+    expect(
+      joinAnchors(s, [
+        { shapeId: id, subpath: 0, index: 0 },
+        { shapeId: id, subpath: 0, index: 4 }
+      ])
+    ).toBe(true)
+    expect(path(s, id).subpaths[0]!.closed).toBe(true)
+    expect(path(s, id).subpaths[0]!.anchors).toHaveLength(4)
+
+    // dos formas abiertas distintas
+    const t = DocumentSession.create(40, 40)
+    const a = makeLine({ x: 2, y: 2 }, { x: 10, y: 2 }, makeAppearance(null, RED, 1))
+    const b = makeLine({ x: 20, y: 2 }, { x: 30, y: 2 }, makeAppearance(null, RED, 1))
+    addShape(t, a)
+    addShape(t, b)
+    convertToPath(t, [a.id, b.id])
+    expect(
+      joinAnchors(t, [
+        { shapeId: a.id, subpath: 0, index: 1 },
+        { shapeId: b.id, subpath: 0, index: 0 }
+      ])
+    ).toBe(true)
+    expect(t.activeLayer.shapes).toHaveLength(1)
+    expect((t.activeLayer.shapes[0] as PathShape).subpaths[0]!.anchors).toHaveLength(4)
+    t.undo()
+    expect(t.activeLayer.shapes).toHaveLength(2)
+  })
+
+  it('curvar un segmento mueve los tiradores y deja las anclas', () => {
+    const { s, id } = rectPath()
+    const hit = findSegment(s, id, 15, 5, 1)!
+    expect(hit.index).toBe(0)
+    const before = path(s, id).subpaths[0]!.anchors.map((a) => ({ ...a.p }))
+    const d = new SegmentDrag(s, id, hit)
+    d.moveBy(0, 6)
+    d.end()
+    const a = path(s, id).subpaths[0]!
+    expect(a.anchors.map((x) => x.p)).toEqual(before)
+    expect(a.anchors[0]!.out).not.toBeNull()
+    expect(a.anchors[1]!.in).not.toBeNull()
+    // el segmento superior se ha hundido hacia abajo
+    expect(a.anchors[0]!.out!.y).toBeGreaterThan(0)
+  })
+
+  it('continuar un trazado abierto sustituye su subtrazado', () => {
+    const s = DocumentSession.create(40, 40)
+    const l = makeLine({ x: 2, y: 2 }, { x: 10, y: 2 }, makeAppearance(null, RED, 1))
+    addShape(s, l)
+    convertToPath(s, [l.id])
+    const base = path(s, l.id).subpaths[0]!.anchors
+    const more = [...base, { p: { x: 10, y: 12 }, in: null, out: null, type: 'corner' as const }]
+    expect(replaceSubpath(s, l.id, 0, more, false)).toBe(true)
+    expect(path(s, l.id).subpaths[0]!.anchors).toHaveLength(3)
+    expect(reverseAnchors(more)[0]!.p).toEqual({ x: 10, y: 12 })
   })
 })

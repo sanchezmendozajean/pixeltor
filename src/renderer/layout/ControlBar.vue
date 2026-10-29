@@ -22,7 +22,9 @@ const CONVERT_BUTTONS = [
 ]
 const ANCHOR_BUTTONS = [
   { id: 'object.addAnchors', icon: 'addAnchor', needsAnchors: false },
-  { id: 'anchor.delete', icon: 'delAnchor', needsAnchors: true }
+  { id: 'anchor.delete', icon: 'delAnchor', needsAnchors: true },
+  { id: 'anchor.cut', icon: 'scissors', needsAnchors: true },
+  { id: 'anchor.join', icon: 'join', needsAnchors: false, needsTwo: true }
 ]
 const anchorTool = computed(() =>
   ['dsel', 'pen', 'addAnchor', 'delAnchor', 'convAnchor'].includes(tools.active)
@@ -97,7 +99,7 @@ function onTolerance(e: Event): void {
         :key="b.id"
         type="button"
         class="pt-iconbtn pt-iconbtn--20"
-        :disabled="b.needsAnchors && !ui.anchorCount"
+        :disabled="(b.needsAnchors && !ui.anchorCount) || (b.needsTwo && ui.anchorCount !== 2)"
         :data-tip="actionLabel(b.id)"
         :aria-label="actionLabel(b.id)"
         @click="execute(b.id)"

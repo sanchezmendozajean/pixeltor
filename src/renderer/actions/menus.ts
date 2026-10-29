@@ -69,6 +69,8 @@ export const MENUS: MenuDef[] = [
       sep,
       act('object.addAnchors'),
       act('anchor.delete'),
+      act('anchor.cut'),
+      act('anchor.join'),
       act('anchor.toCorner'),
       act('anchor.toSmooth'),
       sep,

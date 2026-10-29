@@ -89,11 +89,15 @@ test('Ctrl con la pluma mueve un ancla y Alt+arrastrar saca los tiradores', asyn
   await page.keyboard.press('p')
   const stage = page.locator('.pt-stage')
   await page.mouse.move(cx + 200, cy + 200)
-  const penCursor = await stage.evaluate((el) => (el as HTMLElement).style.cursor)
+  const penCursor = await stage.evaluate(
+    (el) => (el as unknown as { style: { cursor: string } }).style.cursor
+  )
   expect(penCursor).toContain('data:image/svg')
   await page.keyboard.down('Control')
   await page.mouse.move(cx + 201, cy + 200)
-  const ctrlCursor = await stage.evaluate((el) => (el as HTMLElement).style.cursor)
+  const ctrlCursor = await stage.evaluate(
+    (el) => (el as unknown as { style: { cursor: string } }).style.cursor
+  )
   expect(ctrlCursor).toContain('data:image/svg')
   expect(ctrlCursor).not.toBe(penCursor) // flecha de anclas en vez de pluma
   await page.mouse.move(cx - 60, cy - 60)
@@ -112,4 +116,42 @@ test('Ctrl con la pluma mueve un ancla y Alt+arrastrar saca los tiradores', asyn
   await page.mouse.up()
   await page.keyboard.up('Alt')
   await expect(entries('Sacar tiradores')).toHaveCount(1)
+})
+
+test('curvar un segmento, continuar un trazado abierto con la pluma y cortar/unir con los botones', async () => {
+  await page.keyboard.press('Control+n')
+  await page.getByRole('button', { name: 'Crear', exact: true }).click()
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  const entries = (name: string) => page.locator('.hist').getByRole('button', { name })
+
+  // trazado abierto de dos anclas con la pluma
+  await page.keyboard.press('p')
+  await page.mouse.click(cx - 70, cy)
+  await page.mouse.click(cx + 10, cy)
+  await page.keyboard.press('Enter')
+
+  // continuar desde el último extremo (las anclas quedan en el centro del píxel: +10 px)
+  await page.mouse.click(cx + 10, cy + 10)
+  await page.mouse.click(cx + 10, cy + 70)
+  await page.keyboard.press('Enter')
+  await expect(entries('Continuar trazado')).toHaveCount(1)
+
+  // curvar el primer segmento arrastrándolo con la selección directa
+  await page.keyboard.press('a')
+  await page.mouse.move(cx - 30, cy)
+  await page.mouse.down()
+  await page.mouse.move(cx - 30, cy - 40, { steps: 6 })
+  await page.mouse.up()
+  await expect(entries('Curvar segmento')).toHaveCount(1)
+
+  // marco sobre el ancla intermedia y tijeras: queda cortado en dos formas
+  await page.mouse.move(cx + 50, cy - 40)
+  await page.mouse.down()
+  await page.mouse.move(cx - 10, cy + 30, { steps: 4 })
+  await page.mouse.up()
+  await page.getByRole('button', { name: 'Cortar en las anclas' }).click()
+  await expect(entries('Cortar en anclas')).toHaveCount(1)
 })

@@ -188,7 +188,9 @@
     "anchor": {
       "delete": "Eliminar anclas",
       "toCorner": "Anclas en esquina",
-      "toSmooth": "Anclas suaves"
+      "toSmooth": "Anclas suaves",
+      "cut": "Cortar en las anclas",
+      "join": "Unir anclas"
     }
   },
   "titlebar": {

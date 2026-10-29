@@ -236,6 +236,14 @@ export function registerAppActions(): void {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.deleteSelectedAnchors()
   })
+  registerHandler('anchor.cut', {
+    enabled: anchorsReady,
+    run: () => void activeController?.shapes.cutSelectedAnchors()
+  })
+  registerHandler('anchor.join', {
+    enabled: () => has() && ui.anchorCount === 2,
+    run: () => void activeController?.shapes.joinSelectedAnchors()
+  })
   registerHandler('anchor.toCorner', {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.convertSelectedAnchors(false)
