@@ -1,6 +1,6 @@
 // Formas vectoriales y apariencia (specs/02, 05). F2: relleno y contorno sólidos.
 
-import type { BlendMode, ID, RGBA } from './types'
+import type { BlendMode, Effect, ID, RGBA } from './types'
 import { newId } from './ids'
 
 export type Vec2 = { x: number; y: number }
@@ -96,6 +96,8 @@ interface ShapeBase {
   transform: Mat2D
   appearance: Appearance
   antialias: boolean
+  /** Efectos no destructivos de la forma (de arriba abajo = orden de aplicación). */
+  effects?: Effect[]
 }
 
 export interface RectShape extends ShapeBase {

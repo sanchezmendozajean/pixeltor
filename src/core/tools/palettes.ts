@@ -45,7 +45,10 @@ export function addSwatch(s: DocumentSession, color: RGBA, name?: string): Swatc
   if (p.swatches.length >= MAX_SWATCHES) return null
   const same = p.swatches.find(
     (x) =>
-      x.color.r === color.r && x.color.g === color.g && x.color.b === color.b && x.color.a === color.a
+      x.color.r === color.r &&
+      x.color.g === color.g &&
+      x.color.b === color.b &&
+      x.color.a === color.a
   )
   if (same) return same
   return edit(s, 'Añadir muestra', () => {

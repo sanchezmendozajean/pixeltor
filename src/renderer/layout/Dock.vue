@@ -2,6 +2,7 @@
 // Dock derecho del workspace Esenciales: Propiedades · Capas/Apariencia · Color/Muestras.
 import Panel, { type PanelTab } from './Panel.vue'
 import ActionButton from '@/components/ActionButton.vue'
+import EffectsPanel from '@/panels/EffectsPanel.vue'
 import AlignPanel from '@/panels/AlignPanel.vue'
 import ColorPanel from '@/panels/ColorPanel.vue'
 import GradientPanel from '@/panels/GradientPanel.vue'
@@ -21,7 +22,8 @@ const properties: PanelTab[] = [
 const layers: PanelTab[] = [
   { id: 'layers', label: 'panels.layers', empty: 'panels.emptyLayers' },
   { id: 'appearance', label: 'panels.appearance', empty: 'panels.emptyAppearance' },
-  { id: 'align', label: 'panels.align', empty: 'panels.emptyGeneric' }
+  { id: 'align', label: 'panels.align', empty: 'panels.emptyGeneric' },
+  { id: 'effects', label: 'panels.effects', empty: 'panels.emptyGeneric' }
 ]
 const color: PanelTab[] = [
   { id: 'color', label: 'panels.color', empty: 'panels.emptyColor' },
@@ -41,6 +43,7 @@ const color: PanelTab[] = [
       <template #layers><LayersPanel /></template>
       <template #appearance><AppearancePanel /></template>
       <template #align><AlignPanel /></template>
+      <template #effects><EffectsPanel /></template>
       <template #foot>
         <div class="pt-pfoot">
           <span class="pt-spacer" />

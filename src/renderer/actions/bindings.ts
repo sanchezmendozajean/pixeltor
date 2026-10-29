@@ -15,6 +15,7 @@ import {
   groupShapes,
   ungroupShapes,
   isolateGroup,
+  addEffect,
   convertToPath,
   makeCompound,
   offsetPaths,
@@ -34,6 +35,7 @@ import { registerHandler } from './registry'
 import { closeWorkspace, exportPng, openFile, saveWorkspace } from '@/app/documentOps'
 import { useColorsStore } from '@/stores/colors'
 import { hexToRgba } from '@/stores/colorUtil'
+import { EFFECT_DEFS } from '@core/effects/defs'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
@@ -211,6 +213,19 @@ export function registerAppActions(): void {
       shapesSelected() && ses().selectedShapes.some((i) => getShape(ses(), i)?.kind !== 'path'),
     run: () => void convertToPath(ses(), ses().selectedShapes)
   })
+  // Efecto › añadir: a las formas seleccionadas o, si no hay, a la capa activa
+  for (const def of EFFECT_DEFS) {
+    registerHandler(`effect.add.${def.type}`, {
+      enabled: has,
+      run: () => {
+        const s = ses()
+        if (s.selectedShapes.length)
+          for (const id of s.selectedShapes) addEffect(s, { kind: 'shape', id }, def.type)
+        else addEffect(s, { kind: 'layer', id: s.activeLayerId }, def.type)
+        ui.requestTab = 'effects'
+      }
+    })
+  }
   registerHandler('object.compound', {
     enabled: () => has() && (docs.rev, ses().selectedShapes.length > 1),
     run: () => void makeCompound(ses(), ses().selectedShapes)

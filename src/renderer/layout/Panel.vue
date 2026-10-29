@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Grupo de paneles con pestañas, menú ≡ y colapso. Cada pestaña puede aportar su contenido
 // por un slot con su id; sin él se muestra el estado vacío.
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useUiStore } from '@/stores/ui'
 import PtIcon from '@/components/PtIcon.vue'
 import { t, type I18nKey } from '@/i18n'
 
@@ -20,6 +21,16 @@ const props = defineProps<{
 
 const active = ref(props.tabs[0]?.id ?? '')
 const collapsed = ref(false)
+const ui = useUiStore()
+watch(
+  () => ui.requestTab,
+  (id) => {
+    if (id && props.tabs.some((x) => x.id === id)) {
+      active.value = id
+      ui.requestTab = ''
+    }
+  }
+)
 </script>
 
 <template>

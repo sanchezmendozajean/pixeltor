@@ -1,7 +1,14 @@
 // Workspace = documento abierto en una pestaña: sesión del core + visor + composición viva.
 // Es un objeto "crudo" (no reactivo): los buffers de píxeles nunca pasan por Pinia (regla 3).
 
-import { Bitmap, type DocumentSession, type Shape, type Rect, composeImage } from '@core/index'
+import {
+  Bitmap,
+  type DocumentSession,
+  type Shape,
+  type Rect,
+  composeImage,
+  effectsReach
+} from '@core/index'
 import { Viewport } from '@/viewport/Viewport'
 
 export class Workspace {
@@ -45,6 +52,15 @@ export class Workspace {
   private recompose(rect: Rect | null): void {
     const s = this.session
     const f = s.selection.floating
+    // los efectos propagan un cambio más allá de la región tocada
+    const reach = rect ? effectsReach(s.image) : 0
+    if (rect && reach > 0) {
+      const x0 = Math.max(0, rect.x - reach)
+      const y0 = Math.max(0, rect.y - reach)
+      const x1 = Math.min(s.image.width, rect.x + rect.w + reach)
+      const y1 = Math.min(s.image.height, rect.y + rect.h + reach)
+      rect = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+    }
     composeImage(s.image, s.rasters, this.composite, rect ?? undefined, {
       floating: f ? { layerId: s.activeLayerId, pixels: f } : null,
       preview: this.preview ? { layerId: s.activeLayerId, shape: this.preview } : null

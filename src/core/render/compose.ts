@@ -3,7 +3,35 @@ import { Bitmap, type Rect, clipRect } from '../raster/bitmap'
 import { compositeAt, compositeOver } from '../raster/blend'
 import type { Shape } from '../model/shapes'
 import { renderShapeCached, renderShapeRegion } from './shape'
+import { applyEffects, effectsInfluence, hasActiveEffects } from '../effects/registry'
+import { type Region, regionFromBitmap } from '../effects/region'
 import type { FloatingPixels } from '../raster/mask'
+
+/**
+ * Píxeles que un cambio puede alterar más allá de la región tocada por culpa de los efectos:
+ * úsese para ampliar las regiones sucias.
+ */
+export function effectsReach(img: PxImage): number {
+  const ctx = { width: img.width, height: img.height }
+  let reach = 0
+  for (const layer of img.layers) {
+    let shapes = 0
+    const visit = (list: Shape[]): void => {
+      for (const sh of list) {
+        if (sh.kind === 'group') visit(sh.children)
+        if (hasActiveEffects(sh.effects))
+          shapes = Math.max(shapes, effectsInfluence(sh.effects!, ctx))
+      }
+    }
+    visit(layer.shapes)
+    reach = Math.max(reach, shapes + effectsInfluence(layer.effects, ctx))
+  }
+  return reach
+}
+
+function regionBitmap(r: Region): Bitmap {
+  return new Bitmap(r.rect.w, r.rect.h, r.data)
+}
 
 export interface ComposeExtras {
   /** Píxeles flotantes que se ven encima de la capa indicada. */
@@ -30,6 +58,8 @@ export function composeImage(
   }
   let scratch: Bitmap | null = null
   let shapeScratch: Bitmap | null = null
+  let layerFx: Bitmap | null = null
+  const ctx = { width: img.width, height: img.height }
   for (const layer of img.layers) {
     if (!layer.visible || layer.opacity <= 0) continue
     let src = rasters.get(layer.raster.id)
@@ -42,7 +72,11 @@ export function composeImage(
       for (const sh of layer.shapes) {
         if (!sh.visible) continue
         const sb = renderShapeCached(sh, img.width, img.height)
-        if (sb) compositeAt(shapeScratch, sb.bitmap, sb.x, sb.y, sh.blendMode, sh.opacity, r)
+        if (!sb) continue
+        if (hasActiveEffects(sh.effects)) {
+          const fx = applyEffects(sh.effects!, regionFromBitmap(sb.bitmap, sb.x, sb.y), r, ctx)
+          compositeAt(shapeScratch, regionBitmap(fx), r.x, r.y, sh.blendMode, sh.opacity, r)
+        } else compositeAt(shapeScratch, sb.bitmap, sb.x, sb.y, sh.blendMode, sh.opacity, r)
       }
       const pb = pv ? renderShapeRegion(pv, img.width, img.height) : null
       if (pv && pb) compositeAt(shapeScratch, pb.bitmap, pb.x, pb.y, pv.blendMode, pv.opacity, r)
@@ -54,6 +88,17 @@ export function composeImage(
       scratch.data.set(src.data)
       stampOnto(scratch, f.pixels)
       src = scratch
+    }
+    if (hasActiveEffects(layer.effects)) {
+      // Efectos de capa: se calculan sobre la composición ráster + formas, solo en la región.
+      const fx = applyEffects(layer.effects, regionFromBitmap(src), r, ctx)
+      layerFx ??= new Bitmap(img.width, img.height)
+      for (let y = 0; y < r.h; y++)
+        layerFx.data.set(
+          fx.data.subarray(y * r.w * 4, (y + 1) * r.w * 4),
+          ((r.y + y) * img.width + r.x) * 4
+        )
+      src = layerFx
     }
     compositeOver(out, src, layer.blendMode, layer.opacity, r)
   }

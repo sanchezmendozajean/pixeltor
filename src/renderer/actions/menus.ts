@@ -1,4 +1,5 @@
 // Estructura de los menús. Cada entrada apunta a una acción del registro (definitions.ts).
+import { EFFECT_DEFS } from '@core/effects/defs'
 import type { I18nKey } from '@/i18n'
 
 export type MenuNode =
@@ -11,6 +12,8 @@ export interface MenuDef {
   label: I18nKey
   items: MenuNode[]
 }
+
+const EFFECT_CATEGORIES = ['shadow', 'outline', 'blur', 'distort', 'color'] as const
 
 const act = (id: string): MenuNode => ({ type: 'action', id })
 const sep: MenuNode = { type: 'sep' }
@@ -92,11 +95,11 @@ export const MENUS: MenuDef[] = [
     id: 'effect',
     label: 'menus.effect',
     items: [
-      act('effect.shadowLight'),
-      act('effect.outline'),
-      act('effect.blur'),
-      act('effect.distort'),
-      act('effect.color'),
+      ...EFFECT_CATEGORIES.map((c): MenuNode => ({
+        type: 'submenu',
+        label: `effects.categories.${c}` as I18nKey,
+        items: EFFECT_DEFS.filter((d) => d.category === c).map((d) => act(`effect.add.${d.type}`))
+      })),
       sep,
       act('layer.rasterizeEffects')
     ]

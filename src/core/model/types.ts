@@ -29,6 +29,23 @@ export const BLEND_MODES: readonly BlendMode[] = [
 import type { Shape } from './shapes'
 import type { Palette } from '../palette/palette'
 
+/** Sección «Salida» común de los efectos (specs/06). */
+export interface EffectOutput {
+  alpha: 'keep' | 'threshold' | 'dither'
+  threshold?: number
+  /** Cuantiza los colores a esta paleta del documento. */
+  quantizeToPalette?: ID
+}
+
+/** Efecto no destructivo de una forma o de una capa. */
+export interface Effect {
+  id: ID
+  type: string
+  enabled: boolean
+  params: Record<string, number | string | boolean>
+  output?: EffectOutput
+}
+
 export interface RasterRef {
   id: ID
   width: number
@@ -47,7 +64,7 @@ export interface Layer {
   raster: RasterRef
   /** [0] = forma inferior. */
   shapes: Shape[]
-  effects: unknown[]
+  effects: Effect[]
 }
 
 /** Guía de la imagen: línea horizontal (`h`, posición y) o vertical (`v`, posición x), en px. */

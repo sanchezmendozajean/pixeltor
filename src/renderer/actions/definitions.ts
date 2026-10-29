@@ -2,6 +2,8 @@
 // Los atajos siguen specs/04-herramientas.md. Ctrl es el modificador en Windows y Linux.
 // Formato canónico: modificadores en orden Ctrl+Alt+Shift y luego la tecla (p. ej. "Ctrl+Alt+Shift+S").
 
+import { EFFECT_DEFS } from '@core/effects/defs'
+
 export interface ActionDef {
   id: string
   /** Atajo principal; se muestra en menús y tooltips. */
@@ -63,11 +65,7 @@ export const ACTIONS: ActionDef[] = [
   a('layer.rasterizeEffects', 'Ctrl+Alt+E'),
   a('layer.lockAlpha', '/', 'lockAlpha'),
   // Efecto (el catálogo llega en F4)
-  a('effect.shadowLight'),
-  a('effect.outline'),
-  a('effect.blur'),
-  a('effect.distort'),
-  a('effect.color'),
+  ...EFFECT_DEFS.map((d) => a(`effect.add.${d.type}`)),
   // Imagen
   a('image.new', 'Ctrl+Alt+N', 'plus'),
   a('image.prev', ',', 'prevF'),

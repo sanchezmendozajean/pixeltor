@@ -90,7 +90,8 @@ export function parsePalette(bytes: Uint8Array, format: PaletteFormat, name: str
     if ((lines[0] ?? '').trim() !== 'JASC-PAL') throw new Error('No es una paleta JASC (.pal).')
     for (const raw of lines.slice(3)) {
       const m = /^\s*(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})/.exec(raw)
-      if (m) out.push(makeSwatch({ r: clamp8(+m[1]!), g: clamp8(+m[2]!), b: clamp8(+m[3]!), a: 255 }))
+      if (m)
+        out.push(makeSwatch({ r: clamp8(+m[1]!), g: clamp8(+m[2]!), b: clamp8(+m[3]!), a: 255 }))
     }
   } else {
     for (const raw of lines) {
@@ -180,7 +181,17 @@ export function hslToRgb(h: number, s: number, l: number, a = 255): RGBA {
   const hp = (((h % 360) + 360) % 360) / 60
   const x = c * (1 - Math.abs((hp % 2) - 1))
   const [r1, g1, b1] =
-    hp < 1 ? [c, x, 0] : hp < 2 ? [x, c, 0] : hp < 3 ? [0, c, x] : hp < 4 ? [0, x, c] : hp < 5 ? [x, 0, c] : [c, 0, x]
+    hp < 1
+      ? [c, x, 0]
+      : hp < 2
+        ? [x, c, 0]
+        : hp < 3
+          ? [0, c, x]
+          : hp < 4
+            ? [0, x, c]
+            : hp < 5
+              ? [x, 0, c]
+              : [c, 0, x]
   const m = l - c / 2
   return { r: clamp8((r1 + m) * 255), g: clamp8((g1 + m) * 255), b: clamp8((b1 + m) * 255), a }
 }
