@@ -20,6 +20,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Menú contextual de las pestañas** (clic derecho): Cerrar, Cerrar otros y Cerrar todo; los documentos con cambios piden confirmación uno a uno y cancelar detiene el resto. Esc o clic fuera lo cierra.
 
+- **Anclas más cerca de Illustrator**: barra de control con iconos (*Convertir:* esquina / suave, *Anclas:* añadir puntos / eliminar, deshabilitados sin anclas seleccionadas); **cursores propios** (pluma, pluma +/−/convertir según lo que hay bajo el puntero, flecha hueca de selección directa y con marca sobre ancla o tirador) que cambian al pulsar Ctrl/Alt sin mover el ratón; **Ctrl** con la pluma y sus compañeras = selección directa temporal; **Alt**+arrastrar un tirador lo mueve sin arrastrar al opuesto, y **Alt**/Convertir ancla + arrastrar sobre un ancla **saca los tiradores** (un clic alterna esquina/suave).
+
 ### Pendiente de F4
 
 - Cachés de efectos por versión del modelo (hoy se firma por contenido de los píxeles que se leen); composición completa de imágenes grandes en worker; «Aplicar efecto» hasta uno concreto; indicador fx en el panel Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.

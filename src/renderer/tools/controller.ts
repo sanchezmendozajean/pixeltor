@@ -27,6 +27,7 @@ import { useUiStore } from '@/stores/ui'
 import { RULER } from '@/viewport/rulers'
 import type { OverlayState } from '@/viewport/overlay'
 import { SHAPE_TOOLS, ShapeTools } from './shapeTools'
+import type { CursorKind } from './cursors'
 
 /** Controlador del visor activo; lo usan las acciones (Intro/Esc de la Pluma). */
 export let activeController: CanvasController | null = null
@@ -156,7 +157,7 @@ export class CanvasController {
         this.shapes.down(
           tool,
           { x, y, fx: pt.x, fy: pt.y, sx: p.sx, sy: p.sy },
-          { shift: p.shift, alt: p.alt }
+          { shift: p.shift, alt: p.alt, ctrl: p.ctrl }
         )
         return
       }
@@ -280,7 +281,7 @@ export class CanvasController {
       this.shapes.move(
         this.shapeActive,
         { x, y, fx: pt.x, fy: pt.y, sx: p.sx, sy: p.sy },
-        { shift: p.shift, alt: p.alt }
+        { shift: p.shift, alt: p.alt, ctrl: p.ctrl }
       )
       return
     }
@@ -350,6 +351,18 @@ export class CanvasController {
   private eyedrop(ws: Workspace, x: number, y: number, button: number, sampleAll: boolean): void {
     const c = pickColor(ws.session, x, y, sampleAll)
     if (c !== null && (c & 255) !== 0) this.setColor(button, c)
+  }
+
+  /** Cursor propio de las herramientas de trazados (null = el de la herramienta). */
+  cursorHint(p: PointerInfo): CursorKind | null {
+    const ws = this.getWs()
+    if (!ws) return null
+    const pt = ws.viewport.toImage(p.sx, p.sy)
+    return this.shapes.cursorHint(
+      this.tools.active,
+      { x: Math.floor(pt.x), y: Math.floor(pt.y), fx: pt.x, fy: pt.y, sx: p.sx, sy: p.sy },
+      { shift: p.shift, alt: p.alt, ctrl: p.ctrl }
+    )
   }
 
   /** Con simetría el trazo toca zonas lejanas: repinta todo el lienzo. */

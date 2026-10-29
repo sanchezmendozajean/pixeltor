@@ -204,7 +204,9 @@
     "tool": "Herramienta",
     "fill": "Relleno",
     "stroke": "Contorno",
-    "opacity": "Opacidad"
+    "opacity": "Opacidad",
+    "convert": "Convertir:",
+    "anchors": "Anclas:"
   },
   "toolbar": {
     "label": "Herramientas",

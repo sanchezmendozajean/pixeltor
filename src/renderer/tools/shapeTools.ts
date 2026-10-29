@@ -14,6 +14,8 @@ import {
   type Shape,
   type Vec2,
   AnchorDrag,
+  AnchorPull,
+  hitSegment,
   ShapeMove,
   RectRadiusDrag,
   ShapeRotate,
@@ -33,7 +35,6 @@ import {
   addAnchorAt,
   addShape,
   apply,
-  convertAnchor,
   convertAnchors,
   convertToPath,
   deleteAnchor,
@@ -58,9 +59,12 @@ import { useDocumentsStore } from '@/stores/documents'
 import { hexToRgba } from '@/stores/colorUtil'
 import { useToolsStore } from '@/stores/tools'
 import { t } from '@/i18n'
+import type { CursorKind } from './cursors'
 import { useUiStore } from '@/stores/ui'
 import { findGradientAttr, type Attr } from './gradientTarget'
 import type { OverlayState, ShapeOverlay } from '@/viewport/overlay'
+
+const ANCHOR_TOOLS = new Set(['pen', 'addAnchor', 'delAnchor', 'convAnchor'])
 
 export const SHAPE_TOOLS = new Set([
   'gradient',
@@ -80,6 +84,7 @@ export const SHAPE_TOOLS = new Set([
 interface Mods {
   shift: boolean
   alt: boolean
+  ctrl?: boolean
 }
 
 interface Pointer {
@@ -175,7 +180,17 @@ export class ShapeTools {
   } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean } | null = null
   /** Anclas seleccionadas con la Selección directa. */
-  private anchorSel: AnchorSel[] = []
+  private anchorList: AnchorSel[] = []
+  /** Arrastre para sacar tiradores de un ancla (se crea al mover; sin mover, un clic convierte). */
+  private pull: { ref: AnchorSel; sx: number; sy: number; pu: AnchorPull | null } | null = null
+
+  private get anchorSel(): AnchorSel[] {
+    return this.anchorList
+  }
+  private set anchorSel(v: AnchorSel[]) {
+    this.anchorList = v
+    useUiStore().anchorCount = v.length
+  }
   /** Marco de selección de anclas (Selección directa en vacío). */
   private anchorMarquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null =
     null
@@ -335,7 +350,9 @@ export class ShapeTools {
 
     if (tool === 'gradient') return this.downGradient(p)
     if (tool === 'sel') return this.downSelect(p, mods)
-    if (tool === 'dsel') return this.downDirect(p, mods)
+    // Ctrl con la pluma y compañeras = Selección directa temporal (como en Illustrator)
+    if (tool === 'dsel' || (mods.ctrl && ANCHOR_TOOLS.has(tool) && !this.penActive))
+      return this.downDirect(p, mods)
     if (tool === 'addAnchor') {
       const id = hitShape(s, p.x, p.y, 2) ?? s.selectedShapes.find((i) => getShape(s, i))
       if (id && addAnchorAt(s, id, p.fx, p.fy, 6 / vp.zoom + 1)) selectShapes(s, [id])
@@ -344,12 +361,9 @@ export class ShapeTools {
     if (tool === 'delAnchor' || tool === 'convAnchor') {
       const hit = this.hitAnchor(p, near)
       if (!hit || hit.part !== 'p') return
-      const shape = getShape(s, hit.shapeId)!
       if (tool === 'delAnchor') deleteAnchor(s, hit)
-      else {
-        const sp = displayPath(shape).subpaths[hit.subpath]!.anchors[hit.index]!
-        convertAnchor(s, hit, !(sp.in || sp.out))
-      }
+      // Convertir ancla: clic alterna esquina/suave; arrastrar saca los tiradores
+      else this.pull = { ref: hit, sx: p.sx, sy: p.sy, pu: null }
       return
     }
 
@@ -361,12 +375,8 @@ export class ShapeTools {
       if (!this.penActive && s.selectedShapes.length) {
         const hit = this.hitAnchor(p, near)
         if (hit && hit.part === 'p') {
-          if (mods.alt) {
-            const sp = displayPath(getShape(s, hit.shapeId)!).subpaths[hit.subpath]!.anchors[
-              hit.index
-            ]!
-            convertAnchors(s, [hit], !(sp.in || sp.out))
-          } else deleteAnchors(s, [hit])
+          if (mods.alt) this.pull = { ref: hit, sx: p.sx, sy: p.sy, pu: null }
+          else deleteAnchors(s, [hit])
           return
         }
         for (const id of s.selectedShapes)
@@ -592,11 +602,10 @@ export class ShapeTools {
     }
     const hit = this.hitAnchor(p, near)
     if (hit && hit.part === 'p' && mods.alt) {
-      // Alt+clic: esquina ↔ suave
+      // Alt+clic: esquina ↔ suave; Alt+arrastrar: saca los tiradores
       if (!s.selectedShapes.includes(hit.shapeId)) selectShapes(s, [hit.shapeId])
-      const a = displayPath(getShape(s, hit.shapeId)!).subpaths[hit.subpath]!.anchors[hit.index]!
-      convertAnchors(s, [hit], !(a.in || a.out))
       this.anchorSel = [{ shapeId: hit.shapeId, subpath: hit.subpath, index: hit.index }]
+      this.pull = { ref: hit, sx: p.sx, sy: p.sy, pu: null }
       return
     }
     if (hit) {
@@ -607,7 +616,7 @@ export class ShapeTools {
             (a) =>
               !(a.shapeId === hit.shapeId && a.subpath === hit.subpath && a.index === hit.index)
           )
-        else if (mods.shift) this.anchorSel.push({ ...hit })
+        else if (mods.shift) this.anchorSel = [...this.anchorSel, { ...hit }]
         else if (!this.isAnchorSelected(hit.shapeId, hit.subpath, hit.index))
           this.anchorSel = [{ shapeId: hit.shapeId, subpath: hit.subpath, index: hit.index }]
       }
@@ -618,7 +627,8 @@ export class ShapeTools {
               .map((a) => ({ subpath: a.subpath, index: a.index, part: 'p' as const }))
           : [{ subpath: hit.subpath, index: hit.index, part: hit.part }]
       this.anchorDrag = {
-        ad: new AnchorDrag(s, hit.shapeId, targets),
+        // Alt sobre un tirador: se mueve solo, sin arrastrar al opuesto
+        ad: new AnchorDrag(s, hit.shapeId, targets, hit.part !== 'p' && !!mods.alt),
         x0: p.x,
         y0: p.y,
         started: false,
@@ -668,6 +678,13 @@ export class ShapeTools {
         this.snapLines = sn.lines
         m.mv.moveBy(dx, dy)
       }
+      return
+    }
+    if (this.pull) {
+      const pl = this.pull
+      if (!pl.pu && Math.hypot(p.sx - pl.sx, p.sy - pl.sy) > 3)
+        pl.pu = new AnchorPull(ws.session, pl.ref)
+      pl.pu?.pullTo(p.fx, p.fy)
       return
     }
     if (this.anchorMarquee) {
@@ -775,6 +792,17 @@ export class ShapeTools {
       this.moveBounds = null
       return
     }
+    if (this.pull) {
+      const pl = this.pull
+      this.pull = null
+      if (pl.pu) pl.pu.end()
+      else {
+        const a = displayPath(getShape(ws.session, pl.ref.shapeId)!).subpaths[pl.ref.subpath]!
+          .anchors[pl.ref.index]!
+        convertAnchors(ws.session, [pl.ref], !(a.in || a.out))
+      }
+      return
+    }
     if (this.anchorMarquee) {
       const m = this.anchorMarquee
       this.anchorMarquee = null
@@ -836,6 +864,8 @@ export class ShapeTools {
   }
 
   cancel(): void {
+    this.pull?.pu?.end()
+    this.pull = null
     this.drag = null
     this.anchorMarquee = null
     this.snapLines = []
@@ -855,6 +885,37 @@ export class ShapeTools {
     }
     if (this.anchorDrag?.started) this.anchorDrag.ad.end()
     this.anchorDrag = null
+  }
+
+  /** Tipo de cursor para las herramientas de trazados según lo que hay bajo el puntero. */
+  cursorHint(tool: string, p: Pointer, mods: Mods): CursorKind | null {
+    const ws = this.getWs()
+    if (!ws) return null
+    const s = ws.session
+    const vp = ws.viewport
+    const near = (q: Vec2) => {
+      const a = vp.toScreen(q.x, q.y)
+      return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT
+    }
+    const direct = tool === 'dsel' || (!!mods.ctrl && ANCHOR_TOOLS.has(tool) && !this.penActive)
+    if (direct) {
+      const hit = this.hitAnchor(p, near)
+      if (!hit) return 'direct'
+      if (mods.alt && hit.part === 'p') return 'pen-convert'
+      return hit.part === 'p' ? 'direct-anchor' : 'direct-handle'
+    }
+    if (tool === 'addAnchor') return 'pen-plus'
+    if (tool === 'delAnchor') return 'pen-minus'
+    if (tool === 'convAnchor') return 'pen-convert'
+    if (tool === 'pen') {
+      if (this.penActive || !s.selectedShapes.length) return 'pen'
+      const hit = this.hitAnchor(p, near)
+      if (hit && hit.part === 'p') return mods.alt ? 'pen-convert' : 'pen-minus'
+      if (s.selectedShapes.some((id) => hitSegment(s, id, p.fx, p.fy, 6 / vp.zoom + 1)))
+        return 'pen-plus'
+      return 'pen'
+    }
+    return null
   }
 
   hover(x: number, y: number, tool: string): void {

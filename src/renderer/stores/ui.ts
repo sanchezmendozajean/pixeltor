@@ -29,6 +29,8 @@ export const useUiStore = defineStore('ui', {
     keyShape: '' as string,
     /** Columnas de la barra de herramientas (se recuerda entre sesiones). */
     toolbarColumns: 1 as 1 | 2,
+    /** Número de anclas seleccionadas con la Selección directa (para habilitar botones). */
+    anchorCount: 0,
     /** Selector de color abierto para este destino. */
     colorPicker: null as null | 'fill' | 'stroke',
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }

@@ -5,15 +5,25 @@ import PtIcon from '@/components/PtIcon.vue'
 import { actionIcon, actionLabel, execute } from '@/actions/registry'
 import { useColorsStore } from '@/stores/colors'
 import { useDocumentsStore } from '@/stores/documents'
+import { useUiStore } from '@/stores/ui'
 import { useToolsStore } from '@/stores/tools'
 import { t } from '@/i18n'
 
 const tools = useToolsStore()
 const colors = useColorsStore()
 const docs = useDocumentsStore()
+const ui = useUiStore()
 
 const usesSize = computed(() => tools.active === 'brush' || tools.active === 'eraser')
 const usesShape = usesSize
+const CONVERT_BUTTONS = [
+  { id: 'anchor.toCorner', icon: 'anchorCorner' },
+  { id: 'anchor.toSmooth', icon: 'anchorSmooth' }
+]
+const ANCHOR_BUTTONS = [
+  { id: 'object.addAnchors', icon: 'addAnchor', needsAnchors: false },
+  { id: 'anchor.delete', icon: 'delAnchor', needsAnchors: true }
+]
 const anchorTool = computed(() =>
   ['dsel', 'pen', 'addAnchor', 'delAnchor', 'convAnchor'].includes(tools.active)
 )
@@ -67,14 +77,32 @@ function onTolerance(e: Event): void {
       </label>
     </template>
     <template v-if="anchorTool">
+      <span class="pt-ctl__lbl">{{ t('controlbar.convert') }}</span>
       <button
-        v-for="id in ['anchor.toCorner', 'anchor.toSmooth', 'anchor.delete', 'object.addAnchors']"
-        :key="id"
+        v-for="b in CONVERT_BUTTONS"
+        :key="b.id"
         type="button"
-        class="pt-btn pt-btn--secondary"
-        @click="execute(id)"
+        class="pt-iconbtn pt-iconbtn--20"
+        :disabled="!ui.anchorCount"
+        :data-tip="actionLabel(b.id)"
+        :aria-label="actionLabel(b.id)"
+        @click="execute(b.id)"
       >
-        {{ actionLabel(id) }}
+        <PtIcon :name="b.icon" />
+      </button>
+      <span class="pt-sep pt-sep--inset" />
+      <span class="pt-ctl__lbl">{{ t('controlbar.anchors') }}</span>
+      <button
+        v-for="b in ANCHOR_BUTTONS"
+        :key="b.id"
+        type="button"
+        class="pt-iconbtn pt-iconbtn--20"
+        :disabled="b.needsAnchors && !ui.anchorCount"
+        :data-tip="actionLabel(b.id)"
+        :aria-label="actionLabel(b.id)"
+        @click="execute(b.id)"
+      >
+        <PtIcon :name="b.icon" />
       </button>
     </template>
     <template v-if="usesSymmetry">

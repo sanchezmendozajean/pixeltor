@@ -5,6 +5,9 @@ import {
   color,
   convertToPath,
   addMidAnchors,
+  AnchorDrag,
+  AnchorPull,
+  hitSegment,
   deleteAnchors,
   convertAnchors,
   flattenSubpath,
@@ -173,5 +176,43 @@ describe('edición de anclas', () => {
     expect(path(s, id).subpaths[0]!.anchors.every((a) => a.in && a.out)).toBe(true)
     convertAnchors(s, refs, false)
     expect(path(s, id).subpaths[0]!.anchors.every((a) => !a.in && !a.out)).toBe(true)
+  })
+})
+
+describe('tiradores', () => {
+  it('Alt: mover un tirador sin arrastrar al opuesto; sin Alt el opuesto lo refleja', () => {
+    for (const independent of [false, true]) {
+      const s = DocumentSession.create(40, 40)
+      const r = makeRect(5, 5, 20, 20, makeAppearance(RED, null))
+      addShape(s, r)
+      convertToPath(s, [r.id])
+      const ref = { shapeId: r.id, subpath: 0, index: 0 }
+      convertAnchors(s, [ref], true)
+      const a0 = path(s, r.id).subpaths[0]!.anchors[0]!
+      const opp = { ...a0.in! }
+      const d = new AnchorDrag(s, r.id, [{ subpath: 0, index: 0, part: 'out' }], independent)
+      d.moveBy(0, 6)
+      d.end()
+      const a = path(s, r.id).subpaths[0]!.anchors[0]!
+      if (independent) expect(a.in).toEqual(opp)
+      else expect(a.in).not.toEqual(opp)
+    }
+  })
+
+  it('sacar tiradores arrastrando un ancla de esquina', () => {
+    const s = DocumentSession.create(40, 40)
+    const r = makeRect(5, 5, 20, 20, makeAppearance(RED, null))
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    const pull = new AnchorPull(s, { shapeId: r.id, subpath: 0, index: 1 })
+    pull.pullTo(35, 12)
+    pull.end()
+    const a = path(s, r.id).subpaths[0]!.anchors[1]!
+    expect(a.out).toEqual({ x: 30, y: 7 })
+    expect(a.in).toEqual({ x: 10, y: -7 })
+    expect(hitSegment(s, r.id, 15, 25, 1)).toBe(true)
+    expect(hitSegment(s, r.id, 15, 15, 1)).toBe(false)
+    s.undo()
+    expect(path(s, r.id).subpaths[0]!.anchors[1]!.out).toBeNull()
   })
 })

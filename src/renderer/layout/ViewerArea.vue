@@ -7,6 +7,7 @@ import ActionButton from '@/components/ActionButton.vue'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
+import { cursorCss, type CursorKind } from '@/tools/cursors'
 import { CanvasController, type Notice, setActiveController } from '@/tools/controller'
 import { GlView } from '@/viewport/GlView'
 import { drawOverlay } from '@/viewport/overlay'
@@ -166,11 +167,39 @@ function onDown(e: PointerEvent): void {
   controller.down(info(e))
   schedule()
 }
+/** Último puntero conocido (para recalcular el cursor al pulsar Ctrl/Alt sin mover el ratón). */
+let lastInfo: ReturnType<typeof info> | null = null
+
+/** Cursor de la herramienta: guías, trazados (pluma, flecha de anclas) o el predeterminado. */
+function applyCursor(p: ReturnType<typeof info> | null): void {
+  const el = stage.value
+  if (!el) return
+  if (controller.guideHover) {
+    el.style.cursor = controller.guideHover === 'v' ? 'ew-resize' : 'ns-resize'
+    return
+  }
+  const kind = p ? controller.cursorHint(p) : null
+  el.style.cursor = kind ? cursorCss(kind) : toolCursor()
+}
+
+/** Cursor de una herramienta de trazados con el puntero fuera del lienzo o sin moverse. */
+function toolCursor(): string {
+  const map: Record<string, CursorKind> = {
+    pen: 'pen',
+    dsel: 'direct',
+    addAnchor: 'pen-plus',
+    delAnchor: 'pen-minus',
+    convAnchor: 'pen-convert'
+  }
+  const k = map[tools.active]
+  return k ? cursorCss(k) : ''
+}
+
 function onMove(e: PointerEvent): void {
-  controller.moveTo(info(e))
-  // cursor de redimensionar sobre una guía (herramienta V)
-  stage.value!.style.cursor =
-    controller.guideHover === 'v' ? 'ew-resize' : controller.guideHover === 'h' ? 'ns-resize' : ''
+  const p = info(e)
+  lastInfo = p
+  controller.moveTo(p)
+  applyCursor(p)
   schedule()
 }
 function onUp(e: PointerEvent): void {
@@ -204,12 +233,16 @@ function onWheel(e: WheelEvent): void {
 }
 
 function onKeyDown(e: KeyboardEvent): void {
+  if (lastInfo && (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta'))
+    applyCursor({ ...lastInfo, ctrl: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey })
   if (e.code === 'Space' && !(e.target instanceof HTMLInputElement)) {
     controller.spaceDown = true
     e.preventDefault()
   }
 }
 function onKeyUp(e: KeyboardEvent): void {
+  if (lastInfo && (e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift' || e.key === 'Meta'))
+    applyCursor({ ...lastInfo, ctrl: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey })
   if (e.code === 'Space') controller.spaceDown = false
 }
 
@@ -262,6 +295,11 @@ watch(
     gl?.refreshColors()
     schedule()
   }
+)
+
+watch(
+  () => tools.active,
+  () => applyCursor(lastInfo)
 )
 
 const cursorClass = () =>

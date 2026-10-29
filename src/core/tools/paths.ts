@@ -171,7 +171,9 @@ export class AnchorDrag {
   constructor(
     private readonly s: DocumentSession,
     shapeId: ID,
-    targets: { subpath: number; index: number; part: AnchorPart }[]
+    targets: { subpath: number; index: number; part: AnchorPart }[],
+    /** Alt: el tirador se mueve solo, sin arrastrar al opuesto (rompe la simetría). */
+    private readonly independent = false
   ) {
     const f = findShape(s, shapeId)
     if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
@@ -206,9 +208,10 @@ export class AnchorDrag {
         if (st.out) a.out = { x: st.out.x + d.x, y: st.out.y + d.y }
       } else {
         a[st.part] = np
+        if (this.independent) a.type = 'corner'
         // suave/simétrico: el tirador opuesto refleja la dirección
         const other = st.part === 'in' ? 'out' : 'in'
-        if (a.type !== 'corner' && a[other]) {
+        if (!this.independent && a.type !== 'corner' && a[other]) {
           const vx = a.p.x - np.x
           const vy = a.p.y - np.y
           const len =
@@ -226,6 +229,71 @@ export class AnchorDrag {
   end(): boolean {
     return this.tx.commit({ model: true })
   }
+}
+
+/**
+ * Saca los tiradores de un ancla arrastrando (herramienta Convertir ancla, o Alt sobre un ancla):
+ * el ancla pasa a simétrica con el tirador de salida bajo el cursor y el de entrada reflejado.
+ */
+export class AnchorPull {
+  private readonly tx
+  private readonly shape: PathShape
+  private readonly anchor: Anchor
+
+  constructor(
+    private readonly s: DocumentSession,
+    ref: AnchorRef
+  ) {
+    const f = findShape(s, ref.shapeId)
+    if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
+    this.tx = s.begin('Sacar tiradores')
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    this.shape = f.list[f.index] as PathShape
+    const a = this.shape.subpaths[ref.subpath]?.anchors[ref.index]
+    if (!a) throw new Error('ancla inexistente')
+    this.anchor = a
+  }
+
+  /** (x, y) en coordenadas de imagen. */
+  pullTo(x: number, y: number): void {
+    const inv = invert(this.shape.transform)
+    const p = inv ? apply(inv, { x, y }) : { x, y }
+    const a = this.anchor
+    a.out = p
+    a.in = { x: 2 * a.p.x - p.x, y: 2 * a.p.y - p.y }
+    a.type = 'symmetric'
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+  }
+
+  end(): boolean {
+    return this.tx.commit({ model: true })
+  }
+}
+
+/** Segmento del trazado más cercano a (x, y) si está a menos de reach px; sin modificar nada. */
+export function hitSegment(
+  s: DocumentSession,
+  shapeId: ID,
+  x: number,
+  y: number,
+  reach: number
+): boolean {
+  const f = findShape(s, shapeId)
+  if (!f || f.shape.kind === 'group' || f.layer.locked) return false
+  const sh = f.shape.kind === 'path' ? f.shape : toPath(f.shape)
+  for (const sp of sh.subpaths) {
+    const n = sp.anchors.length
+    const segs = sp.closed ? n : n - 1
+    for (let i = 0; i < segs; i++) {
+      const a = sp.anchors[i]!
+      const b = sp.anchors[(i + 1) % n]!
+      for (let k = 1; k < 32; k++) {
+        const p = apply(sh.transform, cubicAt(a, b, k / 32))
+        if (Math.hypot(p.x - x, p.y - y) <= reach) return true
+      }
+    }
+  }
+  return false
 }
 
 function splitCubic(a: Anchor, b: Anchor, t: number): { mid: Anchor; a: Anchor; b: Anchor } {
