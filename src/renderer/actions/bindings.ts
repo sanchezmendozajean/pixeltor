@@ -16,6 +16,11 @@ import {
   ungroupShapes,
   isolateGroup,
   convertToPath,
+  makeCompound,
+  offsetPaths,
+  outlineStroke,
+  releaseCompound,
+  simplifyPaths,
   getShape,
   moveShapes,
   removeShapes,
@@ -205,6 +210,35 @@ export function registerAppActions(): void {
     enabled: () =>
       shapesSelected() && ses().selectedShapes.some((i) => getShape(ses(), i)?.kind !== 'path'),
     run: () => void convertToPath(ses(), ses().selectedShapes)
+  })
+  registerHandler('object.compound', {
+    enabled: () => has() && (docs.rev, ses().selectedShapes.length > 1),
+    run: () => void makeCompound(ses(), ses().selectedShapes)
+  })
+  registerHandler('object.releaseCompound', {
+    enabled: () =>
+      shapesSelected() &&
+      ses().selectedShapes.some((i) => {
+        const sh = getShape(ses(), i)
+        return sh?.kind === 'path' && sh.subpaths.length > 1
+      }),
+    run: () => void releaseCompound(ses(), ses().selectedShapes)
+  })
+  registerHandler('object.simplify', {
+    enabled: shapesSelected,
+    run: () => void simplifyPaths(ses(), ses().selectedShapes)
+  })
+  registerHandler('object.offsetOut', {
+    enabled: shapesSelected,
+    run: () => void offsetPaths(ses(), ses().selectedShapes, 1)
+  })
+  registerHandler('object.offsetIn', {
+    enabled: shapesSelected,
+    run: () => void offsetPaths(ses(), ses().selectedShapes, -1)
+  })
+  registerHandler('object.outlineStroke', {
+    enabled: shapesSelected,
+    run: () => void outlineStroke(ses(), ses().selectedShapes)
   })
   registerHandler('object.stamp', {
     enabled: shapesSelected,

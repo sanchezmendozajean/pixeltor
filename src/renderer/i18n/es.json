@@ -45,7 +45,13 @@
       "sendBack": "Enviar al fondo",
       "stamp": "Estampar formas seleccionadas",
       "stampAll": "Estampar todas las formas de la capa",
-      "convertToPath": "Convertir en trazado"
+      "convertToPath": "Convertir en trazado",
+      "compound": "Crear trazado compuesto",
+      "releaseCompound": "Liberar trazado compuesto",
+      "simplify": "Simplificar trazado",
+      "offsetOut": "Expandir trazado 1 px",
+      "offsetIn": "Contraer trazado 1 px",
+      "outlineStroke": "Contorno de trazo"
     },
     "layer": {
       "new": "Nueva capa",

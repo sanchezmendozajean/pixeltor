@@ -47,6 +47,12 @@ export const ACTIONS: ActionDef[] = [
   a('object.stamp', 'Ctrl+E', 'stamp'),
   a('object.stampAll', 'Ctrl+Shift+E'),
   a('object.convertToPath'),
+  a('object.compound', 'Ctrl+8'),
+  a('object.releaseCompound', 'Ctrl+Alt+8'),
+  a('object.simplify'),
+  a('object.offsetOut'),
+  a('object.offsetIn'),
+  a('object.outlineStroke'),
   // Capa
   a('layer.new', 'Ctrl+Shift+N', 'newLayer'),
   a('layer.duplicate', 'Ctrl+J', 'duplicate'),

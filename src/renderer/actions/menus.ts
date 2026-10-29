@@ -62,7 +62,14 @@ export const MENUS: MenuDef[] = [
       sep,
       act('object.stamp'),
       act('object.stampAll'),
-      act('object.convertToPath')
+      act('object.convertToPath'),
+      sep,
+      act('object.compound'),
+      act('object.releaseCompound'),
+      act('object.outlineStroke'),
+      act('object.offsetOut'),
+      act('object.offsetIn'),
+      act('object.simplify')
     ]
   },
   {

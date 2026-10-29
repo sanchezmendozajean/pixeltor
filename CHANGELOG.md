@@ -19,12 +19,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Paletas y muestras globales**: la paleta vive en el documento (se guarda en el `.pixeltor`; PICO-8 por defecto) y es deshacible. Panel Muestras: añadir (sin duplicar), quitar (clic derecho), reordenar arrastrando, ordenar por tono o luz, **extraer colores de la imagen**, **rampas** entre relleno y contorno con giro de tono (*hue shifting*), biblioteca de la app (PICO-8, Game Boy, Sweetie 16, Endesga 32) e **importar/exportar `.gpl`, `.pal`, `.hex` y `.png`**. **Muestras globales**: enlazar un relleno o contorno sólido a una muestra y, al editarla, se recolorean todas las formas enlazadas de todas las imágenes en un solo paso de historial (deshacible).
 - **Simetría** en lápiz, pincel y borrador: espejo horizontal y/o vertical y giro de 180° o 90° respecto al centro del lienzo (ejes magenta en el visor). Opera a nivel de píxel, así que el resultado es exacto también con puntas de tamaño par; un trazo = un paso de historial. Ejes personalizados, pendientes.
 - **Paleta de comandos** (`Ctrl+K`): busca cualquier acción habilitada del registro (sin tildes, por prefijo, palabra o letras en orden), muestra su atajo, se navega con flechas y Enter, Esc cierra.
+- **Operaciones de trazado** (menú Objeto y paleta de comandos): **trazado compuesto** (`Ctrl+8`, relleno par-impar con huecos) y liberarlo (`Ctrl+Alt+8`); **contorno de trazo** (convierte el contorno activo en una forma rellena con su pintura, respetando grosor y alineación; líneas abiertas con remates rectos); **expandir/contraer** el trazado 1 px (inglete con límite); **simplificar** anclas (Ramer–Douglas–Peucker, 1 px). Hornean la transformación y producen esquinas rectas; todo es deshacible y está cubierto por pruebas.
 - Las pestañas del dock se acortan en vez de ensanchar la columna.
 
 ### Pendiente de F3
 
 - Snapping de anclas y trazados, y al dibujar o escalar (hoy solo al mover); guías inteligentes con medidas y ángulos.
-- Contorno de trazo, desplazamiento de trazado, simplificar y trazados compuestos.
+- Distancia de desplazamiento y tolerancia de simplificar configurables (hoy 1 px fijo); remates y uniones redondeados en el contorno de trazo; simplificar conservando curvas.
 - Editor del modo «paleta» de los degradados y muestras globales también en las paradas de degradado (hoy solo en pinturas sólidas); varias paletas simultáneas en el panel (el modelo ya las admite).
 
 ## [0.3.0] — F2 · Formas vectoriales
