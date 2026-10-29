@@ -11,6 +11,8 @@ export const useUiStore = defineStore('ui', {
     showPaths: true,
     /** Mostrar las guías del lienzo (Ctrl+;). */
     showGuides: true,
+    /** Hay efectos calculándose en los workers. */
+    fxBusy: false,
     /** Pide a un grupo de paneles que muestre la pestaña con este id. */
     requestTab: '',
     /** Paleta de comandos abierta (Ctrl+K). */

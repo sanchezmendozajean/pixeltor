@@ -86,6 +86,7 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
     <div class="pt-seg">
       {{ t('status.image') }} <b>1</b>/{{ docs.session?.doc.images.length ?? 1 }}
     </div>
+    <div v-if="ui.fxBusy" class="pt-seg" role="status">{{ t('status.calculating') }}</div>
     <div class="pt-spacer" />
     <div class="pt-seg pt-seg--r snaps" role="group" :aria-label="t('status.snapLabel')">
       <button

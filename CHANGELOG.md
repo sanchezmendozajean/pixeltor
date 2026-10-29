@@ -8,6 +8,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Motor de efectos** (`src/core/effects`): registro con esquema de parámetros (rangos y valores por defecto), radio de influencia, cadena de aplicación que solo calcula lo necesario por etapa y sección **Salida** (umbral/tramado del alfa y ajuste a paleta). Efectos en **formas y capas** que se componen en vivo sin tocar el ráster base (prueba de invariante) y regiones sucias ampliadas por el radio de influencia (prueba: componer por cuadrantes = componer todo).
 - **23 efectos**: sombra paralela, interior y larga; resplandor exterior e interior; iluminación direccional y bisel (sombreado automático por mapa de alturas, con escalones); contorno de píxel (4/8 conexiones, exterior/interior); desenfoque gaussiano, de caja y de movimiento; onda, ondulación, torsión, desplazamiento (con envoltura) y mosaico; tono/saturación/luminosidad, brillo/contraste, mapa de degradado, reemplazar colores, posterizar, invertir y superposición de color.
+- **Pool de workers** (hasta 4, `hardwareConcurrency − 1`) para los efectos del visor: lo que el cálculo puede leer viaja al worker, solo se procesa la petición más reciente de cada capa/forma y, mientras llega el resultado, se muestra el último válido (sin parpadeo) con «Calculando efectos…» en la barra de estado. Las áreas pequeñas (pinceladas) se calculan en línea. Exportar y estampar siguen siendo síncronos y deterministas. Corrige que la salida «ajustar a paleta» no recibía las paletas del documento.
 - **Presets de efectos** (guardar la pila actual con un nombre y aplicarla como un solo paso) e indicador **fx** en las filas de capas y formas.
 - **Rasterizar efectos de capa** (`Ctrl+Alt+E`): estampa las formas, aplica los efectos de la capa y los vacía sin cambiar el render. Estampar una forma conserva sus efectos.
 - **Golden por efecto** (huella FNV de cada efecto sobre una imagen fija) y benchmark a 1000×1000: desenfoque gaussiano ≈ 146 ms, sombra ≈ 115 ms, contorno ≈ 145 ms (Node, una sola hebra).
@@ -15,7 +16,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 ### Pendiente de F4
 
-- Pool de workers y cachés por versión (los efectos se calculan hoy en el hilo principal y solo en la región sucia); «Aplicar efecto» hasta uno concreto; indicador fx en el panel Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.
+- Cachés de efectos por versión del modelo (hoy se firma por contenido de los píxeles que se leen); composición completa de imágenes grandes en worker; «Aplicar efecto» hasta uno concreto; indicador fx en el panel Apariencia; efectos por atributo (relleno/contorno); editor en popover con Aceptar/Cancelar (hoy los cambios son en vivo y deshacibles); resplandor con caída suave/escalonada por origen centro.
 
 ## [0.4.0] — F3 · Apariencia avanzada y precisión
 

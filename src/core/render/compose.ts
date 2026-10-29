@@ -4,7 +4,9 @@ import { compositeAt, compositeOver } from '../raster/blend'
 import type { Shape } from '../model/shapes'
 import { renderShape, renderShapeCached, renderShapeRegion } from './shape'
 import { applyEffects, effectsInfluence, hasActiveEffects } from '../effects/registry'
+import { type FxProvider, syncFx } from '../effects/async'
 import { type Region, regionFromBitmap } from '../effects/region'
+import type { Palette } from '../palette/palette'
 import type { FloatingPixels } from '../raster/mask'
 
 /**
@@ -52,6 +54,10 @@ export interface ComposeExtras {
   floating?: { layerId: ID; pixels: FloatingPixels } | null
   /** Forma en construcción (vista previa pixelada en vivo) sobre la capa indicada. */
   preview?: { layerId: ID; shape: Shape } | null
+  /** Cómo se aplican los efectos (por defecto en línea; el visor usa workers). */
+  fx?: FxProvider
+  /** Paletas del documento (salida «ajustar a paleta» de los efectos). */
+  palettes?: Palette[]
 }
 
 /**
@@ -73,7 +79,8 @@ export function composeImage(
   let scratch: Bitmap | null = null
   let shapeScratch: Bitmap | null = null
   let layerFx: Bitmap | null = null
-  const ctx = { width: img.width, height: img.height }
+  const ctx = { width: img.width, height: img.height, palettes: extras.palettes }
+  const provider = extras.fx ?? syncFx
   for (const layer of img.layers) {
     if (!layer.visible || layer.opacity <= 0) continue
     let src = rasters.get(layer.raster.id)
@@ -88,7 +95,13 @@ export function composeImage(
         const sb = renderShapeCached(sh, img.width, img.height)
         if (!sb) continue
         if (hasActiveEffects(sh.effects)) {
-          const fx = applyEffects(sh.effects!, regionFromBitmap(sb.bitmap, sb.x, sb.y), r, ctx)
+          const fx = provider.apply(
+            `shape:${sh.id}`,
+            sh.effects!,
+            regionFromBitmap(sb.bitmap, sb.x, sb.y),
+            r,
+            ctx
+          )
           compositeAt(shapeScratch, regionBitmap(fx), r.x, r.y, sh.blendMode, sh.opacity, r)
         } else compositeAt(shapeScratch, sb.bitmap, sb.x, sb.y, sh.blendMode, sh.opacity, r)
       }
@@ -105,7 +118,7 @@ export function composeImage(
     }
     if (hasActiveEffects(layer.effects)) {
       // Efectos de capa: se calculan sobre la composición ráster + formas, solo en la región.
-      const fx = applyEffects(layer.effects, regionFromBitmap(src), r, ctx)
+      const fx = provider.apply(`layer:${layer.id}`, layer.effects, regionFromBitmap(src), r, ctx)
       layerFx ??= new Bitmap(img.width, img.height)
       for (let y = 0; y < r.h; y++)
         layerFx.data.set(

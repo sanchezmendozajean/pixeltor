@@ -281,7 +281,8 @@
     "snapCanvas": "Ajustar a bordes y centro del lienzo",
     "snapLabel": "Ajustar a",
     "none": "—",
-    "shapeSize": "Tamaño de la forma (ancho × alto)"
+    "shapeSize": "Tamaño de la forma (ancho × alto)",
+    "calculating": "Calculando efectos…"
   },
   "notice": {
     "hidden": "La capa activa está oculta",

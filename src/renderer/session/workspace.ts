@@ -9,7 +9,10 @@ import {
   composeImage,
   effectsReach
 } from '@core/index'
+import { AsyncFxProvider } from '@core/index'
 import { Viewport } from '@/viewport/Viewport'
+import { fxExecutor } from '@/workers/pool'
+import { useUiStore } from '@/stores/ui'
 
 export class Workspace {
   readonly viewport: Viewport
@@ -23,6 +26,14 @@ export class Workspace {
   private redrawListeners = new Set<(r: Rect | null) => void>()
   private viewListeners = new Set<() => void>()
   private unsub: () => void
+  /** Efectos calculados en workers; mientras tanto se ve el último resultado válido. */
+  private readonly fx = new AsyncFxProvider(
+    fxExecutor(),
+    () => this.recompose(null),
+    (busy) => {
+      useUiStore().fxBusy = busy
+    }
+  )
 
   constructor(
     readonly id: string,
@@ -63,6 +74,8 @@ export class Workspace {
     }
     composeImage(s.image, s.rasters, this.composite, rect ?? undefined, {
       floating: f ? { layerId: s.activeLayerId, pixels: f } : null,
+      fx: this.fx,
+      palettes: s.doc.palettes,
       preview: this.preview ? { layerId: s.activeLayerId, shape: this.preview } : null
     })
     for (const fn of this.redrawListeners) fn(rect)
@@ -96,6 +109,7 @@ export class Workspace {
 
   dispose(): void {
     this.unsub()
+    this.fx.clear()
     this.redrawListeners.clear()
     this.viewListeners.clear()
   }

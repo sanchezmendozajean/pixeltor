@@ -5,6 +5,7 @@ import { APP_NAME, clampSize } from '../model/document'
 import { FORMAT_VERSION } from '../model/version'
 import type { ID, Layer, PixeltorDocument } from '../model/types'
 import { BLEND_MODES } from '../model/types'
+import type { Palette } from '../palette/palette'
 import { Bitmap } from '../raster/bitmap'
 import { composeImage } from '../render/compose'
 import { decodePng, encodePng, scaleNearest } from './png'
@@ -64,7 +65,7 @@ export function saveDocument(doc: PixeltorDocument, rasters: ReadonlyMap<ID, Bit
   const first = doc.images[0]
   if (first) {
     const comp = new Bitmap(first.width, first.height)
-    composeImage(first, rasters, comp)
+    composeImage(first, rasters, comp, undefined, { palettes: doc.palettes })
     files['thumbnails/document.png'] = encodePng(thumbnail(comp, 256))
   }
   files['manifest.json'] = strToU8(
@@ -164,9 +165,10 @@ function sanitizeLayer(l: Layer): void {
 export function exportImagePng(
   img: PixeltorDocument['images'][number],
   rasters: ReadonlyMap<ID, Bitmap>,
-  scale = 1
+  scale = 1,
+  palettes?: Palette[]
 ): Uint8Array {
   const comp = new Bitmap(img.width, img.height)
-  composeImage(img, rasters, comp)
+  composeImage(img, rasters, comp, undefined, { palettes })
   return encodePng(scaleNearest(comp, scale))
 }

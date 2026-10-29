@@ -59,7 +59,7 @@ export async function saveWorkspace(ws: Workspace, saveAs = false): Promise<bool
 }
 
 export async function exportPng(ws: Workspace, scale: number, again = false): Promise<void> {
-  const bytes = exportImagePng(ws.session.image, ws.session.rasters, scale)
+  const bytes = exportImagePng(ws.session.image, ws.session.rasters, scale, ws.session.doc.palettes)
   const path = await window.pixeltor.files.exportPng({
     path: again && ws.lastExport ? ws.lastExport.path : null,
     suggestedName: `${ws.name}`,
