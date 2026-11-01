@@ -100,6 +100,41 @@ export function registerFileHandlers(): void {
     }
   )
 
+  ipcMain.handle(
+    IPC.fileExportSet,
+    async (
+      e,
+      req: {
+        path: string | null
+        suggestedName: string
+        ext: string
+        filterName: string
+        files: { suffix: string; bytes: Uint8Array }[]
+      }
+    ) => {
+      // la extensión sólo puede ser alfanumérica: se usa como parte del nombre de archivo
+      const ext = req.ext.replace(/[^A-Za-z0-9]/g, '')
+      let target = req.path
+      if (!target) {
+        const win = parentOf(e)
+        const opts: Electron.SaveDialogOptions = {
+          defaultPath: `${req.suggestedName}.${ext}`,
+          filters: [{ name: req.filterName, extensions: [ext] }]
+        }
+        const r = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts)
+        if (r.canceled || !r.filePath) return null
+        target = ensureExt(r.filePath, `.${ext}`)
+      }
+      const base = target.slice(0, target.length - extname(target).length)
+      for (const f of req.files) {
+        // el sufijo no puede contener separadores de ruta
+        const suffix = f.suffix.replace(/[\\/]/g, '_')
+        await writeAtomic(`${base}${suffix}`, f.bytes, false)
+      }
+      return target
+    }
+  )
+
   ipcMain.handle(IPC.paletteImport, async (e): Promise<OpenedFile | null> => {
     const win = parentOf(e)
     const opts: Electron.OpenDialogOptions = {

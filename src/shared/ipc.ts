@@ -17,6 +17,7 @@ export const IPC = {
   fileOpen: 'file:open',
   fileSave: 'file:save',
   fileExport: 'file:export',
+  fileExportSet: 'file:exportSet',
   paletteImport: 'palette:import',
   paletteExport: 'palette:export',
   confirmClose: 'dialog:confirmClose',
@@ -63,6 +64,17 @@ export interface PixeltorApi {
       bytes: Uint8Array
     }): Promise<string | null>
     /** Exporta un PNG pidiendo la ruta (o usando `path`). */
+    /**
+     * Pide un nombre (con la extensión `ext`) y escribe cada archivo como «base + sufijo».
+     * Devuelve la ruta elegida o null si se cancela. `path` reutiliza una ruta anterior.
+     */
+    exportSet(req: {
+      path: string | null
+      suggestedName: string
+      ext: string
+      filterName: string
+      files: { suffix: string; bytes: Uint8Array }[]
+    }): Promise<string | null>
     exportPng(req: {
       path: string | null
       suggestedName: string

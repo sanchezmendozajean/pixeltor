@@ -347,11 +347,35 @@
       "limit": "Entre 1 y 2048 px"
     },
     "export": {
-      "title": "Exportar como PNG",
+      "title": "Exportar como…",
       "scale": "Escala",
       "size": "Tamaño final: {w} × {h} px",
       "export": "Exportar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "format": "Formato",
+      "formats": {
+        "png": "PNG",
+        "sequence": "Secuencia de PNG",
+        "sheet": "Hoja de sprites + JSON",
+        "gif": "GIF animado",
+        "apng": "APNG animado",
+        "ico": "ICO (Windows)"
+      },
+      "scope": "Imágenes",
+      "scopes": {
+        "current": "Imagen actual",
+        "animation": "Las de la animación",
+        "all": "Todas"
+      },
+      "layout": "Disposición",
+      "layouts": {
+        "horizontal": "Horizontal",
+        "vertical": "Vertical",
+        "grid": "Rejilla"
+      },
+      "columns": "Columnas",
+      "padding": "Relleno (px)",
+      "count": "{n} imagen(es) se exportarán"
     },
     "recovery": {
       "title": "Recuperar documentos",

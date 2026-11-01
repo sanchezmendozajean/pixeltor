@@ -38,10 +38,11 @@ import {
 import { activeController } from '@/tools/controller'
 import { ACTIONS } from './definitions'
 import { registerHandler } from './registry'
-import { closeWorkspace, exportPng, openFile, saveWorkspace } from '@/app/documentOps'
+import { closeWorkspace, openFile, saveWorkspace } from '@/app/documentOps'
 import { useColorsStore } from '@/stores/colors'
 import { hexToRgba } from '@/stores/colorUtil'
 import { startPlayback, stopPlayback } from '@/session/playback'
+import { exportAs } from '@/app/exportOps'
 import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
@@ -112,7 +113,7 @@ export function registerAppActions(): void {
   registerHandler('file.export', { enabled: has, run: () => (ui.dialog = 'export') })
   registerHandler('file.exportAgain', {
     enabled: () => has() && !!ws().lastExport,
-    run: () => void exportPng(ws(), ws().lastExport!.scale, true)
+    run: () => void exportAs(ws(), ws().lastExport!.options, true)
   })
   registerHandler('file.close', { enabled: has, run: () => void closeWorkspace(docs.activeId) })
   registerHandler('file.quit', { run: () => window.close() })

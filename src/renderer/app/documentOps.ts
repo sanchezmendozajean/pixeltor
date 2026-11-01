@@ -1,7 +1,7 @@
 // Operaciones de documento que cruzan renderer ↔ main: abrir, guardar, exportar, cerrar,
 // autoguardado y recuperación. La lógica de formato vive en el core.
 
-import { FormatError, decodePng, exportImagePng, loadDocument, saveDocument } from '@core/index'
+import { FormatError, decodePng, loadDocument, saveDocument } from '@core/index'
 import { createDocument } from '@core/model/document'
 import type { Workspace } from '@/session/workspace'
 import { useDocumentsStore } from '@/stores/documents'
@@ -56,16 +56,6 @@ export async function saveWorkspace(ws: Workspace, saveAs = false): Promise<bool
   docs().markSaved(ws.id, path)
   await window.pixeltor.autosave.remove(ws.session.doc.id)
   return true
-}
-
-export async function exportPng(ws: Workspace, scale: number, again = false): Promise<void> {
-  const bytes = exportImagePng(ws.session.image, ws.session.rasters, scale, ws.session.doc.palettes)
-  const path = await window.pixeltor.files.exportPng({
-    path: again && ws.lastExport ? ws.lastExport.path : null,
-    suggestedName: `${ws.name}`,
-    bytes
-  })
-  if (path) ws.lastExport = { path, scale }
 }
 
 /** Cierra una pestaña, preguntando si hay cambios. Devuelve false si se cancela. */

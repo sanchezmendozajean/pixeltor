@@ -12,10 +12,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Reproducción** (`Ctrl+Enter`) en el visor: bucle, ping-pong y una vez, velocidad 0,25×–2×, reloj con `performance.now()`, FPS efectivos, empieza por la imagen activa y no la cambia; las imágenes de distinto tamaño se centran en el mayor. La lógica de tiempos es una función pura del core (`frameAt`, con pruebas).
 - **Papel cebolla** (`O`): hasta 5 imágenes anteriores (rojas) y 5 siguientes (azules), opacidad decreciente por distancia y tinte opcional; sólo se ve en el visor, nunca se exporta.
 
+- **Exportar como…** (`Ctrl+Alt+S`): PNG, **secuencia de PNG** (`nombre_01.png`…), **hoja de sprites + JSON** (horizontal, vertical o rejilla con relleno; metadatos con frame, duración y sourceSize), **GIF animado**, **APNG** e **ICO** (entradas PNG de hasta 256 px), con escala entera por vecino más cercano y alcance imagen actual / las de la animación / todas. Codificadores propios en el core, sin dependencias: el GIF usa paleta global cuantizada por corte mediano (≤ 255 colores + transparente) y se prueba con un decodificador independiente; las imágenes de distinto tamaño se centran. «Exportar de nuevo» repite la última configuración y ruta.
+
 ### Pendiente de F5
 
 - Panel Vista previa independiente; reproducir sólo la selección; modo rejilla del panel; papel cebolla con imágenes de distinto tamaño centradas.
-- Importar GIF, secuencia de PNG y hoja de sprites; exportar secuencia PNG, hoja de sprites + JSON, GIF, APNG e ICO.
+- Importar GIF, secuencia de PNG y hoja de sprites.
+- Exportar: recorte al contenido, fondo de color, varios tamaños a la vez, plantilla de nombre, PNG indexado y empaquetado/extrusión de la hoja.
 
 ## [0.5.0] — F4 · Efectos no destructivos
 

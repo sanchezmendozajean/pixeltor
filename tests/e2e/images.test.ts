@@ -5,7 +5,7 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -79,4 +79,39 @@ test('reproducción de una vez y papel cebolla', async () => {
   await expect(page.getByLabel('Antes')).toBeVisible()
   await page.keyboard.press('o')
   await expect(page.getByLabel('Antes')).toHaveCount(0)
+})
+
+test('exportar un conjunto de archivos con nombre base y sufijos', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pixeltor-export-'))
+  const target = join(dir, 'anim.png')
+  const ret = await page.evaluate(async (p) => {
+    const api = (
+      globalThis as unknown as {
+        pixeltor: {
+          files: {
+            exportSet(r: {
+              path: string
+              suggestedName: string
+              ext: string
+              filterName: string
+              files: { suffix: string; bytes: Uint8Array }[]
+            }): Promise<string>
+          }
+        }
+      }
+    ).pixeltor
+    return api.files.exportSet({
+      path: p,
+      suggestedName: 'anim',
+      ext: 'png',
+      filterName: 'PNG',
+      files: [
+        { suffix: '_01.png', bytes: new Uint8Array([1]) },
+        { suffix: '_02.png', bytes: new Uint8Array([2]) },
+        { suffix: '.json', bytes: new Uint8Array([123, 125]) }
+      ]
+    })
+  }, target)
+  expect(ret).toBe(target)
+  expect(readdirSync(dir).sort()).toEqual(['anim_01.png', 'anim_02.png', 'anim.json'].sort())
 })

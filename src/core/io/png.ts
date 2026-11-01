@@ -3,7 +3,7 @@
 import { unzlibSync, zlibSync } from 'fflate'
 import { Bitmap } from '../raster/bitmap'
 
-const SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10]
+export const SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10]
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256)
@@ -21,7 +21,7 @@ function crc32(data: Uint8Array): number {
   return (c ^ 0xffffffff) >>> 0
 }
 
-function chunk(type: string, data: Uint8Array): Uint8Array {
+export function chunk(type: string, data: Uint8Array): Uint8Array {
   const out = new Uint8Array(12 + data.length)
   const dv = new DataView(out.buffer)
   dv.setUint32(0, data.length)

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { ThemeId } from '@shared/ipc'
+import { DEFAULT_EXPORT, type ExportOptions } from '@/app/exportOps'
 
 export type PanelsHidden = 'none' | 'all' | 'keepTools'
 
@@ -13,6 +14,8 @@ export const useUiStore = defineStore('ui', {
     showGuides: true,
     /** Hay efectos calculándose en los workers. */
     fxBusy: false,
+    /** Opciones de «Exportar como…» (se recuerdan durante la sesión). */
+    exportOptions: { ...DEFAULT_EXPORT } as ExportOptions,
     /** Reproducción en curso, modo, velocidad y FPS efectivos. */
     playing: false,
     speed: 1,

@@ -11,7 +11,8 @@ const api: PixeltorApi = {
   files: {
     open: (path) => ipcRenderer.invoke(IPC.fileOpen, path),
     save: (req) => ipcRenderer.invoke(IPC.fileSave, req),
-    exportPng: (req) => ipcRenderer.invoke(IPC.fileExport, req)
+    exportPng: (req) => ipcRenderer.invoke(IPC.fileExport, req),
+    exportSet: (req) => ipcRenderer.invoke(IPC.fileExportSet, req)
   },
   palettes: {
     import: () => ipcRenderer.invoke(IPC.paletteImport),

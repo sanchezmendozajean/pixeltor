@@ -4,10 +4,11 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { RecoveryEntry } from '@shared/ipc'
 import { MAX_SIZE } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
-import { discardRecovery, exportPng, listRecovery, newDocument, recover } from '@/app/documentOps'
+import { discardRecovery, listRecovery, newDocument, recover } from '@/app/documentOps'
+import { exportAs } from '@/app/exportOps'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
-import { t } from '@/i18n'
+import { t, type I18nKey } from '@/i18n'
 
 const ui = useUiStore()
 const docs = useDocumentsStore()
@@ -15,7 +16,24 @@ const docs = useDocumentsStore()
 const PRESETS = [16, 32, 64, 128, 256, 512]
 const width = ref(32)
 const height = ref(32)
-const scale = ref(4)
+const opts = ui.exportOptions
+const scale = computed({
+  get: () => opts.scale,
+  set: (v: number) => (opts.scale = v)
+})
+/** Al elegir un formato se propone el alcance natural: animados e iconos → toda la animación. */
+function onFormat(): void {
+  opts.scope = opts.format === 'png' ? 'current' : 'animation'
+}
+const exportCount = computed(() => {
+  void docs.rev
+  const s = docs.session
+  if (!s) return 0
+  if (opts.scope === 'current') return 1
+  return opts.scope === 'all'
+    ? s.doc.images.length
+    : s.doc.images.filter((i) => i.includeInAnimation).length
+})
 const recovery = ref<RecoveryEntry[]>([])
 
 const validSize = computed(
@@ -44,7 +62,7 @@ async function doExport(): Promise<void> {
   const ws = docs.active
   if (!ws) return
   close()
-  await exportPng(ws, scale.value)
+  await exportAs(ws, { ...opts })
 }
 async function doRecover(id: string): Promise<void> {
   await recover(id)
@@ -187,6 +205,61 @@ watch(
               <option v-for="n in [1, 2, 3, 4, 6, 8, 10, 16]" :key="n" :value="n">×{{ n }}</option>
             </select>
           </div>
+          <div class="pt-formrow">
+            <label for="ef">{{ t('dialogs.export.format') }}</label>
+            <select id="ef" v-model="opts.format" class="pt-select" @change="onFormat">
+              <option
+                v-for="f in ['png', 'sequence', 'sheet', 'gif', 'apng', 'ico']"
+                :key="f"
+                :value="f"
+              >
+                {{ t(`dialogs.export.formats.${f}` as I18nKey) }}
+              </option>
+            </select>
+          </div>
+          <div v-if="opts.format !== 'png'" class="pt-formrow">
+            <label for="eo">{{ t('dialogs.export.scope') }}</label>
+            <select id="eo" v-model="opts.scope" class="pt-select">
+              <option value="current">{{ t('dialogs.export.scopes.current') }}</option>
+              <option value="animation">{{ t('dialogs.export.scopes.animation') }}</option>
+              <option value="all">{{ t('dialogs.export.scopes.all') }}</option>
+            </select>
+          </div>
+          <template v-if="opts.format === 'sheet'">
+            <div class="pt-formrow">
+              <label for="el">{{ t('dialogs.export.layout') }}</label>
+              <select id="el" v-model="opts.layout" class="pt-select">
+                <option value="horizontal">{{ t('dialogs.export.layouts.horizontal') }}</option>
+                <option value="vertical">{{ t('dialogs.export.layouts.vertical') }}</option>
+                <option value="grid">{{ t('dialogs.export.layouts.grid') }}</option>
+              </select>
+            </div>
+            <div v-if="opts.layout === 'grid'" class="pt-formrow">
+              <label for="ec">{{ t('dialogs.export.columns') }}</label>
+              <input
+                id="ec"
+                v-model.number="opts.columns"
+                class="pt-input"
+                type="number"
+                min="1"
+                max="64"
+              />
+            </div>
+            <div class="pt-formrow">
+              <label for="ep">{{ t('dialogs.export.padding') }}</label>
+              <input
+                id="ep"
+                v-model.number="opts.padding"
+                class="pt-input"
+                type="number"
+                min="0"
+                max="32"
+              />
+            </div>
+          </template>
+          <p v-if="opts.format !== 'png'" class="pt-hint">
+            {{ t('dialogs.export.count', { n: exportCount }) }}
+          </p>
           <p class="pt-hint">
             {{ t('dialogs.export.size', { w: exportSize.w, h: exportSize.h }) }}
           </p>

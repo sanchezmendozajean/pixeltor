@@ -11,6 +11,7 @@ import {
 } from '@core/index'
 import { AsyncFxProvider } from '@core/index'
 import { Viewport } from '@/viewport/Viewport'
+import type { ExportOptions } from '@/app/exportOps'
 import { fxExecutor } from '@/workers/pool'
 import { useUiStore } from '@/stores/ui'
 
@@ -20,7 +21,7 @@ export class Workspace {
   /** Ruta en disco; null mientras el documento no se haya guardado. */
   filePath: string | null = null
   /** Última ruta/escala de exportación, para «Exportar de nuevo». */
-  lastExport: { path: string; scale: number } | null = null
+  lastExport: { path: string; options: ExportOptions } | null = null
   /** Forma en construcción que se ve pixelada en vivo. */
   private preview: Shape | null = null
   private redrawListeners = new Set<(r: Rect | null) => void>()
