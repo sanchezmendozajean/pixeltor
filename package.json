@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.core.json",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"tests/core/bench/**\" --exclude \"node_modules/**\" && vitest run tests/core/bench --no-file-parallelism",
     "test:e2e": "npm run build && playwright test",
     "pack:win": "npm run build && electron-builder --win",
     "pack:linux": "npm run build && electron-builder --linux"
