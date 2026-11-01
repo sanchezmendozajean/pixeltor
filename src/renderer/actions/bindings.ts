@@ -16,6 +16,10 @@ import {
   ungroupShapes,
   isolateGroup,
   addEffect,
+  addImage,
+  deleteImages,
+  duplicateImages,
+  setActiveImage,
   addMidAnchors,
   rasterizeLayerEffects,
   convertToPath,
@@ -236,6 +240,28 @@ export function registerAppActions(): void {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.deleteSelectedAnchors()
   })
+  // ---------- Imágenes ----------
+  registerHandler('image.new', { enabled: has, run: () => void addImage(ses(), 'duplicate') })
+  registerHandler('image.newEmpty', { enabled: has, run: () => void addImage(ses(), 'empty') })
+  registerHandler('image.duplicate', {
+    enabled: has,
+    run: () => void duplicateImages(ses(), [ses().activeImageId])
+  })
+  registerHandler('image.delete', {
+    enabled: () => has() && (docs.rev, ses().doc.images.length > 1),
+    run: () => void deleteImages(ses(), [ses().activeImageId])
+  })
+  const stepImage = (id: string, d: number) =>
+    registerHandler(id, {
+      enabled: () => has() && (docs.rev, ses().doc.images.length > 1),
+      run: () => {
+        const imgs = ses().doc.images
+        const i = imgs.findIndex((x) => x.id === ses().activeImageId)
+        setActiveImage(ses(), imgs[(i + d + imgs.length) % imgs.length]!.id)
+      }
+    })
+  stepImage('image.prev', -1)
+  stepImage('image.next', 1)
   registerHandler('anchor.cut', {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.cutSelectedAnchors()

@@ -13,6 +13,10 @@ export const useUiStore = defineStore('ui', {
     showGuides: true,
     /** Hay efectos calculándose en los workers. */
     fxBusy: false,
+    /** Panel Imágenes desplegado (miniaturas grandes con duración). */
+    stripExpanded: false,
+    /** Imágenes seleccionadas en el panel Imágenes. */
+    selectedImages: [] as string[],
     /** Pide a un grupo de paneles que muestre la pestaña con este id. */
     requestTab: '',
     /** Paleta de comandos abierta (Ctrl+K). */

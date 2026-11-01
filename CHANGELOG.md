@@ -2,6 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
+## [Sin publicar] — F5 · Varias imágenes y animación (en curso)
+
+### Añadido
+
+- **Varias imágenes por documento**: nueva imagen (copia de la actual con ids nuevos, `Ctrl+Alt+N`, o vacía con las mismas capas), duplicar, eliminar (siempre queda una), reordenar arrastrando o invertir, renombrar, **duración en ms** (10–60 000) y **excluir de la animación**; todo es deshacible y rehacible. Al cambiar de imagen (`,` / `.`) se activa la capa del mismo nombre.
+- **Panel Imágenes**: tira con miniaturas reales, selección múltiple (`Mayús`/`Ctrl`), número, duración editable al desplegarlo, total de la animación y menú contextual (nueva, duplicar, eliminar, duración, invertir, excluir). La barra de estado muestra la imagen activa.
+
+### Pendiente de F5
+
+- Reproducción (bucle, ping-pong, una vez, velocidad), panel Vista previa, papel cebolla, imágenes de distinto tamaño centradas.
+- Importar GIF, secuencia de PNG y hoja de sprites; exportar secuencia PNG, hoja de sprites + JSON, GIF, APNG e ICO.
+
 ## [0.5.0] — F4 · Efectos no destructivos
 
 ### Añadido

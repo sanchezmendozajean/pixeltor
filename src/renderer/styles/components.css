@@ -888,6 +888,7 @@
   padding-left: 2px;
 }
 .pt-strip {
+  min-height: 32px;
   height: 32px;
   flex: none;
   display: flex;

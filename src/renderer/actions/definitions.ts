@@ -74,6 +74,9 @@ export const ACTIONS: ActionDef[] = [
   ...EFFECT_DEFS.map((d) => a(`effect.add.${d.type}`)),
   // Imagen
   a('image.new', 'Ctrl+Alt+N', 'plus'),
+  a('image.newEmpty'),
+  a('image.duplicate'),
+  a('image.delete'),
   a('image.prev', ',', 'prevF'),
   a('image.next', '.', 'nextF'),
   a('image.size'),

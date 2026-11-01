@@ -97,7 +97,10 @@
       "next": "Imagen siguiente",
       "size": "Tamaño de imagen…",
       "canvasSize": "Tamaño de lienzo…",
-      "crop": "Recortar a la selección"
+      "crop": "Recortar a la selección",
+      "newEmpty": "Nueva imagen vacía",
+      "duplicate": "Duplicar imagen",
+      "delete": "Eliminar imagen"
     },
     "select": {
       "all": "Seleccionar todo",
@@ -252,7 +255,17 @@
     "title": "Imágenes",
     "expand": "Expandir panel Imágenes",
     "empty": "Imagen {n} de {total}",
-    "total": "Total {ms} ms"
+    "total": "Total {ms} ms",
+    "collapse": "Contraer panel Imágenes",
+    "duration": "Duración en ms",
+    "menu": {
+      "duplicate": "Duplicar",
+      "delete": "Eliminar",
+      "duration": "Duración (ms)",
+      "reverse": "Invertir orden",
+      "exclude": "Excluir de la animación",
+      "include": "Incluir en la animación"
+    }
   },
   "dock": {
     "label": "Paneles",

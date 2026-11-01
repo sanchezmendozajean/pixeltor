@@ -116,6 +116,10 @@ export const MENUS: MenuDef[] = [
     label: 'menus.image',
     items: [
       act('image.new'),
+      act('image.newEmpty'),
+      act('image.duplicate'),
+      act('image.delete'),
+      sep,
       act('image.prev'),
       act('image.next'),
       sep,

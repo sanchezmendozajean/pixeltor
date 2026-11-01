@@ -9,6 +9,11 @@ import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
 const ui = useUiStore()
+const imageIndex = computed(() => {
+  void docs.rev
+  const s = docs.session
+  return s ? s.doc.images.findIndex((i) => i.id === s.activeImageId) + 1 : 1
+})
 
 /** Tamaño en píxeles de la forma que se dibuja o, si no hay ninguna, de la selección. */
 const shapeSize = computed(() => {
@@ -84,7 +89,8 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
       {{ t('status.layer') }}: <b>{{ docs.session?.activeLayer.name ?? t('status.none') }}</b>
     </div>
     <div class="pt-seg">
-      {{ t('status.image') }} <b>1</b>/{{ docs.session?.doc.images.length ?? 1 }}
+      {{ t('status.image') }} <b>{{ imageIndex }}</b
+      >/{{ docs.session?.doc.images.length ?? 1 }}
     </div>
     <div v-if="ui.fxBusy" class="pt-seg" role="status">{{ t('status.calculating') }}</div>
     <div class="pt-spacer" />
