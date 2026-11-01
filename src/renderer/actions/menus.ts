@@ -189,6 +189,6 @@ export const MENUS: MenuDef[] = [
   {
     id: 'help',
     label: 'menus.help',
-    items: [act('help.commandPalette'), sep, act('help.about')]
+    items: [act('help.commandPalette'), act('help.shortcuts'), sep, act('help.about')]
   }
 ]

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { ThemeId } from '@shared/ipc'
+import { loadShortcutOverrides } from '@/actions/registry'
 import { DEFAULT_EXPORT, type ExportOptions } from '@/app/exportOps'
 import type { SheetImportState } from '@/app/importOps'
 
@@ -49,6 +50,8 @@ export const useUiStore = defineStore('ui', {
     anchorCount: 0,
     /** Selector de color abierto para este destino. */
     colorPicker: null as null | 'fill' | 'stroke',
+    /** Diálogo de atajos de teclado abierto. */
+    shortcutsDialog: false,
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {
@@ -56,6 +59,7 @@ export const useUiStore = defineStore('ui', {
       const s = await window.pixeltor.settings.get()
       this.applyTheme(s.theme)
       this.toolbarColumns = s.toolbarColumns
+      loadShortcutOverrides(s.shortcuts)
     },
     async setToolbarColumns(n: 1 | 2) {
       this.toolbarColumns = n

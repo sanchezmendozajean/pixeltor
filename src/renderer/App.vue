@@ -11,6 +11,7 @@ import Dock from '@/layout/Dock.vue'
 import StatusBar from '@/layout/StatusBar.vue'
 import TooltipHost from '@/components/TooltipHost.vue'
 import ColorPickerDialog from '@/dialogs/ColorPickerDialog.vue'
+import ShortcutsDialog from '@/dialogs/ShortcutsDialog.vue'
 import CommandPalette from '@/dialogs/CommandPalette.vue'
 import DialogHost from '@/dialogs/DialogHost.vue'
 import { registerAppActions } from '@/actions/bindings'
@@ -66,5 +67,6 @@ onBeforeUnmount(() => {
     <DialogHost />
     <CommandPalette />
     <ColorPickerDialog />
+    <ShortcutsDialog />
   </div>
 </template>

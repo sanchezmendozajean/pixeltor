@@ -6,9 +6,15 @@ export interface Settings {
   theme: ThemeId
   /** Columnas de la barra de herramientas. */
   toolbarColumns: 1 | 2
+  /** Atajos personalizados: id de acción → atajo canónico ('' = sin atajo). */
+  shortcuts: Record<string, string>
 }
 
-export const DEFAULT_SETTINGS: Settings = { theme: 'oscuro', toolbarColumns: 1 }
+export const DEFAULT_SETTINGS: Settings = {
+  theme: 'oscuro',
+  toolbarColumns: 1,
+  shortcuts: {}
+}
 
 export const IPC = {
   settingsGet: 'settings:get',

@@ -119,6 +119,7 @@ export const ACTIONS: ActionDef[] = [
   a('window.hidePanelsKeepTools', 'Shift+Tab'),
   // Ayuda
   a('help.commandPalette', 'Ctrl+K', 'search'),
+  a('help.shortcuts', undefined, 'keyboard'),
   a('help.about', undefined, 'info'),
   // Selección de píxeles (Intro fija, Esc cancela, flechas desplazan)
   a('selection.commit', 'Enter'),

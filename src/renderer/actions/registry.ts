@@ -1,4 +1,5 @@
 // Runtime del registro de acciones: manejadores, ejecución, etiquetas y atajos.
+import { reactive } from 'vue'
 import { t, type I18nKey } from '@/i18n'
 import { ACTION_MAP, ACTIONS } from './definitions'
 import { eventToShortcut, formatShortcut, isBareShortcut } from './shortcuts'
@@ -12,12 +13,58 @@ export interface ActionHandler {
 
 const handlers = new Map<string, ActionHandler>()
 
+/** Atajos personalizados (id → atajo canónico; '' = sin atajo). Reactivo para menús y tooltips. */
+const overrides = reactive(new Map<string, string>())
+
 /** atajo canónico → id de acción */
 const byShortcut = new Map<string, string>()
-for (const def of ACTIONS) {
-  for (const s of [def.shortcut, ...(def.alt ?? [])]) {
-    if (s) byShortcut.set(s, def.id)
+
+/** Atajo vigente de una acción: el personalizado o el de fábrica ('' = ninguno). */
+export function effectiveShortcut(id: string): string {
+  return overrides.get(id) ?? ACTION_MAP.get(id)?.shortcut ?? ''
+}
+
+function rebuild(): void {
+  byShortcut.clear()
+  for (const def of ACTIONS) {
+    const custom = overrides.get(def.id)
+    const list = custom !== undefined ? [custom] : [def.shortcut, ...(def.alt ?? [])]
+    for (const s of list) if (s) byShortcut.set(s, def.id)
   }
+}
+rebuild()
+
+/** Acción que ya usa ese atajo, si hay alguna. */
+export function shortcutOwner(shortcut: string): string | undefined {
+  return byShortcut.get(shortcut)
+}
+
+export function hasCustomShortcut(id: string): boolean {
+  return overrides.has(id)
+}
+
+/** Fija (o quita con '') el atajo de una acción; null restablece el de fábrica. */
+export function setShortcut(id: string, shortcut: string | null): void {
+  if (!ACTION_MAP.has(id)) return
+  if (shortcut === null || shortcut === (ACTION_MAP.get(id)?.shortcut ?? '')) overrides.delete(id)
+  else overrides.set(id, shortcut)
+  rebuild()
+}
+
+export function resetShortcuts(): void {
+  overrides.clear()
+  rebuild()
+}
+
+/** Sólo las diferencias respecto a los atajos de fábrica (lo que se guarda en ajustes). */
+export function shortcutOverrides(): Record<string, string> {
+  return Object.fromEntries(overrides)
+}
+
+export function loadShortcutOverrides(saved: Record<string, string>): void {
+  overrides.clear()
+  for (const [id, s] of Object.entries(saved)) if (ACTION_MAP.has(id)) overrides.set(id, s)
+  rebuild()
 }
 
 export function registerHandler(id: string, handler: ActionHandler): void {
@@ -30,7 +77,7 @@ export function actionLabel(id: string): string {
 }
 
 export function actionShortcut(id: string): string | undefined {
-  const s = ACTION_MAP.get(id)?.shortcut
+  const s = effectiveShortcut(id)
   return s ? formatShortcut(s) : undefined
 }
 

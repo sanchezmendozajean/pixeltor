@@ -18,6 +18,11 @@ function sanitize(raw: unknown): Settings {
     if (theme && THEMES.includes(theme)) out.theme = theme
     const cols = (raw as Partial<Settings>).toolbarColumns
     if (cols === 1 || cols === 2) out.toolbarColumns = cols
+    const sc = (raw as Partial<Settings>).shortcuts
+    out.shortcuts = {}
+    if (sc && typeof sc === 'object')
+      for (const [id, v] of Object.entries(sc))
+        if (id.length <= 64 && typeof v === 'string' && v.length <= 40) out.shortcuts[id] = v
   }
   return out
 }

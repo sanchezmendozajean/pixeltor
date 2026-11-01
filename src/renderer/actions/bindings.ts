@@ -107,6 +107,7 @@ export function registerAppActions(): void {
     run: viewerFlag('showPaths'),
     checked: () => !ui.showPaths
   })
+  registerHandler('help.shortcuts', { run: () => (ui.shortcutsDialog = true) })
   registerHandler('help.commandPalette', { run: () => (ui.palette = !ui.palette) })
   registerHandler('view.guides', {
     run: () => (ui.showGuides = !ui.showGuides),

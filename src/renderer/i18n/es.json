@@ -147,6 +147,7 @@
     },
     "help": {
       "commandPalette": "Paleta de comandos",
+      "shortcuts": "Atajos de teclado…",
       "about": "Acerca de Pixeltor"
     },
     "tool": {
@@ -251,6 +252,19 @@
       "closeOthers": "Cerrar otros",
       "closeAll": "Cerrar todo"
     }
+  },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "search": "Buscar acción…",
+    "press": "Pulsa un atajo…",
+    "none": "Sin atajo",
+    "clear": "Quitar atajo",
+    "restore": "Restablecer atajo",
+    "resetAll": "Restablecer todos",
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "reassign": "Reasignar",
+    "conflict": "«{key}» ya es el atajo de «{action}»."
   },
   "viewer": {
     "image": "Imagen",
