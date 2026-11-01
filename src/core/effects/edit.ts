@@ -178,14 +178,19 @@ export function commitEffectEdit(s: DocumentSession, key: string): void {
 /**
  * Rasterizar efectos de capa (Ctrl+Alt+E): estampa todas las formas visibles de la capa en su
  * ráster, aplica los efectos de la capa y vacía la lista. El render de la imagen no cambia.
+ * Con upTo (Aplicar efecto) sólo se aplican los efectos hasta ése, inclusive; los siguientes
+ * siguen activos sobre el resultado.
  */
-export function rasterizeLayerEffects(s: DocumentSession, layerId: ID): boolean {
+export function rasterizeLayerEffects(s: DocumentSession, layerId: ID, upTo?: ID): boolean {
   const layer = findLayer(s.image, layerId)
   if (!layer || layer.locked || (!layer.shapes.length && !hasActiveEffects(layer.effects)))
     return false
   const { width: w, height: h } = s.image
   const raster = s.bitmapOf(layer.id)
-  const tx = s.begin('Rasterizar efectos de capa')
+  const cut = upTo ? layer.effects.findIndex((e) => e.id === upTo) : layer.effects.length - 1
+  if (upTo && cut < 0) return false
+  const applied = layer.effects.slice(0, cut + 1)
+  const tx = s.begin(upTo ? 'Aplicar efecto' : 'Rasterizar efectos de capa')
   tx.touch(layer.id, { x: 0, y: 0, w, h })
   for (const sh of layer.shapes) {
     if (!sh.visible) continue
@@ -193,16 +198,16 @@ export function rasterizeLayerEffects(s: DocumentSession, layerId: ID): boolean 
     if (bmp) compositeOver(raster, bmp, sh.blendMode, sh.opacity)
   }
   layer.shapes = []
-  if (hasActiveEffects(layer.effects)) {
+  if (hasActiveEffects(applied)) {
     const fx = applyEffects(
-      layer.effects,
+      applied,
       regionFromBitmap(raster.clone()),
       { x: 0, y: 0, w, h },
       { width: w, height: h, palettes: s.doc.palettes }
     )
     raster.data.set(fx.data)
   }
-  layer.effects = []
+  layer.effects = layer.effects.slice(cut + 1)
   s.selectedShapes = []
   tx.commit({ model: true })
   return true

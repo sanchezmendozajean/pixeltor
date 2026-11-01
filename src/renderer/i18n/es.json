@@ -632,7 +632,8 @@
     "noTarget": "Sin objetivo",
     "presetApply": "Aplicar preset…",
     "presetName": "Nombre del preset",
-    "presetSave": "Guardar"
+    "presetSave": "Guardar",
+    "apply": "Aplicar efecto (estampar)"
   },
   "picker": {
     "title": "Selector de color",

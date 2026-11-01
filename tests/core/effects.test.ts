@@ -228,4 +228,19 @@ describe('efectos', () => {
     expect(s.history.entries.length).toBe(n + 1)
     expect(getEffects(s, T)[0]!.params['thickness']).toBe(2)
   })
+
+  it('Aplicar efecto: estampa la capa hasta ese efecto y conserva el render', () => {
+    const { s, r } = squareDoc()
+    stampShapes(s, [r.id])
+    const L = { kind: 'layer', id: s.activeLayer.id } as const
+    const a = addEffect(s, L, 'pixel-outline')!
+    const b = addEffect(s, L, 'drop-shadow')!
+    updateEffect(s, L, b.id, { params: { dx: 3, dy: 3 } })
+    const before = Array.from(compose(s).data)
+    expect(rasterizeLayerEffects(s, s.activeLayer.id, a.id)).toBe(true)
+    expect(getEffects(s, L).map((e) => e.id)).toEqual([b.id])
+    expect(Array.from(compose(s).data)).toEqual(before)
+    s.undo()
+    expect(getEffects(s, L)).toHaveLength(2)
+  })
 })

@@ -17,7 +17,9 @@ import {
   getShape,
   liveUpdateEffect,
   moveEffect,
+  rasterizeLayerEffects,
   removeEffect,
+  stampShapes,
   updateEffect
 } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
@@ -126,6 +128,15 @@ function applyPreset(e: Event): void {
   if (p && docs.session && target.value) applyEffectPreset(docs.session, target.value, p.effects)
 }
 
+/** Aplicar efecto: capa → estampa hasta este efecto; forma → estampa la forma con sus efectos. */
+function applyFx(fx: Effect): void {
+  const s = docs.session
+  const tg = target.value
+  if (!s || !tg) return
+  if (tg.kind === 'layer') rasterizeLayerEffects(s, tg.id, fx.id)
+  else stampShapes(s, [tg.id])
+}
+
 const outAlpha = (fx: Effect): string => fx.output?.alpha ?? 'keep'
 function setOutput(fx: Effect, alpha: string): void {
   setNow(fx, {
@@ -212,6 +223,15 @@ function setPalette(fx: Effect, e: Event): void {
           @click="duplicateEffect(docs.session!, target!, fx.id)"
         >
           <PtIcon name="plus" />
+        </button>
+        <button
+          type="button"
+          class="pt-iconbtn"
+          :data-tip="t('effects.apply')"
+          :aria-label="t('effects.apply')"
+          @click="applyFx(fx)"
+        >
+          <PtIcon name="stamp" />
         </button>
         <button
           type="button"
