@@ -69,6 +69,8 @@ export interface OverlayState {
   shapes?: ShapeOverlay[]
   /** Guías del lienzo (px de imagen). */
   guides?: { axis: 'h' | 'v'; pos: number }[]
+  /** Papel cebolla: imágenes vecinas teñidas, de la más lejana a la más cercana. */
+  onion?: { canvas: HTMLCanvasElement; alpha: number }[]
   /** Ejes de simetría activos (respecto al centro del lienzo). */
   symmetry?: { x: boolean; y: boolean; rot: 1 | 2 | 4 }
   /** Líneas de ajuste temporales (guías inteligentes) en coordenadas de imagen. */
@@ -105,6 +107,15 @@ export function drawOverlay(
     ctx.scale(vp.zoom, vp.zoom)
     fn()
     ctx.restore()
+  }
+
+  for (const o of [...(st.onion ?? [])].reverse()) {
+    withImageSpace(() => {
+      ctx.imageSmoothingEnabled = false
+      ctx.globalAlpha = o.alpha
+      ctx.drawImage(o.canvas, 0, 0)
+      ctx.globalAlpha = 1
+    })
   }
 
   if (st.symmetry) {

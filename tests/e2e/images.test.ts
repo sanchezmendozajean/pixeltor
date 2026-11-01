@@ -57,3 +57,26 @@ test('varias imágenes: crear, cambiar duración, reordenar con el menú y desha
   await page.keyboard.press('Control+z')
   await expect(frames).toHaveCount(2)
 })
+
+test('reproducción de una vez y papel cebolla', async () => {
+  await page.keyboard.press('Control+Alt+n')
+  const frames = page.locator('.pt-strip .pt-frame')
+  await expect(frames).toHaveCount(3)
+  await page.getByRole('combobox', { name: 'Modo de reproducción' }).selectOption('once')
+  await page.getByRole('combobox', { name: 'Velocidad' }).selectOption('0.25')
+
+  // empieza por la imagen activa (la última) y termina sola; no cambia la imagen activa
+  await page.keyboard.press('Control+Enter')
+  await expect(
+    page.locator('.pt-strip .total').locator('xpath=preceding-sibling::span[1]')
+  ).toContainText('fps')
+  await expect(page.getByText(/ fps$/)).toHaveCount(0, { timeout: 10_000 })
+  await expect(frames.nth(2)).toHaveClass(/is-active/)
+
+  // papel cebolla: el botón queda activo y aparecen sus opciones
+  await page.locator('.pt-stage').click({ position: { x: 40, y: 40 } })
+  await page.keyboard.press('o')
+  await expect(page.getByLabel('Antes')).toBeVisible()
+  await page.keyboard.press('o')
+  await expect(page.getByLabel('Antes')).toHaveCount(0)
+})

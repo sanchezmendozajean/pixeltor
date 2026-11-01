@@ -9,9 +9,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Varias imágenes por documento**: nueva imagen (copia de la actual con ids nuevos, `Ctrl+Alt+N`, o vacía con las mismas capas), duplicar, eliminar (siempre queda una), reordenar arrastrando o invertir, renombrar, **duración en ms** (10–60 000) y **excluir de la animación**; todo es deshacible y rehacible. Al cambiar de imagen (`,` / `.`) se activa la capa del mismo nombre.
 - **Panel Imágenes**: tira con miniaturas reales, selección múltiple (`Mayús`/`Ctrl`), número, duración editable al desplegarlo, total de la animación y menú contextual (nueva, duplicar, eliminar, duración, invertir, excluir). La barra de estado muestra la imagen activa.
 
+- **Reproducción** (`Ctrl+Enter`) en el visor: bucle, ping-pong y una vez, velocidad 0,25×–2×, reloj con `performance.now()`, FPS efectivos, empieza por la imagen activa y no la cambia; las imágenes de distinto tamaño se centran en el mayor. La lógica de tiempos es una función pura del core (`frameAt`, con pruebas).
+- **Papel cebolla** (`O`): hasta 5 imágenes anteriores (rojas) y 5 siguientes (azules), opacidad decreciente por distancia y tinte opcional; sólo se ve en el visor, nunca se exporta.
+
 ### Pendiente de F5
 
-- Reproducción (bucle, ping-pong, una vez, velocidad), panel Vista previa, papel cebolla, imágenes de distinto tamaño centradas.
+- Panel Vista previa independiente; reproducir sólo la selección; modo rejilla del panel; papel cebolla con imágenes de distinto tamaño centradas.
 - Importar GIF, secuencia de PNG y hoja de sprites; exportar secuencia PNG, hoja de sprites + JSON, GIF, APNG e ICO.
 
 ## [0.5.0] — F4 · Efectos no destructivos

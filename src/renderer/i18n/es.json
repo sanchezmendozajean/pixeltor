@@ -265,6 +265,18 @@
       "reverse": "Invertir orden",
       "exclude": "Excluir de la animación",
       "include": "Incluir en la animación"
+    },
+    "loop": {
+      "label": "Modo de reproducción",
+      "loop": "Bucle",
+      "pingpong": "Ping-pong",
+      "once": "Una vez"
+    },
+    "speed": "Velocidad",
+    "onion": {
+      "before": "Antes",
+      "after": "Después",
+      "tint": "Tinte"
     }
   },
   "dock": {

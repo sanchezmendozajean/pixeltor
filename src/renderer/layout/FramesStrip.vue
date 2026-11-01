@@ -42,6 +42,15 @@ const total = computed(() => {
   void docs.rev
   return docs.session ? totalDuration(docs.session) : 0
 })
+const loopMode = computed(() => {
+  void docs.rev
+  return docs.session?.doc.animation.loop ?? 'loop'
+})
+function setLoop(e: Event): void {
+  if (docs.session)
+    docs.session.doc.animation.loop = (e.target as HTMLSelectElement).value as
+      'loop' | 'pingpong' | 'once'
+}
 const current = computed(() => images.value.find((i) => i.active))
 
 // ---- miniaturas ----
@@ -180,6 +189,45 @@ const excluded = computed(() => {
       </button>
       <span class="pt-strip__title">{{ t('frames.title') }}</span>
       <ActionButton id="view.play" />
+      <select
+        class="pt-select mini"
+        :value="loopMode"
+        :aria-label="t('frames.loop.label')"
+        @change="setLoop"
+      >
+        <option value="loop">{{ t('frames.loop.loop') }}</option>
+        <option value="pingpong">{{ t('frames.loop.pingpong') }}</option>
+        <option value="once">{{ t('frames.loop.once') }}</option>
+      </select>
+      <select
+        class="pt-select mini"
+        :value="ui.speed"
+        :aria-label="t('frames.speed')"
+        @change="ui.speed = Number(($event.target as HTMLSelectElement).value)"
+      >
+        <option v-for="v in [0.25, 0.5, 1, 2]" :key="v" :value="v">{{ v }}×</option>
+      </select>
+      <ActionButton id="view.onion" :on="ui.onion.enabled" />
+      <template v-if="ui.onion.enabled">
+        <label class="onion">
+          {{ t('frames.onion.before') }}
+          <input
+            v-model.number="ui.onion.before"
+            type="number"
+            min="0"
+            max="5"
+            class="pt-input n"
+          />
+        </label>
+        <label class="onion">
+          {{ t('frames.onion.after') }}
+          <input v-model.number="ui.onion.after" type="number" min="0" max="5" class="pt-input n" />
+        </label>
+        <label class="pt-check-label">
+          <input v-model="ui.onion.tint" type="checkbox" />
+          {{ t('frames.onion.tint') }}
+        </label>
+      </template>
       <span class="pt-sep pt-sep--inset" />
       <div
         class="frames"
@@ -240,6 +288,7 @@ const excluded = computed(() => {
         {{ t('frames.empty', { n: current.n, total: images.length }) }} · {{ current.ms }} ms
       </span>
       <span class="pt-sep pt-sep--inset" />
+      <span v-if="ui.playing" class="pt-mono pt-sec2">{{ ui.fps }} fps</span>
       <span class="pt-mono pt-sec2 total">{{ t('frames.total', { ms: total }) }}</span>
     </div>
 
@@ -347,6 +396,19 @@ const excluded = computed(() => {
 }
 .total {
   font-size: 10.5px;
+}
+.mini {
+  width: 78px;
+}
+.onion {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+.n {
+  width: 40px;
 }
 .framemenu {
   position: fixed;

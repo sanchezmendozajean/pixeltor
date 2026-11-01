@@ -13,6 +13,12 @@ export const useUiStore = defineStore('ui', {
     showGuides: true,
     /** Hay efectos calculándose en los workers. */
     fxBusy: false,
+    /** Reproducción en curso, modo, velocidad y FPS efectivos. */
+    playing: false,
+    speed: 1,
+    fps: 0,
+    /** Papel cebolla (O): imágenes anteriores/siguientes, opacidad base y tinte. */
+    onion: { enabled: false, before: 1, after: 1, opacity: 0.4, tint: true },
     /** Panel Imágenes desplegado (miniaturas grandes con duración). */
     stripExpanded: false,
     /** Imágenes seleccionadas en el panel Imágenes. */

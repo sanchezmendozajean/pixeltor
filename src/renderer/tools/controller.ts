@@ -110,6 +110,7 @@ export class CanvasController {
         ['pencil', 'brush', 'eraser'].includes(t.active) && isSymmetric(this.tools.symmetry)
           ? { ...this.tools.symmetry }
           : undefined,
+      onion: this.onionFrames(ws),
       guides: useUiStore().showGuides ? (s.image.guides ?? []) : [],
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : this.shapes.anchorMarqueeRect,
@@ -351,6 +352,12 @@ export class CanvasController {
   private eyedrop(ws: Workspace, x: number, y: number, button: number, sampleAll: boolean): void {
     const c = pickColor(ws.session, x, y, sampleAll)
     if (c !== null && (c & 255) !== 0) this.setColor(button, c)
+  }
+
+  private onionFrames(ws: Workspace): OverlayState['onion'] {
+    const o = useUiStore().onion
+    if (!o.enabled || useUiStore().playing) return undefined
+    return ws.onionFrames(o.before, o.after, o.opacity, o.tint)
   }
 
   /** Cursor propio de las herramientas de trazados (null = el de la herramienta). */

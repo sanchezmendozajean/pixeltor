@@ -41,6 +41,7 @@ import { registerHandler } from './registry'
 import { closeWorkspace, exportPng, openFile, saveWorkspace } from '@/app/documentOps'
 import { useColorsStore } from '@/stores/colors'
 import { hexToRgba } from '@/stores/colorUtil'
+import { startPlayback, stopPlayback } from '@/session/playback'
 import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
@@ -239,6 +240,19 @@ export function registerAppActions(): void {
   registerHandler('anchor.delete', {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.deleteSelectedAnchors()
+  })
+  registerHandler('view.play', {
+    enabled: () => has() && (docs.rev, ses().doc.images.some((i) => i.includeInAnimation)),
+    run: () => {
+      if (ui.playing) stopPlayback()
+      else startPlayback(ws(), ses().doc.animation.loop)
+    },
+    checked: () => ui.playing
+  })
+  registerHandler('view.onion', {
+    enabled: has,
+    run: () => (ui.onion.enabled = !ui.onion.enabled),
+    checked: () => ui.onion.enabled
   })
   // ---------- Imágenes ----------
   registerHandler('image.new', { enabled: has, run: () => void addImage(ses(), 'duplicate') })
