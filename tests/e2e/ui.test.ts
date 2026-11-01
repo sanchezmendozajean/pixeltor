@@ -49,7 +49,7 @@ test('el selector de color cambia el relleno y el elemento activo queda encima',
   const fill = page.locator('.pt-fswidget__fill')
   const stroke = page.locator('.pt-fswidget__stroke')
   await expect(fill).toHaveClass(/is-top/)
-  await stroke.click()
+  await stroke.click({ position: { x: 17, y: 17 } }) // el centro del marco está hueco
   await expect(stroke).toHaveClass(/is-top/)
   await expect(fill).not.toHaveClass(/is-top/)
 

@@ -1048,59 +1048,58 @@
 }
 .pt-fswidget {
   position: relative;
-  width: 34px;
-  height: 34px;
-  margin-bottom: 4px;
+  flex: none;
 }
-.pt-fswidget__fill {
-  position: absolute;
-  left: 2px;
-  top: 2px;
-  width: 20px;
-  height: 20px;
-  border: 0;
-  padding: 0;
-  border-radius: 2px;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-  z-index: 1;
-}
-.pt-fswidget__fill.is-top {
-  z-index: 3;
-}
+/* Como en Illustrator: borde negro, borde blanco y después el color. */
+.pt-fswidget__fill,
 .pt-fswidget__stroke {
   position: absolute;
-  left: 12px;
-  top: 12px;
-  width: 20px;
-  height: 20px;
   padding: 0;
-  border-radius: 2px;
-  background: transparent;
-  border: 5px solid;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+  border: 0;
+  box-shadow:
+    inset 0 0 0 1px #000,
+    inset 0 0 0 2px #fff;
+  background-color: #fff;
+}
+.pt-fswidget__fill {
+  left: 0;
+  top: 0;
   z-index: 2;
+}
+/* El elemento activo se dibuja encima. */
+.pt-fswidget__fill.is-top,
+.pt-fswidget__stroke.is-top {
+  z-index: 3;
+}
+/* El contorno es un marco hueco: su color sólo se ve en el anillo (ancho --ring). */
+.pt-fswidget__stroke {
+  --ring: 6px;
+  /* clip-path (no máscara) para que el hueco también deje pasar los clics al relleno. */
+  clip-path: polygon(
+    evenodd,
+    0 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 0,
+    var(--ring) var(--ring),
+    var(--ring) calc(100% - var(--ring)),
+    calc(100% - var(--ring)) calc(100% - var(--ring)),
+    calc(100% - var(--ring)) var(--ring),
+    var(--ring) var(--ring)
+  );
+}
+.pt-fswidget__stroke::after {
+  content: '';
+  position: absolute;
+  inset: var(--ring);
+  box-shadow:
+    0 0 0 1px #000,
+    0 0 0 2px #fff;
 }
 .pt-toolbar.is-two {
   width: 76px;
 }
-.pt-fswidget__stroke.is-top {
-  z-index: 3;
-}
-.pt-modes {
-  display: flex;
-  gap: 1px;
-  margin-bottom: 6px;
-}
-.pt-modes button {
-  width: 10px;
-  height: 10px;
-  padding: 0;
-  border: 0;
-  box-shadow: 0 0 0 1px var(--border-input);
-}
-
 /* ---------- Panels ---------- */
 .pt-panel {
   background: var(--bg-panel);
