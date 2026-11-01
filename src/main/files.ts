@@ -8,6 +8,7 @@ import { IPC, type CloseChoice, type OpenedFile, type RecoveryEntry } from '@sha
 
 const PIXELTOR_FILTER = { name: 'Documento de Pixeltor', extensions: ['pixeltor'] }
 const PNG_FILTER = { name: 'Imagen PNG', extensions: ['png'] }
+const GIF_FILTER = { name: 'GIF animado', extensions: ['gif'] }
 
 function recoveryDir(): string {
   return join(app.getPath('userData'), 'recovery')
@@ -51,7 +52,7 @@ export function registerFileHandlers(): void {
     if (!target) {
       const win = parentOf(e)
       const opts: Electron.OpenDialogOptions = {
-        filters: [PIXELTOR_FILTER, PNG_FILTER],
+        filters: [PIXELTOR_FILTER, PNG_FILTER, GIF_FILTER],
         properties: ['openFile']
       }
       const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
@@ -97,6 +98,26 @@ export function registerFileHandlers(): void {
       }
       await writeAtomic(target, req.bytes, false)
       return target
+    }
+  )
+
+  ipcMain.handle(
+    IPC.fileOpenMany,
+    async (e, filterName: string, extensions: string[]): Promise<OpenedFile[]> => {
+      const win = parentOf(e)
+      const exts = extensions.map((x) => x.replace(/[^A-Za-z0-9]/g, ''))
+      const opts: Electron.OpenDialogOptions = {
+        filters: [{ name: filterName, extensions: exts }],
+        properties: ['openFile', 'multiSelections']
+      }
+      const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+      if (r.canceled) return []
+      return Promise.all(
+        r.filePaths.map(async (path) => {
+          const buf = await readFile(path)
+          return { path, bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) }
+        })
+      )
     }
   )
 

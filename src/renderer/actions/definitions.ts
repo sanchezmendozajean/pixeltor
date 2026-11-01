@@ -25,6 +25,8 @@ export const ACTIONS: ActionDef[] = [
   // Archivo
   a('file.new', 'Ctrl+N', 'newDoc'),
   a('file.open', 'Ctrl+O', 'folderOpen'),
+  a('file.importSequence'),
+  a('file.importSheet'),
   a('file.save', 'Ctrl+S', 'save'),
   a('file.saveAs', 'Ctrl+Shift+S'),
   a('file.export', 'Ctrl+Alt+S', 'exportIc'),

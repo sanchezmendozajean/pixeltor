@@ -14,10 +14,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Exportar como…** (`Ctrl+Alt+S`): PNG, **secuencia de PNG** (`nombre_01.png`…), **hoja de sprites + JSON** (horizontal, vertical o rejilla con relleno; metadatos con frame, duración y sourceSize), **GIF animado**, **APNG** e **ICO** (entradas PNG de hasta 256 px), con escala entera por vecino más cercano y alcance imagen actual / las de la animación / todas. Codificadores propios en el core, sin dependencias: el GIF usa paleta global cuantizada por corte mediano (≤ 255 colores + transparente) y se prueba con un decodificador independiente; las imágenes de distinto tamaño se centran. «Exportar de nuevo» repite la última configuración y ruta.
 
+- **Importar**: **GIF animado** (Archivo › Abrir: una imagen por fotograma con su duración, paletas locales, entrelazado y disposición de fotogramas), **secuencia de PNG** (varios archivos en orden alfabético natural) e **hoja de sprites** (diálogo con tamaño de celda, margen, espaciado, orden y omitir celdas vacías). Decodificador GIF y troceado en el core con pruebas de ida y vuelta contra el codificador.
+
 ### Pendiente de F5
 
 - Panel Vista previa independiente; reproducir sólo la selección; modo rejilla del panel; papel cebolla con imágenes de distinto tamaño centradas.
-- Importar GIF, secuencia de PNG y hoja de sprites.
+- Importar: arrastrar y soltar archivos y detección automática de la rejilla de una hoja.
 - Exportar: recorte al contenido, fondo de color, varios tamaños a la vez, plantilla de nombre, PNG indexado y empaquetado/extrusión de la hoja.
 
 ## [0.5.0] — F4 · Efectos no destructivos

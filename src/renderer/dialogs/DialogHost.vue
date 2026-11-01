@@ -6,6 +6,7 @@ import { MAX_SIZE } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import { discardRecovery, listRecovery, newDocument, recover } from '@/app/documentOps'
 import { exportAs } from '@/app/exportOps'
+import { confirmSheetImport, sheetCellCount } from '@/app/importOps'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
 import { t, type I18nKey } from '@/i18n'
@@ -63,6 +64,12 @@ async function doExport(): Promise<void> {
   if (!ws) return
   close()
   await exportAs(ws, { ...opts })
+}
+const sheetCount = computed(() => (ui.sheetImport ? sheetCellCount(ui.sheetImport) : 0))
+function doSheet(): void {
+  if (!ui.sheetImport || !sheetCount.value) return
+  confirmSheetImport({ ...ui.sheetImport })
+  close()
 }
 async function doRecover(id: string): Promise<void> {
   await recover(id)
@@ -271,6 +278,91 @@ watch(
         </button>
         <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg">
           {{ t('dialogs.export.export') }}
+        </button>
+      </div>
+    </form>
+
+    <form
+      v-else-if="ui.dialog === 'sheet' && ui.sheetImport"
+      class="pt-dialog box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dlg-sheet"
+      @submit.prevent="doSheet"
+    >
+      <div class="pt-dialog__head">
+        <span id="dlg-sheet">{{ t('dialogs.sheet.title') }}</span>
+      </div>
+      <div class="pt-dialog__body col">
+        <div class="pt-form">
+          <div class="pt-formrow">
+            <label for="sw">{{ t('dialogs.sheet.cellW') }}</label>
+            <input
+              id="sw"
+              v-model.number="ui.sheetImport.cellW"
+              class="pt-input"
+              type="number"
+              min="1"
+            />
+          </div>
+          <div class="pt-formrow">
+            <label for="sh">{{ t('dialogs.sheet.cellH') }}</label>
+            <input
+              id="sh"
+              v-model.number="ui.sheetImport.cellH"
+              class="pt-input"
+              type="number"
+              min="1"
+            />
+          </div>
+          <div class="pt-formrow">
+            <label for="sm">{{ t('dialogs.sheet.margin') }}</label>
+            <input
+              id="sm"
+              v-model.number="ui.sheetImport.margin"
+              class="pt-input"
+              type="number"
+              min="0"
+            />
+          </div>
+          <div class="pt-formrow">
+            <label for="ss">{{ t('dialogs.sheet.spacing') }}</label>
+            <input
+              id="ss"
+              v-model.number="ui.sheetImport.spacing"
+              class="pt-input"
+              type="number"
+              min="0"
+            />
+          </div>
+          <div class="pt-formrow">
+            <label for="so">{{ t('dialogs.sheet.order') }}</label>
+            <select id="so" v-model="ui.sheetImport.order" class="pt-select">
+              <option value="rows">{{ t('dialogs.sheet.byRows') }}</option>
+              <option value="columns">{{ t('dialogs.sheet.byColumns') }}</option>
+            </select>
+          </div>
+          <label class="pt-check-label">
+            <input v-model="ui.sheetImport.skipEmpty" type="checkbox" />
+            {{ t('dialogs.sheet.skipEmpty') }}
+          </label>
+          <p class="pt-hint">
+            {{
+              t('dialogs.sheet.count', {
+                n: sheetCount,
+                w: ui.sheetImport.width,
+                h: ui.sheetImport.height
+              })
+            }}
+          </p>
+        </div>
+      </div>
+      <div class="pt-dialog__foot">
+        <button type="button" class="pt-btn pt-btn--secondary pt-btn--lg" @click="close">
+          {{ t('dialogs.export.cancel') }}
+        </button>
+        <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg" :disabled="!sheetCount">
+          {{ t('dialogs.sheet.import') }}
         </button>
       </div>
     </form>

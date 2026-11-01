@@ -43,6 +43,7 @@ import { useColorsStore } from '@/stores/colors'
 import { hexToRgba } from '@/stores/colorUtil'
 import { startPlayback, stopPlayback } from '@/session/playback'
 import { exportAs } from '@/app/exportOps'
+import { importSequence, startSheetImport } from '@/app/importOps'
 import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
@@ -108,6 +109,8 @@ export function registerAppActions(): void {
   // ---------- Archivo ----------
   registerHandler('file.new', { run: () => (ui.dialog = 'new') })
   registerHandler('file.open', { run: () => void openFile() })
+  registerHandler('file.importSequence', { run: () => void importSequence() })
+  registerHandler('file.importSheet', { run: () => void startSheetImport() })
   registerHandler('file.save', { enabled: has, run: () => void saveWorkspace(ws()) })
   registerHandler('file.saveAs', { enabled: has, run: () => void saveWorkspace(ws(), true) })
   registerHandler('file.export', { enabled: has, run: () => (ui.dialog = 'export') })

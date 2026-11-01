@@ -25,6 +25,8 @@ export const MENUS: MenuDef[] = [
     items: [
       act('file.new'),
       act('file.open'),
+      act('file.importSequence'),
+      act('file.importSheet'),
       sep,
       act('file.save'),
       act('file.saveAs'),

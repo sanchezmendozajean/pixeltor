@@ -25,7 +25,9 @@
       "export": "Exportar como…",
       "exportAgain": "Exportar de nuevo",
       "close": "Cerrar",
-      "quit": "Salir"
+      "quit": "Salir",
+      "importSequence": "Importar secuencia de PNG…",
+      "importSheet": "Importar hoja de sprites…"
     },
     "edit": {
       "undo": "Deshacer",
@@ -383,6 +385,19 @@
       "recover": "Recuperar",
       "discard": "Descartar",
       "later": "Cerrar"
+    },
+    "sheet": {
+      "title": "Importar hoja de sprites",
+      "cellW": "Ancho de celda",
+      "cellH": "Alto de celda",
+      "margin": "Margen (px)",
+      "spacing": "Espaciado (px)",
+      "order": "Orden",
+      "byRows": "Por filas",
+      "byColumns": "Por columnas",
+      "skipEmpty": "Omitir celdas vacías",
+      "count": "{n} celdas posibles en una hoja de {w} × {h} px",
+      "import": "Importar"
     }
   },
   "layers": {

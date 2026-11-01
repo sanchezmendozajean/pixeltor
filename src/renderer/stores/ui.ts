@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { ThemeId } from '@shared/ipc'
 import { DEFAULT_EXPORT, type ExportOptions } from '@/app/exportOps'
+import type { SheetImportState } from '@/app/importOps'
 
 export type PanelsHidden = 'none' | 'all' | 'keepTools'
 
@@ -31,7 +32,9 @@ export const useUiStore = defineStore('ui', {
     /** Paleta de comandos abierta (Ctrl+K). */
     palette: false,
     /** Diálogo modal abierto. */
-    dialog: null as null | 'new' | 'export' | 'recovery',
+    dialog: null as null | 'new' | 'export' | 'recovery' | 'sheet',
+    /** Configuración del diálogo «Importar hoja de sprites». */
+    sheetImport: null as SheetImportState | null,
     /** Mensaje breve no bloqueante (errores y avisos). */
     toast: '',
     /** Relleno o contorno que editan los paneles Apariencia y Degradado. */

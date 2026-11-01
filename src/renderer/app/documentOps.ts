@@ -6,6 +6,7 @@ import { createDocument } from '@core/model/document'
 import type { Workspace } from '@/session/workspace'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
+import { openGif } from '@/app/importOps'
 import { t } from '@/i18n'
 
 function docs() {
@@ -25,6 +26,10 @@ export async function openFile(path?: string): Promise<void> {
   const file = await window.pixeltor.files.open(path)
   if (!file) return
   try {
+    if (file.path.toLowerCase().endsWith('.gif')) {
+      openGif(file.path, file.bytes)
+      return
+    }
     if (file.path.toLowerCase().endsWith('.png')) {
       const bmp = decodePng(file.bytes)
       const name = file.path

@@ -18,6 +18,7 @@ export const IPC = {
   fileSave: 'file:save',
   fileExport: 'file:export',
   fileExportSet: 'file:exportSet',
+  fileOpenMany: 'file:openMany',
   paletteImport: 'palette:import',
   paletteExport: 'palette:export',
   confirmClose: 'dialog:confirmClose',
@@ -55,6 +56,8 @@ export interface PixeltorApi {
     set(patch: Partial<Settings>): Promise<Settings>
   }
   files: {
+    /** Pide varios archivos (con las extensiones indicadas) y devuelve su contenido. */
+    openMany(filterName: string, extensions: string[]): Promise<OpenedFile[]>
     /** Abre el diálogo (o lee `path`) y devuelve el contenido; null si se cancela. */
     open(path?: string): Promise<OpenedFile | null>
     /** Guarda de forma atómica (con .bak). Con `path: null` pide la ruta. Devuelve la ruta final o null. */

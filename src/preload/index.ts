@@ -10,6 +10,7 @@ const api: PixeltorApi = {
   },
   files: {
     open: (path) => ipcRenderer.invoke(IPC.fileOpen, path),
+    openMany: (name, exts) => ipcRenderer.invoke(IPC.fileOpenMany, name, exts),
     save: (req) => ipcRenderer.invoke(IPC.fileSave, req),
     exportPng: (req) => ipcRenderer.invoke(IPC.fileExport, req),
     exportSet: (req) => ipcRenderer.invoke(IPC.fileExportSet, req)
