@@ -105,7 +105,7 @@ export class CanvasController {
     }
     const m = this.marquee
     return {
-      ...this.shapes.overlay(t.active),
+      ...(ws.ctx.showPaths ? this.shapes.overlay(t.active) : {}),
       symmetry:
         ['pencil', 'brush', 'eraser'].includes(t.active) && isSymmetric(this.tools.symmetry)
           ? { ...this.tools.symmetry }
@@ -356,7 +356,7 @@ export class CanvasController {
 
   private onionFrames(ws: Workspace): OverlayState['onion'] {
     const o = useUiStore().onion
-    if (!o.enabled || useUiStore().playing) return undefined
+    if (!ws.ctx.onion || ws.ctx.playImageId) return undefined
     return ws.onionFrames(o.before, o.after, o.opacity, o.tint)
   }
 

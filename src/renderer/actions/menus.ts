@@ -153,6 +153,8 @@ export const MENUS: MenuDef[] = [
       sep,
       act('view.onion'),
       act('view.play'),
+      act('view.tiled'),
+      act('view.syncViewers'),
       sep,
       {
         type: 'submenu',
@@ -167,6 +169,18 @@ export const MENUS: MenuDef[] = [
     items: [
       act('window.splitV'),
       act('window.splitH'),
+      act('window.closeViewer'),
+      {
+        type: 'submenu',
+        label: 'menus.viewerLayout',
+        items: [
+          act('window.layout.single'),
+          act('window.layout.2v'),
+          act('window.layout.2h'),
+          act('window.layout.1+2'),
+          act('window.layout.2x2')
+        ]
+      },
       sep,
       act('window.hidePanels'),
       act('window.hidePanelsKeepTools')

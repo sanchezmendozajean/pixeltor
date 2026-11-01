@@ -532,6 +532,13 @@
     "f": ""
   },
   {
+    "name": "tiled",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M2.5 2.5h4v4h-4z M9.5 2.5h4v4h-4z M2.5 9.5h4v4h-4z M9.5 9.5h4v4h-4z",
+    "f": ""
+  },
+  {
     "name": "stamp",
     "size": 16,
     "group": "interfaz-16",

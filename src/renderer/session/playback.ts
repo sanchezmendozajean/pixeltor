@@ -3,18 +3,19 @@
 
 import { type LoopMode, frameAt, playlist } from '@core/index'
 import type { Workspace } from './workspace'
+import type { ViewerState } from './viewer'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
 
 let raf = 0
-let owner: Workspace | null = null
+let owner: { ws: Workspace; viewer: ViewerState } | null = null
 
 export function stopPlayback(): void {
   cancelAnimationFrame(raf)
   const ui = useUiStore()
   ui.playing = false
   ui.fps = 0
-  owner?.setPlayImage(null)
+  owner?.ws.setViewerPlay(owner.viewer, null)
   owner = null
 }
 
@@ -24,7 +25,8 @@ export function startPlayback(ws: Workspace, mode: LoopMode): void {
   const ui = useUiStore()
   const pl = playlist(s.doc.images)
   if (!pl.indices.length) return
-  owner = ws
+  const viewer = ws.activeViewer
+  owner = { ws, viewer }
   ui.playing = true
   // empieza por la imagen activa si forma parte de la animación
   const active = s.doc.images.findIndex((i) => i.id === s.activeImageId)
@@ -38,12 +40,12 @@ export function startPlayback(ws: Workspace, mode: LoopMode): void {
   const tab = docs.activeId
 
   const tick = (now: number): void => {
-    if (docs.activeId !== tab) return stopPlayback() // cambió de documento
+    if (docs.activeId !== tab || !ws.viewer(viewer.id)) return stopPlayback() // otro documento o visor cerrado
     const f = frameAt(pl.durations, mode, ui.speed, now - t0)
     const id = s.doc.images[pl.indices[f.pos]!]!.id
     if (id !== shown) {
       shown = id
-      ws.setPlayImage(id)
+      ws.setViewerPlay(viewer, id)
       frames++
     }
     if (now - fpsStart >= 500) {

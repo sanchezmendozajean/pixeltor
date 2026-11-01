@@ -36,6 +36,9 @@ import {
   stampShapes
 } from '@core/index'
 import { activeController } from '@/tools/controller'
+import { mirrorViewerFlags } from '@/session/viewer'
+import type { Viewport } from '@/viewport/Viewport'
+import { type LayoutPreset, MAX_VIEWERS, PRESET_COUNT } from '@core/index'
 import { ACTIONS } from './definitions'
 import { registerHandler } from './registry'
 import { closeWorkspace, openFile, saveWorkspace } from '@/app/documentOps'
@@ -88,12 +91,20 @@ export function registerAppActions(): void {
 
   registerHandler('window.hidePanels', { run: () => ui.togglePanels('all') })
   registerHandler('window.hidePanelsKeepTools', { run: () => ui.togglePanels('keepTools') })
+  // Estos ajustes son de cada visor; la interfaz refleja los del visor activo (ui.*).
+  const viewerFlag = (k: 'pixelGrid' | 'showPaths' | 'onion') => () => {
+    const w = docs.active
+    if (!w) return
+    w.activeViewer[k] = !w.activeViewer[k]
+    mirrorViewerFlags(w)
+    w.refreshView()
+  }
   registerHandler('view.pixelGrid', {
-    run: () => (ui.pixelGrid = !ui.pixelGrid),
+    run: viewerFlag('pixelGrid'),
     checked: () => ui.pixelGrid
   })
   registerHandler('view.hidePaths', {
-    run: () => (ui.showPaths = !ui.showPaths),
+    run: viewerFlag('showPaths'),
     checked: () => !ui.showPaths
   })
   registerHandler('help.commandPalette', { run: () => (ui.palette = !ui.palette) })
@@ -255,7 +266,7 @@ export function registerAppActions(): void {
   })
   registerHandler('view.onion', {
     enabled: has,
-    run: () => (ui.onion.enabled = !ui.onion.enabled),
+    run: viewerFlag('onion'),
     checked: () => ui.onion.enabled
   })
   // ---------- Imágenes ----------
@@ -371,15 +382,61 @@ export function registerAppActions(): void {
   })
 
   // ---------- Ver ----------
-  const zoom = (fn: (w: ReturnType<typeof ws>) => void) => () => {
-    fn(ws())
+  const zoom = (fn: (vp: Viewport) => void) => () => {
+    const v = ws().activeViewer
+    fn(v.viewport)
+    ws().syncFrom(v)
     ws().refreshView()
   }
-  registerHandler('view.zoomIn', { enabled: has, run: zoom((w) => w.viewport.stepZoom(1)) })
-  registerHandler('view.zoomOut', { enabled: has, run: zoom((w) => w.viewport.stepZoom(-1)) })
+  registerHandler('view.zoomIn', { enabled: has, run: zoom((vp) => vp.stepZoom(1)) })
+  registerHandler('view.zoomOut', { enabled: has, run: zoom((vp) => vp.stepZoom(-1)) })
   registerHandler('view.zoom100', {
     enabled: has,
-    run: zoom((w) => w.viewport.setZoom(1))
+    run: zoom((vp) => vp.setZoom(1))
   })
-  registerHandler('view.zoomFit', { enabled: has, run: zoom((w) => w.viewport.fit()) })
+  registerHandler('view.zoomFit', { enabled: has, run: zoom((vp) => vp.fit()) })
+
+  // ---------- Visores (specs/09) ----------
+  registerHandler('window.splitV', {
+    enabled: () => has() && ws().viewers.length < MAX_VIEWERS,
+    run: () => void ws().splitViewer(ws().activeViewerId, 'v')
+  })
+  registerHandler('window.splitH', {
+    enabled: () => has() && ws().viewers.length < MAX_VIEWERS,
+    run: () => void ws().splitViewer(ws().activeViewerId, 'h')
+  })
+  registerHandler('window.closeViewer', {
+    enabled: () => has() && ws().viewers.length > 1,
+    run: () => {
+      ws().closeViewer(ws().activeViewerId)
+      mirrorViewerFlags(ws())
+    }
+  })
+  for (const p of Object.keys(PRESET_COUNT) as LayoutPreset[])
+    registerHandler(`window.layout.${p}`, {
+      enabled: has,
+      run: () => {
+        ws().applyPreset(p)
+        mirrorViewerFlags(ws())
+      }
+    })
+  registerHandler('view.tiled', {
+    enabled: has,
+    run: () => {
+      const v = ws().activeViewer
+      v.tiled = v.tiled === 'none' ? 'both' : 'none'
+      ws().refreshView()
+    },
+    checked: () => (docs.rev, has() && ws().activeViewer.tiled !== 'none')
+  })
+  registerHandler('view.syncViewers', {
+    enabled: () => has() && ws().viewers.length > 1,
+    run: () => {
+      const v = ws().activeViewer
+      v.sync = !v.sync
+      ws().syncFrom(v)
+      ws().refreshView()
+    },
+    checked: () => (docs.rev, has() && ws().activeViewer.sync)
+  })
 }

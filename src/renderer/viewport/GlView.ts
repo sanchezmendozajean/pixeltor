@@ -19,6 +19,7 @@ uniform vec4 u_bg;
 uniform vec4 u_checkA;
 uniform vec4 u_checkB;
 uniform float u_checkSize;
+uniform vec2 u_tile;      // repetir en x / y (modo mosaico)
 uniform float u_grid;     // 0/1
 uniform vec4 u_gridColor;
 out vec4 outColor;
@@ -26,6 +27,8 @@ void main() {
   vec2 p = vec2(gl_FragCoord.x, u_view.y - gl_FragCoord.y);
   vec2 rel = p - u_pan;
   vec2 img = rel / u_zoom;
+  if (u_tile.x > 0.5) img.x = mod(img.x, u_size.x);
+  if (u_tile.y > 0.5) img.y = mod(img.y, u_size.y);
   if (img.x < 0.0 || img.y < 0.0 || img.x >= u_size.x || img.y >= u_size.y) {
     outColor = u_bg;
     return;
@@ -195,6 +198,7 @@ export class GlView {
     gl.uniform4fv(this.u('u_checkA'), this.colors.checkerA)
     gl.uniform4fv(this.u('u_checkB'), this.colors.checkerB)
     gl.uniform1f(this.u('u_checkSize'), 8 * dpr)
+    gl.uniform2f(this.u('u_tile'), vp.tileX ? 1 : 0, vp.tileY ? 1 : 0)
     gl.uniform1f(this.u('u_grid'), gridOn && vp.zoom >= 8 ? 1 : 0)
     gl.uniform4fv(this.u('u_gridColor'), this.colors.grid)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)

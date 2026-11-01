@@ -19,7 +19,8 @@ function draw(): void {
   const ctx = el.getContext('2d')!
   ctx.clearRect(0, 0, W, H)
   if (!ws) return
-  const { composite: c, viewport: vp } = ws
+  const c = ws.composite
+  const vp = ws.activeViewer.viewport
   scale = Math.min(W / c.width, H / c.height)
   const w = Math.max(1, Math.floor(c.width * scale))
   const h = Math.max(1, Math.floor(c.height * scale))
@@ -34,8 +35,8 @@ function draw(): void {
   ctx.imageSmoothingEnabled = false
   ctx.drawImage(off, ox, oy, w, h)
   // Zona visible del visor, en coordenadas de imagen.
-  const a = vp.toImage(0, 0)
-  const b = vp.toImage(vp.width, vp.height)
+  const a = vp.toImageRaw(0, 0)
+  const b = vp.toImageRaw(vp.width, vp.height)
   ctx.strokeStyle =
     getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3d8bff'
   ctx.lineWidth = 1
@@ -55,7 +56,7 @@ function centreOn(e: PointerEvent): void {
   const r = canvas.value!.getBoundingClientRect()
   const ix = ((e.clientX - r.left) * (W / r.width) - ox) / scale
   const iy = ((e.clientY - r.top) * (H / r.height) - oy) / scale
-  const vp = ws.viewport
+  const vp = ws.activeViewer.viewport
   vp.panX = vp.width / 2 - ix * vp.zoom
   vp.panY = vp.height / 2 - iy * vp.zoom
   vp.panBy(0, 0)

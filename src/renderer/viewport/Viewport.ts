@@ -6,6 +6,8 @@ export const ZOOM_STEPS = [0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64] 
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 64
 
+const wrap = (v: number, n: number): number => ((v % n) + n) % n
+
 export class Viewport {
   /** Píxeles de pantalla por píxel de imagen. */
   zoom = 1
@@ -25,8 +27,21 @@ export class Viewport {
     this.height = Math.max(1, h)
   }
 
-  toImage(sx: number, sy: number): { x: number; y: number } {
+  /** Modo mosaico: la imagen se repite en ese eje y los puntos se envuelven a la imagen. */
+  tileX = false
+  tileY = false
+
+  /** Punto de imagen sin envolver (zoom, reglas, guías). */
+  toImageRaw(sx: number, sy: number): { x: number; y: number } {
     return { x: (sx - this.panX) / this.zoom, y: (sy - this.panY) / this.zoom }
+  }
+
+  /** Punto de imagen; en modo mosaico cualquier copia de la imagen edita la misma. */
+  toImage(sx: number, sy: number): { x: number; y: number } {
+    const p = this.toImageRaw(sx, sy)
+    if (this.tileX) p.x = wrap(p.x, this.imageW)
+    if (this.tileY) p.y = wrap(p.y, this.imageH)
+    return p
   }
 
   toScreen(ix: number, iy: number): { x: number; y: number } {
@@ -59,7 +74,7 @@ export class Viewport {
 
   setZoom(z: number, anchorX = this.width / 2, anchorY = this.height / 2): void {
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z))
-    const before = this.toImage(anchorX, anchorY)
+    const before = this.toImageRaw(anchorX, anchorY)
     this.zoom = clamped
     this.panX = anchorX - before.x * clamped
     this.panY = anchorY - before.y * clamped

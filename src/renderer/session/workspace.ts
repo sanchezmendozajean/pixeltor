@@ -9,14 +9,38 @@ import {
   composeImage,
   effectsReach
 } from '@core/index'
-import { AsyncFxProvider } from '@core/index'
-import { Viewport } from '@/viewport/Viewport'
+import {
+  AsyncFxProvider,
+  type LayoutNode,
+  type LayoutPreset,
+  MAX_VIEWERS,
+  PRESET_COUNT,
+  equalize,
+  type SplitDir,
+  leaf,
+  leaves,
+  presetLayout,
+  removeLeaf,
+  splitLeaf
+} from '@core/index'
+import type { Viewport } from '@/viewport/Viewport'
+import { ViewerState } from './viewer'
 import type { ExportOptions } from '@/app/exportOps'
 import { fxExecutor } from '@/workers/pool'
 import { useUiStore } from '@/stores/ui'
 
 export class Workspace {
-  readonly viewport: Viewport
+  /** Visores del documento (hasta 4) y su disposición. */
+  readonly viewers: ViewerState[] = []
+  layout: LayoutNode
+  /** Visor activo = el último en el que se hizo clic. */
+  activeViewerId: string
+  /** Visor que está atendiendo la entrada ahora mismo; las herramientas leen `viewport`. */
+  ctx: ViewerState
+  private layoutListeners = new Set<() => void>()
+  private viewerSeq = 0
+  /** Contador de recomposiciones, para invalidar las composiciones propias de cada visor. */
+  private stamp = 0
   composite: Bitmap
   /** Ruta en disco; null mientras el documento no se haya guardado. */
   filePath: string | null = null
@@ -27,8 +51,6 @@ export class Workspace {
   private redrawListeners = new Set<(r: Rect | null) => void>()
   private viewListeners = new Set<() => void>()
   private unsub: () => void
-  /** Imagen que se está reproduciendo (null = se ve la activa). */
-  playImageId: string | null = null
   private frameBmp: Bitmap | null = null
   /** Contador de cambios del documento (para cachés de papel cebolla). */
   version = 0
@@ -36,7 +58,10 @@ export class Workspace {
   /** Efectos calculados en workers; mientras tanto se ve el último resultado válido. */
   private readonly fx = new AsyncFxProvider(
     fxExecutor(),
-    () => this.recompose(null),
+    () => {
+      this.stamp++
+      this.recompose(null)
+    },
     (busy) => {
       useUiStore().fxBusy = busy
     }
@@ -47,17 +72,17 @@ export class Workspace {
     readonly session: DocumentSession
   ) {
     const img = session.image
-    this.viewport = new Viewport(img.width, img.height)
+    const first = this.addViewer(img.width, img.height)
+    this.layout = leaf(first.id)
+    this.activeViewerId = first.id
+    this.ctx = first
     this.composite = new Bitmap(img.width, img.height)
     this.recompose(null)
     this.unsub = session.onChange((e) => {
       this.version++
-      if (this.playImageId) return // durante la reproducción el visor sólo muestra fotogramas
       const i = session.image
       if (i.width !== this.composite.width || i.height !== this.composite.height) {
         this.composite = new Bitmap(i.width, i.height)
-        this.viewport.imageW = i.width
-        this.viewport.imageH = i.height
         e.dirty = null
       }
       // Cambios estructurales (propiedades, orden, selección flotante): recomponer entera.
@@ -69,47 +94,202 @@ export class Workspace {
     return this.session.doc.name
   }
 
-  /** Muestra otra imagen del documento sin activarla (reproducción); null = volver a la activa. */
-  setPlayImage(id: string | null): void {
-    this.playImageId = id
+  // ---------- Visores (specs/09) ----------
+
+  /** Zoom/desplazamiento del visor que atiende la entrada (lo usan las herramientas). */
+  get viewport(): Viewport {
+    return this.ctx.viewport
+  }
+
+  get activeViewer(): ViewerState {
+    return this.viewers.find((v) => v.id === this.activeViewerId) ?? this.viewers[0]!
+  }
+
+  viewer(id: string): ViewerState | undefined {
+    return this.viewers.find((v) => v.id === id)
+  }
+
+  private addViewer(w: number, h: number): ViewerState {
+    const v = new ViewerState(`v${++this.viewerSeq}`, w, h)
+    this.viewers.push(v)
+    return v
+  }
+
+  setActiveViewer(id: string): void {
+    const v = this.viewer(id)
+    if (!v) return
+    this.ctx = v
+    if (this.activeViewerId === id) return
+    this.activeViewerId = id
+    this.emitLayout()
+  }
+
+  onLayout(fn: () => void): () => void {
+    this.layoutListeners.add(fn)
+    return () => this.layoutListeners.delete(fn)
+  }
+
+  private emitLayout(): void {
+    for (const fn of this.layoutListeners) fn()
+    this.refreshView()
+  }
+
+  /** Divide un visor; el nuevo hereda sus ajustes y se vuelve el activo. */
+  splitViewer(id: string, dir: SplitDir): boolean {
+    const src = this.viewer(id)
+    if (!src || this.viewers.length >= MAX_VIEWERS) return false
+    const v = this.addViewer(this.composite.width, this.composite.height)
+    const next = splitLeaf(this.layout, id, dir, v.id)
+    if (!next) {
+      this.viewers.pop()
+      return false
+    }
+    v.inherit(src)
+    v.sync = src.sync
+    this.layout = next
+    this.activeViewerId = v.id
+    this.ctx = v
+    this.emitLayout()
+    return true
+  }
+
+  closeViewer(id: string): boolean {
+    const next = removeLeaf(this.layout, id)
+    if (!next) return false
+    if (this.viewer(id)?.playImageId) this.setViewerPlay(this.viewer(id)!, null)
+    this.viewers.splice(
+      this.viewers.findIndex((v) => v.id === id),
+      1
+    )
+    this.layout = next
+    if (this.activeViewerId === id) this.activeViewerId = leaves(next)[0]!
+    this.ctx = this.activeViewer
+    this.emitLayout()
+    return true
+  }
+
+  /** Aplica un preset conservando los visores existentes (en orden) y creando o quitando los demás. */
+  applyPreset(preset: LayoutPreset): void {
+    const n = PRESET_COUNT[preset]
+    const order = leaves(this.layout)
+    while (order.length > n) {
+      const id = order.pop()!
+      if (this.viewer(id)?.playImageId) this.setViewerPlay(this.viewer(id)!, null)
+      this.viewers.splice(
+        this.viewers.findIndex((v) => v.id === id),
+        1
+      )
+    }
+    while (order.length < n) {
+      const v = this.addViewer(this.composite.width, this.composite.height)
+      v.inherit(this.activeViewer)
+      order.push(v.id)
+    }
+    this.layout = presetLayout(preset, order)
+    if (!this.viewer(this.activeViewerId)) this.activeViewerId = order[0]!
+    this.ctx = this.activeViewer
+    this.emitLayout()
+  }
+
+  /** Este visor atiende la entrada ahora mismo (las herramientas leen su Viewport). */
+  enterViewer(v: ViewerState): void {
+    this.ctx = v
+  }
+
+  equalizeLayout(): void {
+    this.layout = equalize(this.layout)
+    this.emitLayout()
+  }
+
+  /** Cambia un divisor (arrastre) o los iguala; la disposición ya es la del árbol vivo. */
+  touchLayout(): void {
+    this.emitLayout()
+  }
+
+  /** Zoom y centro compartidos entre los visores sincronizados (relativo al centro de cada uno). */
+  syncFrom(src: ViewerState): void {
+    if (!src.sync) return
+    const sv = src.viewport
+    const c = sv.toImageRaw(sv.width / 2, sv.height / 2)
+    for (const v of this.viewers) {
+      if (v === src || !v.sync) continue
+      const vp = v.viewport
+      vp.zoom = sv.zoom
+      vp.panX = vp.width / 2 - c.x * vp.zoom
+      vp.panY = vp.height / 2 - c.y * vp.zoom
+      vp.panBy(0, 0)
+    }
+  }
+
+  /** Qué imagen enseña el visor (la fijada o la activa). */
+  imageIdOf(v: ViewerState): string {
     const s = this.session
-    let w = s.image.width
-    let h = s.image.height
-    if (id) {
+    if (v.playImageId) return v.playImageId
+    if (v.imageId && s.doc.images.some((i) => i.id === v.imageId)) return v.imageId
+    return s.activeImageId
+  }
+
+  /** Reproduce una imagen dentro de un visor (null = volver a lo normal). */
+  setViewerPlay(v: ViewerState, id: string | null): void {
+    v.playImageId = id
+    for (const fn of this.redrawListeners) fn(null)
+  }
+
+  /**
+   * Bitmap que debe mostrar el visor. Si enseña la imagen activa es la composición compartida
+   * (con actualización parcial); si enseña otra (fijada o en reproducción) se compone aparte.
+   */
+  displayFor(v: ViewerState): { bmp: Bitmap; own: boolean } {
+    const s = this.session
+    const id = this.imageIdOf(v)
+    if (!v.playImageId && id === s.activeImageId) {
+      v.viewport.imageW = this.composite.width
+      v.viewport.imageH = this.composite.height
+      return { bmp: this.composite, own: false }
+    }
+    const img = s.doc.images.find((i) => i.id === id) ?? s.image
+    let w = img.width
+    let h = img.height
+    if (v.playImageId) {
       // el lienzo de reproducción es el de mayor tamaño; las imágenes menores se centran
+      w = Math.max(w, s.image.width)
+      h = Math.max(h, s.image.height)
       for (const i of s.doc.images) {
         if (!i.includeInAnimation) continue
         w = Math.max(w, i.width)
         h = Math.max(h, i.height)
       }
     }
-    if (w !== this.composite.width || h !== this.composite.height) {
-      this.composite = new Bitmap(w, h)
-      this.viewport.imageW = w
-      this.viewport.imageH = h
+    if (!v.own || v.own.width !== w || v.own.height !== h) {
+      v.own = new Bitmap(w, h)
+      v.ownStamp = ''
     }
-    this.recompose(null)
-  }
-
-  private composePlayFrame(): void {
-    const s = this.session
-    const img = s.doc.images.find((i) => i.id === this.playImageId) ?? s.image
-    if (!this.frameBmp || this.frameBmp.width !== img.width || this.frameBmp.height !== img.height)
-      this.frameBmp = new Bitmap(img.width, img.height)
-    composeImage(img, s.rasters, this.frameBmp, undefined, {
-      fx: this.fx,
-      palettes: s.doc.palettes
-    })
-    const out = this.composite
-    out.data.fill(0)
-    const ox = Math.floor((out.width - img.width) / 2)
-    const oy = Math.floor((out.height - img.height) / 2)
-    for (let y = 0; y < img.height; y++)
-      out.data.set(
-        this.frameBmp.data.subarray(y * img.width * 4, (y + 1) * img.width * 4),
-        ((y + oy) * out.width + ox) * 4
+    const key = `${this.version}|${this.stamp}|${id}`
+    if (v.ownStamp !== key) {
+      v.ownStamp = key
+      if (
+        !this.frameBmp ||
+        this.frameBmp.width !== img.width ||
+        this.frameBmp.height !== img.height
       )
-    for (const fn of this.redrawListeners) fn(null)
+        this.frameBmp = new Bitmap(img.width, img.height)
+      composeImage(img, s.rasters, this.frameBmp, undefined, {
+        fx: this.fx,
+        palettes: s.doc.palettes
+      })
+      const out = v.own
+      out.data.fill(0)
+      const ox = Math.floor((out.width - img.width) / 2)
+      const oy = Math.floor((out.height - img.height) / 2)
+      for (let y = 0; y < img.height; y++)
+        out.data.set(
+          this.frameBmp.data.subarray(y * img.width * 4, (y + 1) * img.width * 4),
+          ((y + oy) * out.width + ox) * 4
+        )
+    }
+    v.viewport.imageW = v.own.width
+    v.viewport.imageH = v.own.height
+    return { bmp: v.own, own: true }
   }
 
   /**
@@ -157,10 +337,6 @@ export class Workspace {
   }
 
   private recompose(rect: Rect | null): void {
-    if (this.playImageId) {
-      this.composePlayFrame()
-      return
-    }
     const s = this.session
     const f = s.selection.floating
     // los efectos propagan un cambio más allá de la región tocada
@@ -212,5 +388,6 @@ export class Workspace {
     this.fx.clear()
     this.redrawListeners.clear()
     this.viewListeners.clear()
+    this.layoutListeners.clear()
   }
 }

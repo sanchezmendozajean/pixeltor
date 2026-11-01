@@ -853,6 +853,20 @@
   width: 2px;
   background: var(--accent);
 }
+.pt-splitter--h {
+  width: auto;
+  height: 4px;
+  flex-direction: column;
+  cursor: row-resize;
+}
+.pt-splitter--h::after {
+  width: auto;
+  height: 1px;
+}
+.pt-splitter--h.is-hover::after {
+  width: auto;
+  height: 2px;
+}
 .pt-vhead {
   height: 24px;
   display: flex;

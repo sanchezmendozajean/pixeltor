@@ -14,6 +14,7 @@
     "window": "Ventana",
     "help": "Ayuda",
     "theme": "Tema",
+    "viewerLayout": "Disposición de visores",
     "effectCategories": "Categorías de efectos"
   },
   "actions": {
@@ -121,7 +122,9 @@
       "hidePaths": "Ocultar trazados",
       "preview": "Modo vista previa",
       "onion": "Papel cebolla",
-      "play": "Reproducir / pausar"
+      "play": "Reproducir / pausar",
+      "tiled": "Modo mosaico",
+      "syncViewers": "Sincronizar zoom y posición"
     },
     "theme": {
       "oscuro": "Oscuro",
@@ -131,6 +134,14 @@
     "window": {
       "splitV": "Dividir visor en vertical",
       "splitH": "Dividir visor en horizontal",
+      "closeViewer": "Cerrar visor",
+      "layout": {
+        "single": "Disposición: un visor",
+        "2v": "Disposición: 2 verticales",
+        "2h": "Disposición: 2 horizontales",
+        "1+2": "Disposición: 1 grande + 2 pequeños",
+        "2x2": "Disposición: 2×2"
+      },
       "hidePanels": "Ocultar todos los paneles",
       "hidePanelsKeepTools": "Ocultar paneles (menos herramientas)"
     },
@@ -251,6 +262,12 @@
     "mosaic": "Modo mosaico",
     "play": "Reproducir en este visor",
     "more": "Dividir, sincronizar…",
+    "tile": {
+      "none": "Sin mosaico",
+      "both": "Repetir en X e Y",
+      "h": "Repetir en X",
+      "v": "Repetir en Y"
+    },
     "name": "Visor {n}"
   },
   "frames": {

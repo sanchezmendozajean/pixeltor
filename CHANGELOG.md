@@ -2,6 +2,22 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
+## [0.7.0] — F6 · Visores divididos
+
+### Añadido
+
+- **Varios visores por documento** (hasta 4): `Ctrl+Alt+V` divide en vertical y `Ctrl+Alt+H` en horizontal el visor activo (árbol binario de divisiones; el visor nuevo hereda zoom y ajustes). Separadores de 4 px arrastrables, **doble clic** los iguala y arrastrar uno hasta el borde cierra el visor de ese lado. Cerrar con ✕ en la cabecera o con `Ctrl+Alt+W`. La lógica del árbol (dividir, quitar, presets, igualar) es pura y está en `core/viewers` con pruebas.
+- **Presets** en Ventana › Disposición de visores: un visor, 2 verticales, 2 horizontales, 1 grande + 2 pequeños y 2×2 (conservan los visores existentes).
+- **Edición completa en cualquier visor**: cada visor tiene su propio `Viewport`, controlador de herramientas, overlay, reglas y cursor; un trazo, una forma o una edición de anclas hecha en uno se ve al instante en todos. El último visor pulsado es el activo (borde de acento); Navegador, zoom del menú y atajos actúan sobre él.
+- **Cabecera por visor**: imagen (sigue la activa o **fijada** a una concreta; editar en un visor fijado activa esa imagen), zoom con presets y «Encajar», cuadrícula de píxeles, trazados, papel cebolla, **modo mosaico** (repite la imagen en X, en Y o en ambos y se puede editar en cualquier copia), reproducir sólo en ese visor y menú ⋯ (dividir, **sincronizar** zoom y posición entre visores).
+- Una composición propia por visor sólo cuando enseña una imagen distinta de la activa (fijada o en reproducción); el visor normal sigue compartiendo la composición con actualización por regiones.
+
+### Pendiente (pasa a fases siguientes)
+
+- Guardar la disposición en el documento y en el workspace; cabecera fija/al pasar el cursor (preferencia); elegir con qué visor sincronizar (ahora comparten todos los marcados).
+- Modo mosaico: el trazo que cruza el borde de la imagen salta de lado; el overlay (selección, anclas) sólo se dibuja sobre la copia central.
+- Un canvas WebGL por visor (en vez de un único canvas con _scissor_); sin medir el rendimiento con 4 visores a la vez ni verificado en Linux.
+
 ## [0.6.0] — F5 · Varias imágenes y animación
 
 ### Añadido
@@ -37,13 +53,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Interfaz**: barra de herramientas en **una o dos columnas** (se guarda en los ajustes y se recuerda); en el widget de relleno/contorno el elemento seleccionado queda **encima** (clic = elegir, doble clic = abrir el selector); **selector de color** modal con cuadrado S/B, barra de tono, modos RGB · HSB · HSL con deslizadores de color real, hexadecimal, «Solo colores web» y recuadros Web/Real, con Aceptar y Cancelar; al arrastrar una capa la línea indicadora va **debajo** de la fila destino cuando la capa baja (y al arrastrar formas se resalta la capa completa).
 
-- **Edición de anclas como en Illustrator**: con la **Pluma**, clic sobre un segmento de un trazado seleccionado añade un ancla y clic sobre un ancla la elimina (`Alt` la convierte entre esquina y suave); con la **Selección directa**, `Alt`+clic convierte, un **marco** en vacío selecciona anclas (`Mayús` suma), `Supr` elimina las anclas seleccionadas de una vez y las flechas las mueven. La barra de control muestra *Anclas en esquina*, *Anclas suaves*, *Eliminar anclas* y *Añadir puntos de ancla* (también en Objeto y en `Ctrl+K`).
+- **Edición de anclas como en Illustrator**: con la **Pluma**, clic sobre un segmento de un trazado seleccionado añade un ancla y clic sobre un ancla la elimina (`Alt` la convierte entre esquina y suave); con la **Selección directa**, `Alt`+clic convierte, un **marco** en vacío selecciona anclas (`Mayús` suma), `Supr` elimina las anclas seleccionadas de una vez y las flechas las mueven. La barra de control muestra _Anclas en esquina_, _Anclas suaves_, _Eliminar anclas_ y _Añadir puntos de ancla_ (también en Objeto y en `Ctrl+K`).
 
 - **Menú contextual de las pestañas** (clic derecho): Cerrar, Cerrar otros y Cerrar todo; los documentos con cambios piden confirmación uno a uno y cancelar detiene el resto. Esc o clic fuera lo cierra.
 
-- **Anclas más cerca de Illustrator**: barra de control con iconos (*Convertir:* esquina / suave, *Anclas:* añadir puntos / eliminar, deshabilitados sin anclas seleccionadas); **cursores propios** (pluma, pluma +/−/convertir según lo que hay bajo el puntero, flecha hueca de selección directa y con marca sobre ancla o tirador) que cambian al pulsar Ctrl/Alt sin mover el ratón; **Ctrl** con la pluma y sus compañeras = selección directa temporal; **Alt**+arrastrar un tirador lo mueve sin arrastrar al opuesto, y **Alt**/Convertir ancla + arrastrar sobre un ancla **saca los tiradores** (un clic alterna esquina/suave).
+- **Anclas más cerca de Illustrator**: barra de control con iconos (_Convertir:_ esquina / suave, _Anclas:_ añadir puntos / eliminar, deshabilitados sin anclas seleccionadas); **cursores propios** (pluma, pluma +/−/convertir según lo que hay bajo el puntero, flecha hueca de selección directa y con marca sobre ancla o tirador) que cambian al pulsar Ctrl/Alt sin mover el ratón; **Ctrl** con la pluma y sus compañeras = selección directa temporal; **Alt**+arrastrar un tirador lo mueve sin arrastrar al opuesto, y **Alt**/Convertir ancla + arrastrar sobre un ancla **saca los tiradores** (un clic alterna esquina/suave).
 
-- **Cortar, unir, curvar y continuar** (anclas): *Cortar en las anclas* (tijeras; el trazado cerrado queda abierto y cada corte da una pieza como forma independiente), *Unir anclas* (`Ctrl+Shift+J`: dos extremos de trazados abiertos, de la misma o de distintas formas; si coinciden se fusionan, si no se unen con un segmento recto, y los dos extremos de un mismo trazado lo cierran); **arrastrar un segmento** con la Selección directa lo curva moviendo los tiradores de ambos lados; la **Pluma continúa** un trazado abierto al hacer clic en uno de sus extremos.
+- **Cortar, unir, curvar y continuar** (anclas): _Cortar en las anclas_ (tijeras; el trazado cerrado queda abierto y cada corte da una pieza como forma independiente), _Unir anclas_ (`Ctrl+Shift+J`: dos extremos de trazados abiertos, de la misma o de distintas formas; si coinciden se fusionan, si no se unen con un segmento recto, y los dos extremos de un mismo trazado lo cierran); **arrastrar un segmento** con la Selección directa lo curva moviendo los tiradores de ambos lados; la **Pluma continúa** un trazado abierto al hacer clic en uno de sus extremos.
 
 ### Pendiente (pasa a fases siguientes)
 
@@ -63,7 +79,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Panel Alinear**: alinear (izquierda, centro, derecha, arriba, centro, abajo) y distribuir (bordes y centros, horizontal y vertical) respecto a la selección, a un **objeto clave** (clic en una forma ya seleccionada, trazo grueso) o al lienzo; **espaciado fijo** en píxeles. Usa los límites de píxeles visibles; todo movimiento es entero.
 - **Reglas y guías**: reglas en píxeles de imagen; arrastrar desde una regla crea una guía, con `V` se mueve y devolverla a la regla la elimina (Ctrl+; las oculta). Las guías se guardan en el documento y son deshacibles.
 - **Ajuste (snapping) al mover formas**: a bordes y centros de otras formas (guías inteligentes, líneas magenta), a los bordes y centro del lienzo y a las guías (cian), con los interruptores de la barra de estado y un radio de 4 px de pantalla.
-- **Paletas y muestras globales**: la paleta vive en el documento (se guarda en el `.pixeltor`; PICO-8 por defecto) y es deshacible. Panel Muestras: añadir (sin duplicar), quitar (clic derecho), reordenar arrastrando, ordenar por tono o luz, **extraer colores de la imagen**, **rampas** entre relleno y contorno con giro de tono (*hue shifting*), biblioteca de la app (PICO-8, Game Boy, Sweetie 16, Endesga 32) e **importar/exportar `.gpl`, `.pal`, `.hex` y `.png`**. **Muestras globales**: enlazar un relleno o contorno sólido a una muestra y, al editarla, se recolorean todas las formas enlazadas de todas las imágenes en un solo paso de historial (deshacible).
+- **Paletas y muestras globales**: la paleta vive en el documento (se guarda en el `.pixeltor`; PICO-8 por defecto) y es deshacible. Panel Muestras: añadir (sin duplicar), quitar (clic derecho), reordenar arrastrando, ordenar por tono o luz, **extraer colores de la imagen**, **rampas** entre relleno y contorno con giro de tono (_hue shifting_), biblioteca de la app (PICO-8, Game Boy, Sweetie 16, Endesga 32) e **importar/exportar `.gpl`, `.pal`, `.hex` y `.png`**. **Muestras globales**: enlazar un relleno o contorno sólido a una muestra y, al editarla, se recolorean todas las formas enlazadas de todas las imágenes en un solo paso de historial (deshacible).
 - **Simetría** en lápiz, pincel y borrador: espejo horizontal y/o vertical y giro de 180° o 90° respecto al centro del lienzo (ejes magenta en el visor). Opera a nivel de píxel, así que el resultado es exacto también con puntas de tamaño par; un trazo = un paso de historial. Ejes personalizados, pendientes.
 - **Degradados en modo paleta**: el modo de píxel «Paleta» copia los colores de la paleta del documento (con tramado opcional y botón para actualizarlos).
 - **Paleta de comandos** (`Ctrl+K`): busca cualquier acción habilitada del registro (sin tildes, por prefijo, palabra o letras en orden), muestra su atajo, se navega con flechas y Enter, Esc cierra.
