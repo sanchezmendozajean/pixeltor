@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
-## [Sin publicar] — F5 · Varias imágenes y animación (en curso)
+## [0.6.0] — F5 · Varias imágenes y animación
 
 ### Añadido
 
@@ -16,7 +16,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Importar**: **GIF animado** (Archivo › Abrir: una imagen por fotograma con su duración, paletas locales, entrelazado y disposición de fotogramas), **secuencia de PNG** (varios archivos en orden alfabético natural) e **hoja de sprites** (diálogo con tamaño de celda, margen, espaciado, orden y omitir celdas vacías). Decodificador GIF y troceado en el core con pruebas de ida y vuelta contra el codificador.
 
-### Pendiente de F5
+### Pendiente (pasa a fases siguientes)
 
 - Panel Vista previa independiente; reproducir sólo la selección; modo rejilla del panel; papel cebolla con imágenes de distinto tamaño centradas.
 - Importar: arrastrar y soltar archivos y detección automática de la rejilla de una hoja.

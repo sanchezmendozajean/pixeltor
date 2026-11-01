@@ -6,6 +6,8 @@ import {
   color,
   deleteImages,
   duplicateImages,
+  loadDocument,
+  saveDocument,
   makeAppearance,
   makeRect,
   moveImage,
@@ -104,5 +106,26 @@ describe('varias imágenes', () => {
     s.setActiveLayer(s.image.layers[0]!.id)
     setActiveImage(s, s.doc.images[0]!.id)
     expect(s.activeLayer.name).toBe('Capa 1')
+  })
+})
+
+describe('persistencia de varias imágenes', () => {
+  it('guardar y abrir conserva imágenes, duraciones, exclusión, rásters y modo de bucle', () => {
+    const s = setup()
+    addImage(s, 'empty')
+    s.bitmapOf(s.activeLayer.id).set(5, 5, 0x00ff00ff)
+    const [a, b] = s.doc.images.map((i) => i.id) as [string, string]
+    setImageDuration(s, [a], 333)
+    setImageIncluded(s, [b], false)
+    s.doc.animation.loop = 'pingpong'
+    const back = loadDocument(saveDocument(s.doc, s.rasters))
+    expect(back.doc.images.map((i) => [i.durationMs, i.includeInAnimation])).toEqual([
+      [333, true],
+      [100, false]
+    ])
+    expect(back.doc.animation.loop).toBe('pingpong')
+    const t = new DocumentSession(back.doc, back.rasters)
+    expect(t.bitmapOf(back.doc.images[0]!.layers[0]!.id).get(2, 2)).toBe(0xff0000ff)
+    expect(t.bitmapOf(back.doc.images[1]!.layers[0]!.id).get(5, 5)).toBe(0x00ff00ff)
   })
 })
