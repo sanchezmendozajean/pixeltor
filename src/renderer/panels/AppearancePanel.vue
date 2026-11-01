@@ -624,8 +624,9 @@ button.pt-lcol {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--panel-pad-x);
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
   border-top: 1px solid var(--border-subtle);
 }
 .line {

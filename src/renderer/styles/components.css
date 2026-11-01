@@ -933,6 +933,14 @@
 .pt-iconcol .pt-tooldiv {
   width: 20px;
 }
+.pt-dock,
+.pt-strip {
+  /* los paneles usan una escala de texto 1 px menor que el resto de la interfaz */
+  --fs-xs: 9px;
+  --fs-sm: 10px;
+  --fs-md: 11px;
+  font-size: var(--fs-sm);
+}
 .pt-dock {
   width: 260px;
   flex: none;
@@ -1144,12 +1152,12 @@
   padding-right: 3px;
 }
 .pt-pfoot {
-  height: 28px;
+  min-height: 28px;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 6px;
+  gap: 4px;
+  padding: 4px;
   border-top: 1px solid var(--border-subtle);
 }
 .pt-pbody {

@@ -395,7 +395,7 @@ const excluded = computed(() => {
   image-rendering: pixelated;
 }
 .total {
-  font-size: 10.5px;
+  font-size: 9.5px;
 }
 .mini {
   width: 78px;
