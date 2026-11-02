@@ -26,6 +26,7 @@ import {
   hitSegment,
   ShapeMove,
   RectRadiusDrag,
+  radiusHandleT,
   ShapeRotate,
   isolateGroup,
   resolveShape,
@@ -500,16 +501,16 @@ export class ShapeTools {
     if (!ws || ws.session.selectedShapes.length !== 1) return null
     const sh = getShape(ws.session, ws.session.selectedShapes[0]!)
     if (!sh || sh.kind !== 'rect' || sh.locked) return null
-    // a ~20 px de pantalla como mínimo de la esquina para no tapar el tirador de la caja, y
-    // siempre en el centro de un píxel (radio r → píxel r, centro r + 0,5)
-    const d = sh.radius[0] + this.radiusOffset() + 0.5
+    // parte a ~20 px de pantalla de la esquina con radio 0 y llega al borde del arco con el radio
+    // máximo; libre (sin ajustar a píxeles) para que no se salga de formas pequeñas
+    const d = radiusHandleT(sh.radius[0], Math.min(sh.w, sh.h) / 2, this.radiusOffset())
     return { id: sh.id, pos: apply(sh.transform, { x: d, y: d }) }
   }
 
   /** Separación fija (en píxeles de imagen) entre la esquina y el tirador con radio 0. */
   private radiusOffset(): number {
     const ws = this.getWs()
-    return ws ? Math.ceil(20 / ws.viewport.zoom) : 0
+    return ws ? 20 / ws.viewport.zoom : 0
   }
 
   private radiusWidgetAt(p: Pointer): ID | null {

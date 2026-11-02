@@ -751,6 +751,17 @@ export class ShapeRotate {
   }
 }
 
+/**
+ * Distancia a lo largo de la diagonal (desde la esquina) a la que se dibuja el tirador del radio:
+ * va de `offset` con radio 0 hasta el radio máximo, de modo que nunca sale de la forma ni queda
+ * pegado a la esquina, y se mueve de forma continua con el radio.
+ */
+export function radiusHandleT(radius: number, max: number, offset: number): number {
+  if (max <= 0) return 0
+  const off = Math.min(offset, max / 2)
+  return off + (Math.min(radius, max) * (max - off)) / max
+}
+
 /** Radio de esquina del rectángulo arrastrando el widget (Alt: solo la esquina superior izquierda). */
 export class RectRadiusDrag {
   private readonly tx
@@ -769,15 +780,16 @@ export class RectRadiusDrag {
   }
 
   /**
-   * (fx, fy) en coordenadas de imagen; el radio es la proyección sobre la diagonal de la esquina,
-   * descontando la separación `offset` que el tirador guarda con radio 0.
+   * (fx, fy) en coordenadas de imagen. El tirador se mueve libre por la diagonal de la esquina,
+   * entre `offset` (radio 0) y el radio máximo (la mitad del lado menor); ver `radiusHandleT`.
    */
   moveTo(fx: number, fy: number, single = false, offset = 0): void {
     const inv = invert(this.rect.transform)
     if (!inv) return
     const l = apply(inv, { x: fx, y: fy })
     const max = Math.min(this.rect.w, this.rect.h) / 2
-    const r = Math.max(0, Math.min(max, Math.round((l.x + l.y) / 2 - 0.5 - offset)))
+    const off = Math.min(offset, max / 2)
+    const r = max <= 0 ? 0 : Math.max(0, Math.min(max, (((l.x + l.y) / 2 - off) * max) / (max - off)))
     this.rect.radius = single
       ? ([r, this.start[1], this.start[2], this.start[3]] as typeof this.start)
       : [r, r, r, r]

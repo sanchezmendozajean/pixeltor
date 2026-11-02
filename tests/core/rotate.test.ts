@@ -54,7 +54,7 @@ describe('widget de radio', () => {
     const r = makeRect(4, 4, 20, 20, makeAppearance(RED, null))
     addShape(s, r)
     const d = new RectRadiusDrag(s, r.id)
-    d.moveTo(4 + 6.5, 4 + 6.5) // el widget está en el centro del píxel r
+    d.moveTo(4 + 6, 4 + 6)
     d.end()
     const a = get(s, r.id)!
     expect(a.kind === 'rect' && a.radius).toEqual([6, 6, 6, 6])
@@ -67,5 +67,18 @@ describe('widget de radio', () => {
     s.undo()
     const c = get(s, r.id)!
     expect(c.kind === 'rect' && c.radius).toEqual([0, 0, 0, 0])
+  })
+})
+
+describe('posición del tirador de radio', () => {
+  it('queda dentro de la forma aunque sea pequeña y llega al arco con el radio máximo', async () => {
+    const { radiusHandleT } = await import('@core/index')
+    // forma de 6 px: radio máximo 3; el desplazamiento de 20 px de pantalla no debe sacarlo
+    expect(radiusHandleT(0, 3, 20)).toBeCloseTo(1.5)
+    expect(radiusHandleT(3, 3, 20)).toBeCloseTo(3)
+    expect(radiusHandleT(1.5, 3, 20)).toBeGreaterThan(radiusHandleT(0, 3, 20))
+    // forma grande: parte a la distancia indicada
+    expect(radiusHandleT(0, 40, 6)).toBeCloseTo(6)
+    expect(radiusHandleT(40, 40, 6)).toBeCloseTo(40)
   })
 })
