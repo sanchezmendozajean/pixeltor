@@ -70,6 +70,7 @@ export const MENUS: MenuDef[] = [
       act('object.convertToPath'),
       sep,
       act('object.addAnchors'),
+      act('object.centerAnchors'),
       act('anchor.delete'),
       act('anchor.cut'),
       act('anchor.join'),

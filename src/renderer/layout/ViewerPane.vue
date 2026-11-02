@@ -49,6 +49,7 @@ let pendingUpload: {
   rect: { x: number; y: number; w: number; h: number } | null
 } | null = { full: true, rect: null }
 let lastBmp: unknown = null
+let shownZoom = 0
 let dash = 0
 let ants = 0
 
@@ -111,6 +112,11 @@ function frame(): void {
   drawOverlay(ov.getContext('2d')!, vp, controller.overlayState(dash), dpr)
   drawRulers(vp, dpr)
   if (isActive.value && docs.zoomPercent !== vp.zoomPercent) docs.zoomPercent = vp.zoomPercent
+  // la etiqueta de zoom de la cabecera se actualiza también cuando cambia sin pasar por la rueda (encajar)
+  if (shownZoom !== vp.zoomPercent) {
+    shownZoom = vp.zoomPercent
+    rev.value++
+  }
 }
 
 function drawRulers(vp: ViewerState['viewport'], dpr: number): void {

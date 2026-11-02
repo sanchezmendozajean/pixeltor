@@ -24,6 +24,7 @@ import {
   rasterizeLayerEffects,
   convertToPath,
   makeCompound,
+  centerAnchors,
   createGroup,
   toggleClip,
   ungroup,
@@ -323,6 +324,10 @@ export function registerAppActions(): void {
   registerHandler('anchor.toSmooth', {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.convertSelectedAnchors(true)
+  })
+  registerHandler('object.centerAnchors', {
+    enabled: shapesSelected,
+    run: () => void centerAnchors(ses(), ses().selectedShapes)
   })
   registerHandler('object.addAnchors', {
     enabled: shapesSelected,

@@ -155,6 +155,22 @@ function localDelta(m: Mat2D, dx: number, dy: number): Vec2 {
   return inv ? apply(inv, { x: dx, y: dy }) : { x: dx, y: dy }
 }
 
+/** Centro del píxel que contiene el valor (coordenadas de imagen). */
+export const pixelCenter = (v: number): number => Math.floor(v + 1e-9) + 0.5
+
+/**
+ * Lleva el ancla al centro del píxel más cercano (en coordenadas de imagen), con sus tiradores,
+ * para que el vector quede siempre «encima» de un píxel y no entre dos.
+ */
+export function centerAnchor(m: Mat2D, a: Anchor): void {
+  const img = apply(m, a.p)
+  const d = localDelta(m, pixelCenter(img.x) - img.x, pixelCenter(img.y) - img.y)
+  if (Math.abs(d.x) < 1e-9 && Math.abs(d.y) < 1e-9) return
+  a.p = { x: a.p.x + d.x, y: a.p.y + d.y }
+  if (a.in) a.in = { x: a.in.x + d.x, y: a.in.y + d.y }
+  if (a.out) a.out = { x: a.out.x + d.x, y: a.out.y + d.y }
+}
+
 /** Arrastre de anclas o tiradores: un único paso de historial. Convierte formas paramétricas. */
 export class AnchorDrag {
   private readonly tx
@@ -200,12 +216,18 @@ export class AnchorDrag {
     const d = localDelta(this.shape.transform, dx, dy)
     for (const st of this.start) {
       const a = this.shape.subpaths[st.sub]!.anchors[st.i]!
-      const np = { x: st.pt.x + d.x, y: st.pt.y + d.y }
+      let np = { x: st.pt.x + d.x, y: st.pt.y + d.y }
       if (st.part === 'p') {
+        // las anclas se colocan siempre en el centro de un píxel; los tiradores las acompañan
+        const m = this.shape.transform
+        const from = apply(m, st.pt)
+        const to = { x: pixelCenter(from.x + dx), y: pixelCenter(from.y + dy) }
+        const dl = localDelta(m, to.x - from.x, to.y - from.y)
+        np = { x: st.pt.x + dl.x, y: st.pt.y + dl.y }
         a.p = np
         // los tiradores acompañan al ancla
-        if (st.in) a.in = { x: st.in.x + d.x, y: st.in.y + d.y }
-        if (st.out) a.out = { x: st.out.x + d.x, y: st.out.y + d.y }
+        if (st.in) a.in = { x: st.in.x + dl.x, y: st.in.y + dl.y }
+        if (st.out) a.out = { x: st.out.x + dl.x, y: st.out.y + dl.y }
       } else {
         a[st.part] = np
         if (this.independent) a.type = 'corner'
@@ -454,6 +476,7 @@ export function addAnchorAt(
   sp.anchors[b.i] = r.a
   if ((b.i + 1) % sp.anchors.length === 0) sp.anchors[0] = r.b
   else sp.anchors[b.i + 1] = r.b
+  centerAnchor(sh.transform, r.mid)
   sp.anchors.splice(b.i + 1, 0, r.mid)
   tx.commit({ model: true })
   return true
@@ -803,11 +826,33 @@ export function addMidAnchors(s: DocumentSession, ids: ID[]): boolean {
         const r = splitCubic(w[i]!, w[j]!, 0.5)
         w[i] = r.a
         w[j] = r.b
+        centerAnchor(sh.transform, r.mid)
         mids.push(r.mid)
         any = true
       }
       sp.anchors = w.flatMap((x, i) => (i < mids.length ? [x, mids[i]!] : [x]))
     }
+  }
+  if (!any) return false
+  tx.commit({ model: true })
+  return true
+}
+
+/**
+ * Lleva todas las anclas de las formas al centro de su píxel (convierte las paramétricas en
+ * trazados). Sirve para arreglar formas antiguas o convertidas, cuyas anclas caen entre píxeles.
+ */
+export function centerAnchors(s: DocumentSession, ids: ID[]): boolean {
+  const tx = s.begin('Centrar anclas en los píxeles')
+  let any = false
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    const before = f.shape.kind === 'path' ? JSON.stringify(f.shape.subpaths) : null
+    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    const sh = f.list[f.index] as PathShape
+    for (const sp of sh.subpaths) for (const a of sp.anchors) centerAnchor(sh.transform, a)
+    if (before === null || before !== JSON.stringify(sh.subpaths)) any = true
   }
   if (!any) return false
   tx.commit({ model: true })

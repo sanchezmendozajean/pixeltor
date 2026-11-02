@@ -784,7 +784,10 @@ export class ShapeTools {
         let dx = p.x - a.x0
         let dy = p.y - a.y0
         if (a.pt0) {
-          const q = this.snapPt(Math.round(a.pt0.x + dx), Math.round(a.pt0.y + dy), [a.shapeId])
+          // el ancla acaba en el centro de un píxel (lo garantiza AnchorDrag); el ajuste a guías y objetos parte de ahí
+          const q = this.snapPt(Math.floor(a.pt0.x + dx) + 0.5, Math.floor(a.pt0.y + dy) + 0.5, [
+            a.shapeId
+          ])
           dx = q.x - a.pt0.x
           dy = q.y - a.pt0.y
         }

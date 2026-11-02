@@ -30,6 +30,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - Caché de composición: no se usa si hay efectos en las capas de debajo (reconstruirla en cada trazo calculaba los efectos de toda la imagen); el grupo de búferes temporales se libera al cambiar de tamaño de imagen.
 - Interfaz: el texto del control de color pasa por i18n y los ayudantes de teclado se comparten; el trazo «ninguno» del selector usa el token `--danger`; el diálogo de espacios de trabajo retira su escuchador de teclado.
 
+### Anclas en el centro de los píxeles
+
+- Las anclas de los trazados se colocan siempre en el centro de un píxel y no entre dos: al arrastrarlas (también con teclado), al añadir un ancla sobre un segmento y al añadir puntos medios; sus tiradores las acompañan sin cambiar de longitud. La pluma ya creaba las anclas en centros. Un ancla arrastrada que estaba en una esquina (p. ej. una forma convertida en trazado) salta medio píxel al primer movimiento.
+- Objeto › **Centrar anclas en los píxeles** lleva todas las anclas de las formas seleccionadas a su centro (convierte las paramétricas en trazados; un paso deshacible); arregla formas antiguas. No se centran solas al convertir un rectángulo, porque eso cambiaría lo que se rasteriza.
+- Arreglo menor: la etiqueta de zoom de la cabecera del visor no se actualizaba tras encajar la imagen.
+
 ### No incluido en esta versión (decisión de alcance)
 
 - Rotación de vista (choca con el render pixel-perfect), estilos gráficos, capas enlazadas y WebP animado (opcional en la spec).

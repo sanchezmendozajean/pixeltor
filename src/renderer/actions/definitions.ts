@@ -51,6 +51,7 @@ export const ACTIONS: ActionDef[] = [
   a('object.stamp', 'Ctrl+E', 'stamp'),
   a('object.stampAll', 'Ctrl+Shift+E'),
   a('object.convertToPath'),
+  a('object.centerAnchors'),
   a('object.addAnchors'),
   a('anchor.delete'),
   a('anchor.cut', undefined, 'scissors'),

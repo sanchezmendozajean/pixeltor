@@ -55,6 +55,7 @@
       "convertToPath": "Convertir en trazado",
       "compound": "Crear trazado compuesto",
       "releaseCompound": "Liberar trazado compuesto",
+      "centerAnchors": "Centrar anclas en los píxeles",
       "pf": {
         "unite": "Unir",
         "minusFront": "Restar forma frontal",

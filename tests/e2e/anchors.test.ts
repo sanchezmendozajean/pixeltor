@@ -85,6 +85,17 @@ test('Ctrl con la pluma mueve un ancla y Alt+arrastrar saca los tiradores', asyn
   await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
   const entries = (name: string) => page.locator('.hist').getByRole('button', { name })
 
+  // las anclas acaban en el centro de un píxel: se calcula dónde cae en pantalla
+  const zoom =
+    Number.parseInt(
+      (await page.locator('.pt-viewport .pt-select.zoom').first().innerText()).replace(/D/g, ''),
+      10
+    ) / 100
+  const centre = (x: number, y: number) => ({
+    x: cx + (Math.floor((x - cx) / zoom) + 0.5) * zoom,
+    y: cy + (Math.floor((y - cy) / zoom) + 0.5) * zoom
+  })
+
   // pluma + Ctrl: se comporta como la selección directa y mueve el ancla
   await page.keyboard.press('p')
   const stage = page.locator('.pt-stage')
@@ -105,12 +116,13 @@ test('Ctrl con la pluma mueve un ancla y Alt+arrastrar saca los tiradores', asyn
   await page.mouse.move(cx - 80, cy - 80, { steps: 4 })
   await page.mouse.up()
   await page.keyboard.up('Control')
+  const moved = centre(cx - 80, cy - 80)
   await expect(entries('Mover ancla')).toHaveCount(1)
 
   // selección directa + Alt: arrastrar un ancla saca los tiradores
   await page.keyboard.press('a')
   await page.keyboard.down('Alt')
-  await page.mouse.move(cx - 80, cy - 80)
+  await page.mouse.move(moved.x, moved.y)
   await page.mouse.down()
   await page.mouse.move(cx - 40, cy - 100, { steps: 6 })
   await page.mouse.up()

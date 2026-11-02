@@ -5,6 +5,8 @@ import {
   DocumentSession,
   ShapeScale,
   addAnchorAt,
+  addMidAnchors,
+  centerAnchors,
   addShape,
   color,
   composeImage,
@@ -84,7 +86,8 @@ describe('anclas', () => {
     d.end()
     expect(s.history.entries.length).toBe(n + 1)
     const sh = getShape(s, id) as PathShape
-    expect(sh.subpaths[0]!.anchors[0]!.p.x).toBeCloseTo(4)
+    // el ancla acaba en el centro de un píxel: 0 + 4 → 4,5
+    expect(sh.subpaths[0]!.anchors[0]!.p.x).toBeCloseTo(4.5)
     s.undo()
     expect((getShape(s, id) as PathShape).subpaths[0]!.anchors[0]!.p.x).toBeCloseTo(0)
   })
@@ -159,5 +162,84 @@ describe('escalado con la caja', () => {
     sc.scaleBy({ x: 10, y: 11 }, 1, 1)
     sc.end()
     expect(renderShape(getShape(s, e.id)!, 32, 32).data).toEqual(before)
+  })
+})
+
+describe('anclas en el centro de los píxeles', () => {
+  function triangle() {
+    const s = DocumentSession.create(32, 32)
+    const p = makePolygon(16, 16, 10, 3, makeAppearance(RED, null))
+    addShape(s, p)
+    convertToPath(s, [p.id])
+    return { s, id: p.id }
+  }
+
+  const frac = (v: number) => Math.abs(v - Math.floor(v) - 0.5)
+  const allCentered = (sh: PathShape) =>
+    sh.subpaths.every((sp) => sp.anchors.every((a) => frac(a.p.x) < 1e-9 && frac(a.p.y) < 1e-9))
+
+  it('arrastrar un ancla (también con desplazamientos fraccionarios) la deja en un centro', () => {
+    const { s, id } = triangle()
+    for (const [dx, dy] of [
+      [3, 5],
+      [0.3, -0.4],
+      [-7, 2]
+    ] as const) {
+      const d = new AnchorDrag(s, id, [{ subpath: 0, index: 1, part: 'p' }])
+      d.moveBy(dx, dy)
+      d.end()
+      const a = (getShape(s, id) as PathShape).subpaths[0]!.anchors[1]!
+      expect(frac(a.p.x)).toBeLessThan(1e-9)
+      expect(frac(a.p.y)).toBeLessThan(1e-9)
+    }
+  })
+
+  it('los tiradores acompañan al ancla al centrarla', () => {
+    const { s, id } = triangle()
+    const sh = getShape(s, id) as PathShape
+    const a0 = sh.subpaths[0]!.anchors[0]!
+    a0.out = { x: a0.p.x + 5, y: a0.p.y }
+    const d = new AnchorDrag(s, id, [{ subpath: 0, index: 0, part: 'p' }])
+    d.moveBy(2, 3)
+    d.end()
+    const a = (getShape(s, id) as PathShape).subpaths[0]!.anchors[0]!
+    expect(a.out!.x - a.p.x).toBeCloseTo(5) // la longitud del tirador no cambia
+    expect(a.out!.y - a.p.y).toBeCloseTo(0)
+  })
+
+  it('añadir un ancla sobre un segmento (o puntos medios) crea anclas en centros', () => {
+    const { s, id } = triangle()
+    const sh = getShape(s, id) as PathShape
+    const a0 = sh.subpaths[0]!.anchors[0]!
+    const a1 = sh.subpaths[0]!.anchors[1]!
+    expect(
+      addAnchorAt(
+        s,
+        id,
+        (a0.p.x + a1.p.x) / 2 + sh.transform[4],
+        (a0.p.y + a1.p.y) / 2 + sh.transform[5],
+        4
+      )
+    ).toBe(true)
+    const after = getShape(s, id) as PathShape
+    // sólo la nueva (índice 1) tiene que estar centrada
+    expect(frac(after.subpaths[0]!.anchors[1]!.p.x)).toBeLessThan(1e-9)
+    expect(frac(after.subpaths[0]!.anchors[1]!.p.y)).toBeLessThan(1e-9)
+    centerAnchors(s, [id])
+    expect(addMidAnchors(s, [id])).toBe(true)
+    expect(allCentered(getShape(s, id) as PathShape)).toBe(true)
+  })
+
+  it('«centrar anclas» arregla formas con anclas entre píxeles, es un paso y se deshace', () => {
+    const s = DocumentSession.create(32, 32)
+    const r = makeRect(4, 4, 10, 10, makeAppearance(RED, null))
+    addShape(s, r)
+    const n = s.history.entries.length
+    expect(centerAnchors(s, [r.id])).toBe(true)
+    expect(s.history.entries.length).toBe(n + 1)
+    expect(allCentered(getShape(s, r.id) as PathShape)).toBe(true)
+    expect(centerAnchors(s, [r.id])).toBe(false) // ya están centradas
+    s.undo()
+    expect(getShape(s, r.id)!.kind).toBe('rect')
   })
 })
