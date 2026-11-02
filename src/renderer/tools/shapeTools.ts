@@ -510,10 +510,10 @@ export class ShapeTools {
     return { id: sh.id, pos: apply(sh.transform, { x: d, y: d }) }
   }
 
-  /** Separación fija (en píxeles de imagen) entre la esquina y el tirador con radio 0. */
+  /** Separación (en píxeles de imagen) entre la esquina y el tirador con radio 0: medio píxel (el contorno de selección va por el centro del píxel del borde) más 20 px de pantalla. */
   private radiusOffset(): number {
     const ws = this.getWs()
-    return ws ? 20 / ws.viewport.zoom : 0
+    return ws ? 0.5 + 20 / ws.viewport.zoom : 0
   }
 
   private radiusWidgetAt(p: Pointer): ID | null {
