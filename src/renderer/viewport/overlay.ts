@@ -2,6 +2,7 @@
 // Es UI (no imagen), así que se dibuja en espacio de pantalla con Canvas2D.
 
 import type { PixelMask, Rect } from '@core/index'
+import { handlePoint } from '@/tools/boxHandles'
 import type { Viewport } from './Viewport'
 
 const edgeCache = new WeakMap<PixelMask, Path2D>()
@@ -287,14 +288,16 @@ export function drawOverlay(
 
   if (st.selBox) {
     const b = st.selBox
-    const a = vp.toScreen(b.x, b.y)
-    const w = b.w * vp.zoom
-    const h = b.h * vp.zoom
     ctx.setLineDash([])
     ctx.lineWidth = 1
     ctx.strokeStyle = '#3d8bff'
     ctx.fillStyle = '#fff'
-    ctx.strokeRect(a.x + 0.5, a.y + 0.5, w, h)
+    // el marco y los tiradores pasan por el centro de los píxeles del borde de la forma
+    const tl = handlePoint(b, 0, 0)
+    const br = handlePoint(b, 1, 1)
+    const fa = vp.toScreen(tl.x, tl.y)
+    const fb = vp.toScreen(br.x, br.y)
+    ctx.strokeRect(Math.round(fa.x) + 0.5, Math.round(fa.y) + 0.5, fb.x - fa.x, fb.y - fa.y)
     for (const [hx, hy] of [
       [0, 0],
       [0.5, 0],
@@ -305,8 +308,10 @@ export function drawOverlay(
       [0.5, 1],
       [1, 1]
     ] as const) {
-      ctx.fillRect(a.x + hx * w - 2.5, a.y + hy * h - 2.5, 6, 6)
-      ctx.strokeRect(a.x + hx * w - 2.5, a.y + hy * h - 2.5, 6, 6)
+      const hp = handlePoint(b, hx, hy)
+      const sp = vp.toScreen(hp.x, hp.y)
+      ctx.fillRect(Math.round(sp.x) - 2.5, Math.round(sp.y) - 2.5, 6, 6)
+      ctx.strokeRect(Math.round(sp.x) - 2.5, Math.round(sp.y) - 2.5, 6, 6)
     }
   }
 

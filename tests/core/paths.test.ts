@@ -243,3 +243,36 @@ describe('anclas en el centro de los píxeles', () => {
     expect(getShape(s, r.id)!.kind).toBe('rect')
   })
 })
+
+describe('convertir un rectángulo en trazado', () => {
+  const pixels = (s: DocumentSession, id: string): string => {
+    const r = renderShape(getShape(s, id)!, s.image.width, s.image.height)
+    return r ? [...r.data].filter((_, i) => i % 4 === 3).join('') : ''
+  }
+
+  it('lleva las anclas al centro de los píxeles sin cambiar lo que se pinta', () => {
+    for (const stroke of [null, color(0, 0, 255)]) {
+      const s = DocumentSession.create(64, 64)
+      const r = makeRect(7, 9, 26, 20, makeAppearance(RED, stroke))
+      addShape(s, r)
+      const before = pixels(s, r.id)
+      convertToPath(s, [r.id])
+      const sh = getShape(s, r.id) as PathShape
+      for (const a of sh.subpaths[0]!.anchors) {
+        expect(a.p.x - Math.floor(a.p.x)).toBeCloseTo(0.5)
+        expect(a.p.y - Math.floor(a.p.y)).toBeCloseTo(0.5)
+      }
+      expect(pixels(s, r.id)).toBe(before)
+    }
+  })
+
+  it('un rectángulo redondeado no se desplaza al convertirlo', () => {
+    const s = DocumentSession.create(64, 64)
+    const r = makeRect(7, 9, 26, 20, makeAppearance(RED, null))
+    r.radius = [4, 4, 4, 4]
+    addShape(s, r)
+    const before = pixels(s, r.id)
+    convertToPath(s, [r.id])
+    expect(pixels(s, r.id)).toBe(before)
+  })
+})

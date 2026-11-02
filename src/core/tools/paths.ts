@@ -25,6 +25,19 @@ const corner = (x: number, y: number): Anchor => ({
   type: 'corner'
 })
 
+/**
+ * Trazado editable de una forma: igual que `toPath`, pero un rectángulo de esquinas rectas lleva
+ * sus anclas al centro de los píxeles, y se rasteriza exactamente igual (lo comprueban las pruebas).
+ * Elipses, polígonos y esquinas redondeadas se convierten sin tocar su geometría (centrarlas los
+ * movería medio píxel); «Centrar anclas en los píxeles» las centra a petición.
+ */
+export function toEditablePath(sh: Shape): PathShape {
+  const p = toPath(sh)
+  if (sh.kind === 'rect' && sh.radius.every((r) => r === 0))
+    for (const sp of p.subpaths) for (const a of sp.anchors) centerAnchor(p.transform, a)
+  return p
+}
+
 /** Convierte una forma paramétrica en trazado (conserva la transformación y la apariencia). */
 export function toPath(sh: Shape): PathShape {
   if (sh.kind === 'group') throw new Error('Un grupo no se puede convertir en trazado')
@@ -134,7 +147,7 @@ export function convertToPath(s: DocumentSession, ids: ID[]): boolean {
   for (const id of ids) {
     const f = findShape(s, id)
     if (!f || f.shape.kind === 'path' || f.shape.kind === 'group' || f.layer.locked) continue
-    f.list[f.index] = toPath(f.shape)
+    f.list[f.index] = toEditablePath(f.shape)
     any = true
   }
   if (any) tx.commit({ model: true })
@@ -194,7 +207,7 @@ export class AnchorDrag {
     const f = findShape(s, shapeId)
     if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
     this.tx = s.begin(targets.length > 1 ? `Mover ${targets.length} anclas` : 'Mover ancla')
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     this.shape = f.list[f.index] as PathShape
     for (const t of targets) {
       const a = this.shape.subpaths[t.subpath]?.anchors[t.index]
@@ -274,7 +287,7 @@ export class AnchorPull {
     const f = findShape(s, ref.shapeId)
     if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
     this.tx = s.begin('Sacar tiradores')
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     this.shape = f.list[f.index] as PathShape
     const a = this.shape.subpaths[ref.subpath]?.anchors[ref.index]
     if (!a) throw new Error('ancla inexistente')
@@ -320,7 +333,7 @@ export function findSegment(
 ): SegmentHit | null {
   const f = findShape(s, shapeId)
   if (!f || f.shape.kind === 'group' || f.layer.locked) return null
-  const sh = f.shape.kind === 'path' ? f.shape : toPath(f.shape)
+  const sh = f.shape.kind === 'path' ? f.shape : toEditablePath(f.shape)
   let best: (SegmentHit & { d: number }) | null = null
   sh.subpaths.forEach((sp, spi) => {
     const n = sp.anchors.length
@@ -369,7 +382,7 @@ export class SegmentDrag {
     const f = findShape(s, shapeId)
     if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
     this.tx = s.begin('Curvar segmento')
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     this.shape = f.list[f.index] as PathShape
     const sp = this.shape.subpaths[hit.subpath]!
     this.a = sp.anchors[hit.index]!
@@ -449,7 +462,7 @@ export function addAnchorAt(
 ): boolean {
   const f = findShape(s, shapeId)
   if (!f || f.shape.kind === 'group' || f.layer.locked) return false
-  const sh = f.shape.kind === 'path' ? f.shape : toPath(f.shape)
+  const sh = f.shape.kind === 'path' ? f.shape : toEditablePath(f.shape)
   let best: { sp: number; i: number; t: number; d: number } | null = null
   sh.subpaths.forEach((sp, spi) => {
     const n = sp.anchors.length
@@ -487,7 +500,7 @@ export function deleteAnchor(s: DocumentSession, ref: AnchorRef): boolean {
   const f = findShape(s, ref.shapeId)
   if (!f || f.shape.kind === 'group' || f.layer.locked) return false
   const tx = s.begin('Eliminar ancla')
-  if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+  if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
   const sh = f.list[f.index] as PathShape
   const sp = sh.subpaths[ref.subpath]
   if (!sp) return false
@@ -506,7 +519,7 @@ export function convertAnchor(s: DocumentSession, ref: AnchorRef, smooth: boolea
   const f = findShape(s, ref.shapeId)
   if (!f || f.shape.kind === 'group' || f.layer.locked) return false
   const tx = s.begin(smooth ? 'Ancla suave' : 'Ancla de esquina')
-  if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+  if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
   const sh = f.list[f.index] as PathShape
   const sp = sh.subpaths[ref.subpath]
   const a = sp?.anchors[ref.index]
@@ -747,7 +760,7 @@ export function deleteAnchors(s: DocumentSession, refs: AnchorRef[]): boolean {
   for (const [id, list] of byShape) {
     const f = findShape(s, id)
     if (!f || f.shape.kind === 'group' || f.layer.locked) continue
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     const sh = f.list[f.index] as PathShape
     // de mayor a menor índice para no desplazar los siguientes
     for (const r of [...list].sort((a, b) => b.subpath - a.subpath || b.index - a.index)) {
@@ -776,7 +789,7 @@ export function convertAnchors(s: DocumentSession, refs: AnchorRef[], smooth: bo
   for (const r of refs) {
     const f = findShape(s, r.shapeId)
     if (!f || f.shape.kind === 'group' || f.layer.locked) continue
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     const sh = f.list[f.index] as PathShape
     const sp = sh.subpaths[r.subpath]
     const a = sp?.anchors[r.index]
@@ -814,7 +827,7 @@ export function addMidAnchors(s: DocumentSession, ids: ID[]): boolean {
   for (const id of ids) {
     const f = findShape(s, id)
     if (!f || f.shape.kind === 'group' || f.layer.locked) continue
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     const sh = f.list[f.index] as PathShape
     for (const sp of sh.subpaths) {
       const n = sp.anchors.length
@@ -849,7 +862,7 @@ export function centerAnchors(s: DocumentSession, ids: ID[]): boolean {
     const f = findShape(s, id)
     if (!f || f.shape.kind === 'group' || f.layer.locked) continue
     const before = f.shape.kind === 'path' ? JSON.stringify(f.shape.subpaths) : null
-    if (f.shape.kind !== 'path') f.list[f.index] = toPath(f.shape)
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
     const sh = f.list[f.index] as PathShape
     for (const sp of sh.subpaths) for (const a of sp.anchors) centerAnchor(sh.transform, a)
     if (before === null || before !== JSON.stringify(sh.subpaths)) any = true

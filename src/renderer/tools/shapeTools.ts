@@ -59,7 +59,7 @@ import {
   selectShapes,
   shapeLines,
   shapesBox,
-  toPath
+  toEditablePath
 } from '@core/index'
 import type { Workspace } from '@/session/workspace'
 import { useColorsStore } from '@/stores/colors'
@@ -71,6 +71,7 @@ import type { CursorKind } from './cursors'
 import { useUiStore } from '@/stores/ui'
 import { findGradientAttr, type Attr } from './gradientTarget'
 import type { OverlayState, ShapeOverlay } from '@/viewport/overlay'
+import { edgeForPixel, handlePoint } from './boxHandles'
 
 const ANCHOR_TOOLS = new Set(['pen', 'addAnchor', 'delAnchor', 'convAnchor'])
 
@@ -148,7 +149,7 @@ function currentAppearance(closed: boolean): Appearance {
 /** Trazado visible de una forma: el suyo, o el equivalente si es paramétrica (solo para mostrar). */
 function displayPath(sh: Shape): PathShape {
   if (sh.kind === 'group') return { ...sh, kind: 'path', subpaths: [], fillRule: 'nonzero' }
-  return sh.kind === 'path' ? sh : toPath(sh)
+  return sh.kind === 'path' ? sh : toEditablePath(sh)
 }
 
 type OverlayGradientBar = NonNullable<OverlayState['gradientBar']>
@@ -467,7 +468,8 @@ export class ShapeTools {
     if (!box) return null
     const vp = ws.viewport
     for (const [hx, hy] of HANDLES) {
-      const a = vp.toScreen(box.x + hx * box.w, box.y + hy * box.h)
+      const pt = handlePoint(box, hx, hy)
+      const a = vp.toScreen(pt.x, pt.y)
       if (Math.hypot(a.x - p.sx, a.y - p.sy) < HIT) return { handle: [hx, hy], box }
     }
     return null
@@ -504,7 +506,8 @@ export class ShapeTools {
       [0, 1],
       [1, 1]
     ] as const) {
-      const a = ws.viewport.toScreen(box.x + hx * box.w, box.y + hy * box.h)
+      const pt = handlePoint(box, hx, hy)
+      const a = ws.viewport.toScreen(pt.x, pt.y)
       const d = Math.hypot(a.x - p.sx, a.y - p.sy)
       const outside = (hx === 0 ? p.sx < a.x : p.sx > a.x) || (hy === 0 ? p.sy < a.y : p.sy > a.y)
       if (d >= HIT && d <= 26 && outside) return box
@@ -825,7 +828,12 @@ export class ShapeTools {
       ? { x: box.x + box.w / 2, y: box.y + box.h / 2 }
       : { x: box.x + (1 - hx) * box.w, y: box.y + (1 - hy) * box.h }
     const start: Vec2 = { x: box.x + hx * box.w, y: box.y + hy * box.h }
-    const q = this.snapPt(Math.round(p.fx), Math.round(p.fy), this.getWs()!.session.selectedShapes)
+    // el tirador queda sobre el píxel del cursor: la arista de la caja se lleva a ese píxel
+    const q = this.snapPt(
+      edgeForPixel(p.fx, hx),
+      edgeForPixel(p.fy, hy),
+      this.getWs()!.session.selectedShapes
+    )
     const cx = q.x
     const cy = q.y
     const factor = (cur: number, st: number, fx: number) =>

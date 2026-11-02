@@ -215,7 +215,8 @@ describe('tiradores', () => {
     pull.end()
     const a = path(s, r.id).subpaths[0]!.anchors[1]!
     expect(a.out).toEqual({ x: 30, y: 7 })
-    expect(a.in).toEqual({ x: 10, y: -7 })
+    // el rectángulo se convierte con las anclas en el centro de sus píxeles (+0,5 en cada eje)
+    expect(a.in).toEqual({ x: 11, y: -6 })
     expect(hitSegment(s, r.id, 15, 25, 1)).toBe(true)
     expect(hitSegment(s, r.id, 15, 15, 1)).toBe(false)
     s.undo()

@@ -81,10 +81,18 @@ test('escalar con la caja, convertir en trazado y mover un ancla', async () => {
   const box = (await page.locator('.pt-stage').boundingBox())!
   const cx = box.x + box.width / 2
   const cy = box.y + box.height / 2
-  await page.mouse.move(cx + 10, cy + 10)
+  // la caja acaba un píxel más allá del cursor; su tirador está en el centro de ese último píxel
+  const zoom =
+    Number.parseInt(
+      (await page.locator('.pt-viewport .pt-select.zoom').first().innerText()).replace(/D/g, ''),
+      10
+    ) / 100
+  await page.mouse.move(cx + zoom / 2, cy + zoom / 2)
   await page.mouse.down()
   await page.mouse.move(cx + 70, cy + 70, { steps: 6 })
   await page.mouse.up()
+  // la esquina escalada queda en la arista que sigue al píxel bajo el cursor
+  const corner = (v: number) => (Math.floor(v / zoom) + 1) * zoom
   await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
   await expect(page.getByRole('button', { name: 'Escalar' })).toBeVisible()
 
@@ -93,7 +101,8 @@ test('escalar con la caja, convertir en trazado y mover un ancla', async () => {
   await expect(page.getByRole('button', { name: 'Convertir en trazado' })).toBeVisible()
 
   await page.keyboard.press('a')
-  await page.mouse.move(cx + 70, cy + 70)
+  // el ancla del rectángulo convertido está en el centro del píxel de la esquina
+  await page.mouse.move(cx + corner(70) + zoom / 2, cy + corner(70) + zoom / 2)
   await page.mouse.down()
   await page.mouse.move(cx + 90, cy + 50, { steps: 5 })
   await page.mouse.up()

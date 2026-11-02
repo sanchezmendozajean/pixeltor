@@ -111,7 +111,9 @@ test('Ctrl con la pluma mueve un ancla y Alt+arrastrar saca los tiradores', asyn
   )
   expect(ctrlCursor).toContain('data:image/svg')
   expect(ctrlCursor).not.toBe(penCursor) // flecha de anclas en vez de pluma
-  await page.mouse.move(cx - 60, cy - 60)
+  // el ancla del rectángulo convertido está en el centro del píxel de la esquina
+  const start = centre(cx - 60, cy - 60)
+  await page.mouse.move(start.x, start.y)
   await page.mouse.down()
   await page.mouse.move(cx - 80, cy - 80, { steps: 4 })
   await page.mouse.up()
