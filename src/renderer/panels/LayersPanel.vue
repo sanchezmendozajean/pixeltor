@@ -95,7 +95,7 @@ function onDrop(rowIndex: number) {
 
 <template>
   <div class="layers">
-    <ul class="list pt-scroll" role="listbox" :aria-label="t('panels.layers')">
+    <ul class="list pt-scroll" role="list" :aria-label="t('panels.layers')">
       <template v-for="(l, i) in docs.layers" :key="l.id">
         <li
           v-if="!hidden(l)"
@@ -110,8 +110,7 @@ function onDrop(rowIndex: number) {
             'is-drop-after': dropIndex === i && dragId !== null && dragId !== l.id && dropAfter(i),
             'is-drop-into': dropIndex === i && dragShape !== null
           }"
-          role="option"
-          :aria-selected="l.active"
+          :aria-current="l.active || undefined"
           draggable="true"
           @click="docs.session?.setActiveLayer(l.id)"
           @dragstart="dragId = l.id"

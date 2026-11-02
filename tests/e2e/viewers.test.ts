@@ -86,7 +86,7 @@ test('presets de disposición, imagen fijada y modo mosaico', async () => {
   await expect(views).toHaveCount(2)
 
   // fijar el segundo visor a la primera imagen
-  await views.nth(1).getByRole('button', { name: 'Imagen', exact: true }).click()
+  await views.nth(1).getByRole('button', { name: /^Imagen:/ }).click()
   await page.getByRole('menuitem', { name: /Imagen 1/ }).click()
   await expect(views.nth(1).locator('.pt-select.image')).toContainText('Imagen 1')
 

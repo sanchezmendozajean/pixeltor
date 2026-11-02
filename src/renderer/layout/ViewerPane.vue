@@ -433,7 +433,7 @@ const cursorClass = () =>
       <button
         type="button"
         class="pt-select image"
-        :aria-label="t('viewer.image')"
+        :aria-label="`${t('viewer.image')}: ${imageLabel}`"
         @click="openMenu('image', $event)"
       >
         <span>{{ imageLabel }}</span>
@@ -443,7 +443,7 @@ const cursorClass = () =>
       <button
         type="button"
         class="pt-select zoom"
-        :aria-label="t('status.zoom')"
+        :aria-label="`${t('status.zoom')} ${zoomLabel}`"
         @click="openMenu('zoom', $event)"
       >
         <span class="pt-mono">{{ zoomLabel }}</span>

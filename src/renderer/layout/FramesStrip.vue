@@ -239,6 +239,7 @@ const excluded = computed(() => {
           v-for="(f, i) in images"
           :key="f.id"
           class="cell"
+          role="presentation"
           :class="{ over: overIndex === i && dragId !== f.id }"
           @dragover.prevent="overIndex = i"
           @dragleave="overIndex = null"
@@ -281,8 +282,8 @@ const excluded = computed(() => {
             @change="onDuration(f.id, $event)"
           />
         </div>
-        <ActionButton id="image.new" />
       </div>
+      <ActionButton id="image.new" />
       <div class="pt-spacer" />
       <span v-if="current" class="pt-sec2">
         {{ t('frames.empty', { n: current.n, total: images.length }) }} · {{ current.ms }} ms

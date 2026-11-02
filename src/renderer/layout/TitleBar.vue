@@ -22,17 +22,12 @@ import { t } from '@/i18n'
       type="button"
       class="pt-select pt-nodrag workspace"
       :data-tip="t('titlebar.workspace')"
-      :aria-label="t('titlebar.workspace')"
+      :aria-label="`${t('titlebar.workspace')}: ${t('workspaces.essentials')}`"
     >
       <span>{{ t('workspaces.essentials') }}</span>
       <PtIcon name="chevDown" />
     </button>
-    <button
-      type="button"
-      class="pt-select pt-nodrag search"
-      data-action="help.commandPalette"
-      :aria-label="t('titlebar.search')"
-    >
+    <button type="button" class="pt-select pt-nodrag search" data-action="help.commandPalette">
       <PtIcon name="search" />
       <span class="grow">{{ t('titlebar.search') }}</span>
       <span class="pt-mono kbd">{{ actionShortcut('help.commandPalette') }}</span>

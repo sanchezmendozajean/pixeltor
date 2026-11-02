@@ -5,6 +5,7 @@ import { rgbaToHex } from '@/stores/colorUtil'
 import PtIcon from '@/components/PtIcon.vue'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
+import { actionLabel } from '@/actions/registry'
 import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
@@ -47,7 +48,11 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
 <template>
   <footer class="pt-status" :aria-label="t('status.label')">
     <div class="pt-seg first">
-      <button type="button" class="pt-zoomfield" :aria-label="t('status.zoom')">
+      <button
+        type="button"
+        class="pt-zoomfield"
+        :aria-label="`${t('status.zoom')} ${docs.zoomPercent} %`"
+      >
         <PtIcon name="zoomPx" />
         <span class="pt-mono zoom">{{ docs.zoomPercent }} %</span>
         <PtIcon name="chevDown" />
@@ -113,6 +118,8 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
         class="pt-snap pt-snap--smart"
         :class="{ 'is-on': ui.snap.smart }"
         :aria-pressed="ui.snap.smart"
+        :aria-label="actionLabel('view.smartGuides')"
+        :data-tip="actionLabel('view.smartGuides')"
         data-action="view.smartGuides"
         @click="ui.snap.smart = !ui.snap.smart"
       >

@@ -18,6 +18,7 @@ import { registerAppActions } from '@/actions/bindings'
 import { handleKeydown } from '@/actions/registry'
 import { handleBeforeClose, listRecovery, startAutosave } from '@/app/documentOps'
 import { useDocumentsStore } from '@/stores/documents'
+import { t } from '@/i18n'
 import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
@@ -51,10 +52,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="pt-root pt-app">
     <TitleBar />
-    <ControlBar v-if="showPanels" />
+    <div v-if="showPanels" role="region" :aria-label="t('controlbar.label')">
+      <ControlBar />
+    </div>
     <div class="pt-body">
       <ToolBar v-if="showTools" />
       <main class="pt-center">
+        <h1 class="pt-sr">{{ t('app.name') }}</h1>
         <DocTabs />
         <div class="pt-viewports"><ViewerArea /></div>
         <FramesStrip v-if="showPanels" />

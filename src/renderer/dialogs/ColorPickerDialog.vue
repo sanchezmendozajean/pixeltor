@@ -212,6 +212,36 @@ function onNum(r: Row, e: Event): void {
   if (Number.isFinite(v)) r.set(v)
 }
 
+/** Teclado en los controles de color: flechas (Mayús = paso grande). */
+function arrows(e: KeyboardEvent): [number, number] | null {
+  const d = e.shiftKey ? 0.1 : 0.01
+  const k: Record<string, [number, number]> = {
+    ArrowLeft: [-d, 0],
+    ArrowRight: [d, 0],
+    ArrowUp: [0, -d],
+    ArrowDown: [0, d]
+  }
+  const v = k[e.key]
+  if (v) e.preventDefault()
+  return v ?? null
+}
+
+const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
+function svKey(e: KeyboardEvent): void {
+  const a = arrows(e)
+  if (!a) return
+  hsv.value = { ...hsv.value, s: clamp01(hsv.value.s + a[0]), v: clamp01(hsv.value.v - a[1]) }
+}
+function hueKey(e: KeyboardEvent): void {
+  const a = arrows(e)
+  if (!a) return
+  hsv.value = { ...hsv.value, h: Math.min(360, Math.max(0, hsv.value.h + (a[0] + a[1]) * 360)) }
+}
+const svText = computed(
+  () =>
+    `${Math.round(hsv.value.s * 100)} % de saturación, ${Math.round(hsv.value.v * 100)} % de brillo`
+)
+
 const hueColor = computed(() => hsvToHex(hsv.value.h, 1, 1))
 
 function close(): void {
@@ -258,13 +288,29 @@ function onKey(e: KeyboardEvent): void {
         <div
           class="sv"
           role="slider"
+          tabindex="0"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-valuenow="Math.round(hsv.s * 100)"
+          :aria-valuetext="svText"
           :aria-label="t('color.saturationValue')"
           :style="{ backgroundColor: hueColor }"
+          @keydown.stop="svKey"
           @pointerdown="svDown"
         >
           <i class="dot" :style="{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%` }" />
         </div>
-        <div class="hue" role="slider" :aria-label="t('color.hue')" @pointerdown="hueDown">
+        <div
+          class="hue"
+          role="slider"
+          tabindex="0"
+          aria-valuemin="0"
+          aria-valuemax="360"
+          :aria-valuenow="Math.round(hsv.h)"
+          :aria-label="t('color.hue')"
+          @keydown.stop="hueKey"
+          @pointerdown="hueDown"
+        >
           <i class="mark" :style="{ top: `${(hsv.h / 360) * 100}%` }" />
         </div>
         <div class="side">
