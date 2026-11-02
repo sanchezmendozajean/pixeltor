@@ -125,6 +125,10 @@ function onTolerance(e: Event): void {
         </select>
       </label>
     </template>
+    <label v-if="usesSize" class="pt-check-label" :data-tip="t('tooloptions.pressureTip')">
+      <input v-model="tools.pressure" type="checkbox" />
+      {{ t('tooloptions.pressure') }}
+    </label>
     <label v-if="usesShape" class="pt-ctl">
       <span class="pt-ctl__lbl">{{ t('tooloptions.shape') }}</span>
       <select v-model="tools.brushShape" class="pt-select shape">

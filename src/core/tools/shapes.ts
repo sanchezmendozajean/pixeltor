@@ -37,6 +37,20 @@ function searchList(
 }
 
 /** Localiza una forma en cualquier capa y a cualquier profundidad de grupos. */
+/**
+ * Capas que contienen esas formas, para avisar de qué capas cambian; undefined (cambio desconocido)
+ * si alguna no se encuentra.
+ */
+export function layersOf(s: DocumentSession, ids: ID[]): ID[] | undefined {
+  const out = new Set<ID>()
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (!f) return undefined
+    out.add(f.layer.id)
+  }
+  return [...out]
+}
+
 export function findShape(s: DocumentSession, id: ID): ShapeLocation | null {
   for (const layer of s.image.layers) {
     const r = searchList(layer, layer.shapes, null, id)
@@ -150,7 +164,7 @@ export function removeShapes(s: DocumentSession, ids: ID[]): boolean {
 
 export function selectShapes(s: DocumentSession, ids: ID[]): void {
   s.selectedShapes = ids
-  s.emit({ imageId: s.activeImageId, dirty: null, structure: true })
+  s.emit({ imageId: s.activeImageId, dirty: null, structure: true, layerIds: [] })
 }
 
 export type Arrange = 'front' | 'forward' | 'backward' | 'back'
@@ -278,7 +292,7 @@ export function isolateGroup(s: DocumentSession, id: ID | null): void {
   s.isolatedGroup = id
   // al salir queda seleccionado el grupo; al entrar, ningún hijo
   s.selectedShapes = !id && leaving ? [leaving] : []
-  s.emit({ imageId: s.activeImageId, dirty: null, structure: true })
+  s.emit({ imageId: s.activeImageId, dirty: null, structure: true, layerIds: [] })
 }
 
 export interface StampResult {
@@ -415,7 +429,12 @@ export class ShapeMove {
       const f = findShape(this.s, id)
       if (f) f.shape.transform = translateMat(m, dx, dy)
     }
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [...this.start.keys()])
+    })
   }
 
   end(): boolean {
@@ -463,7 +482,12 @@ class LiveEdit {
     const f = findShape(this.s, this.id)
     if (!f) return
     fn(f.shape)
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [this.id])
+    })
   }
 
   end(): boolean {

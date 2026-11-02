@@ -167,7 +167,7 @@ export class GuideDrag {
   static create(s: DocumentSession, axis: 'h' | 'v', pos: number): GuideDrag {
     const drag = new GuideDrag(s, newId(), 'Crear guía')
     ;(s.image.guides ??= []).push({ id: drag.id, axis, pos: Math.round(pos) })
-    s.emit({ imageId: s.activeImageId, dirty: null, structure: true })
+    s.emit({ imageId: s.activeImageId, dirty: null, structure: true, layerIds: [] })
     return drag
   }
 
@@ -175,7 +175,7 @@ export class GuideDrag {
     const g = this.s.image.guides?.find((x) => x.id === this.id)
     if (!g) return
     g.pos = Math.round(pos)
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true, layerIds: [] })
   }
 
   /** Confirma; si `remove`, la guía se elimina (se arrastró de vuelta a la regla). */

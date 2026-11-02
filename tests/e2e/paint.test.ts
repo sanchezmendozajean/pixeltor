@@ -119,3 +119,40 @@ test('IPC de archivos: guardado atómico con .bak y autoguardado', async () => {
   expect(r.after).toBe(0)
   expect(readFileSync(`${path}.bak`)).toEqual(Buffer.from([1, 2, 3]))
 })
+
+test('un lápiz de tableta con presión crea un trazo de pincel', async () => {
+  // capa nueva: la anterior quedó oculta por otra prueba
+  await page.keyboard.press('Control+Shift+n')
+  await page.keyboard.press('b')
+  await page.locator('.pt-cbar input.pt-input').first().fill('9')
+  await page.locator('.pt-cbar input.pt-input').first().press('Enter')
+  await page.locator('.pt-cbar').getByLabel('Presión').check()
+  await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
+  const before = await page.locator('.hist li').count()
+  const stage = page.locator('.pt-stage')
+  await stage.evaluate((el) => {
+    type Ev = new (t: string, o: unknown) => unknown
+    const g = globalThis as unknown as { PointerEvent: Ev }
+    const r = (
+      el as { getBoundingClientRect(): { left: number; top: number } }
+    ).getBoundingClientRect()
+    const fire = (type: string, x: number, pressure: number) =>
+      (el as { dispatchEvent(e: unknown): void }).dispatchEvent(
+        new g.PointerEvent(type, {
+          bubbles: true,
+          pointerId: 7,
+          pointerType: 'pen',
+          pressure,
+          clientX: r.left + 200 + x,
+          clientY: r.top + 260,
+          button: 0,
+          buttons: 1
+        })
+      )
+    fire('pointerdown', 0, 0.2)
+    for (let i = 1; i <= 20; i++) fire('pointermove', i * 12, 0.2 + i * 0.04)
+    fire('pointerup', 240, 1)
+  })
+  await expect(page.locator('.hist li')).toHaveCount(before + 1)
+  await expect(page.getByRole('button', { name: 'Trazo de pincel' })).toBeVisible()
+})

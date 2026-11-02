@@ -17,6 +17,8 @@ export interface StrokeOptions {
   shape: 'square' | 'round'
   /** Simetría respecto al centro del lienzo (opcional). */
   symmetry?: Symmetry
+  /** El tamaño del pincel y del borrador sigue la presión (tableta); `size` es el máximo. */
+  pressure?: boolean
 }
 
 export type PaintBlock = 'hidden' | 'locked' | 'floating' | 'group' | null
@@ -35,7 +37,11 @@ export class Stroke {
   private readonly tx: Transaction
   private readonly layerId: ID
   private readonly target: PaintTarget
-  private readonly offsets: [number, number][]
+  private offsets: [number, number][]
+  private readonly offsetCache = new Map<number, [number, number][]>()
+  /** Tamaño de la punta del punto que se está pintando. */
+  private curSize: number
+  private lastPressure = 1
   private readonly dirty = new DirtyTracker()
   /** Copia del ráster antes del trazo: permite deshacer píxeles al aplicar pixel-perfect. */
   private readonly base: Bitmap | null
@@ -52,7 +58,9 @@ export class Stroke {
     const bitmap = s.bitmapOf(layer.id)
     this.target = { bitmap, mask: s.selection.mask, lockAlpha: layer.lockAlpha }
     const size = opt.tool === 'pencil' ? 1 : opt.size
+    this.curSize = size
     this.offsets = brushOffsets(size, opt.shape)
+    this.offsetCache.set(size, this.offsets)
     this.maps = isSymmetric(opt.symmetry)
       ? symmetryMaps(opt.symmetry, bitmap.width, bitmap.height)
       : []
@@ -68,7 +76,7 @@ export class Stroke {
 
   private paint(x: number, y: number): void {
     // El tx.touch debe cubrir toda la punta (y sus reflejos) antes de pintar.
-    const r = this.opt.tool === 'pencil' ? 0 : Math.ceil(this.opt.size)
+    const r = this.opt.tool === 'pencil' ? 0 : Math.ceil(this.curSize)
     const bw = this.target.bitmap.width
     const bh = this.target.bitmap.height
     this.tx.touch(this.layerId, { x: x - r, y: y - r, w: 2 * r + 1, h: 2 * r + 1 })
@@ -96,16 +104,38 @@ export class Stroke {
     }
   }
 
-  /** Añade un punto (coordenadas enteras de píxel). Interpola con Bresenham desde el anterior. */
-  move(x: number, y: number): void {
+  /** Tamaño de la punta para una presión (0..1): entero ≥ 1, nunca mayor que `opt.size`. */
+  private sizeFor(pressure: number): number {
+    const p = Math.min(1, Math.max(0, pressure))
+    return Math.max(1, Math.round(this.opt.size * p))
+  }
+
+  private useSize(size: number): void {
+    if (size === this.curSize) return
+    let o = this.offsetCache.get(size)
+    if (!o) this.offsetCache.set(size, (o = brushOffsets(size, this.opt.shape)))
+    this.curSize = size
+    this.offsets = o
+  }
+
+  /**
+   * Añade un punto (coordenadas enteras de píxel). Interpola con Bresenham desde el anterior.
+   * `pressure` (0..1) sólo cuenta con `opt.pressure` en pincel y borrador; entre dos puntos la
+   * presión se interpola, así el tamaño cambia de forma continua a lo largo del segmento.
+   */
+  move(x: number, y: number, pressure = 1): void {
     const pts = this.last
       ? linePoints(this.last[0], this.last[1], x, y).slice(1)
       : [[x, y] as [number, number]]
     this.last = [x, y]
-    for (const p of pts) {
-      if (this.opt.tool === 'pencil') this.addPencilPoint(p)
-      else this.paint(p[0], p[1])
-    }
+    const variable = !!this.opt.pressure && this.opt.tool !== 'pencil'
+    const from = this.lastPressure
+    this.lastPressure = pressure
+    pts.forEach((p, i) => {
+      if (this.opt.tool === 'pencil') return this.addPencilPoint(p)
+      if (variable) this.useSize(this.sizeFor(from + ((pressure - from) * (i + 1)) / pts.length))
+      this.paint(p[0], p[1])
+    })
   }
 
   private addPencilPoint(p: [number, number]): void {

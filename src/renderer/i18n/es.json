@@ -519,6 +519,8 @@
   },
   "tooloptions": {
     "size": "Tamaño",
+    "pressure": "Presión",
+    "pressureTip": "El tamaño sigue la presión del lápiz de tableta",
     "symX": "Espejo ↔",
     "symY": "Espejo ↕",
     "symRot": "Giro",

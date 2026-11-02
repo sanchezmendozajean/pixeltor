@@ -193,7 +193,9 @@ function info(e: PointerEvent) {
     button: e.button,
     shift: e.shiftKey,
     alt: e.altKey,
-    ctrl: e.ctrlKey || e.metaKey
+    ctrl: e.ctrlKey || e.metaKey,
+    // sólo un lápiz de tableta aporta presión; con ratón el tamaño no varía
+    pressure: e.pointerType === 'pen' ? e.pressure : undefined
   }
 }
 
@@ -213,7 +215,12 @@ function onDown(e: PointerEvent): void {
   activate()
   const ws = props.ws
   const view = v()
-  stage.value!.setPointerCapture(e.pointerId)
+  // un puntero sintético (pruebas, accesibilidad) no admite captura: se ignora
+  try {
+    stage.value!.setPointerCapture(e.pointerId)
+  } catch {
+    /* sin captura */
+  }
   // un visor en reproducción sólo se mira; uno fijado a otra imagen la activa al editar
   if (view.playImageId) return
   if (view.imageId && view.imageId !== ws.session.activeImageId) {

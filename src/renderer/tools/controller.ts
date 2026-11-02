@@ -45,6 +45,8 @@ interface PointerInfo {
   shift: boolean
   alt: boolean
   ctrl: boolean
+  /** Presión (0..1) cuando el puntero es un lápiz de tableta; undefined con ratón. */
+  pressure?: number
 }
 
 const PAINT_TOOLS = new Set(['pencil', 'brush', 'eraser'])
@@ -177,13 +179,14 @@ export class CanvasController {
           color,
           size: this.tools.brushSize,
           shape: this.tools.brushShape,
-          symmetry: { ...this.tools.symmetry }
+          symmetry: { ...this.tools.symmetry },
+          pressure: this.tools.pressure && p.pressure !== undefined
         })
         const last = this.lastPaintPoint.get(ws)
         // Mayús+clic: línea recta desde el último punto.
         if (p.shift && last && tool !== 'eraser') this.stroke.move(last.x, last.y)
         this.strokeLast = { x: x, y: y }
-        this.stroke.move(x, y)
+        this.stroke.move(x, y, p.pressure)
         ws.liveDirty(this.liveBox(ws, brushBox(x, y, last && p.shift ? last : null, this.radius())))
         break
       }
@@ -289,7 +292,7 @@ export class CanvasController {
     if (this.stroke && this.strokeLast) {
       const prev = this.strokeLast
       if (prev.x !== x || prev.y !== y) {
-        this.stroke.move(x, y)
+        this.stroke.move(x, y, p.pressure)
         ws.liveDirty(this.liveBox(ws, brushBox(x, y, prev, this.radius())))
         this.strokeLast = { x, y }
       }

@@ -14,7 +14,7 @@ import {
 import type { ID } from '../model/types'
 import { shapeLines } from '../render/shape'
 import type { DocumentSession } from '../session'
-import { findShape } from './shapes'
+import { findShape, layersOf } from './shapes'
 
 const K = 0.5522847498 // constante de Bézier para cuartos de círculo
 
@@ -223,7 +223,12 @@ export class AnchorDrag {
         }
       }
     }
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [this.shape.id])
+    })
   }
 
   end(): boolean {
@@ -262,7 +267,12 @@ export class AnchorPull {
     a.out = p
     a.in = { x: 2 * a.p.x - p.x, y: 2 * a.p.y - p.y }
     a.type = 'symmetric'
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [this.shape.id])
+    })
   }
 
   end(): boolean {
@@ -359,7 +369,12 @@ export class SegmentDrag {
     const p2 = this.b0.in ?? this.b0.p
     this.a.out = { x: p1.x + sh.x, y: p1.y + sh.y }
     this.b.in = { x: p2.x + sh.x, y: p2.y + sh.y }
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [this.shape.id])
+    })
   }
 
   end(): boolean {
@@ -594,7 +609,12 @@ export class ShapeScale {
       scaleShape(copy, sx, sy, anchor.x, anchor.y)
       f.list[f.index] = copy
     }
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [...this.originals.keys()])
+    })
   }
 
   get original(): Box {
@@ -639,7 +659,12 @@ export class ShapeRotate {
       copy.transform = multiply(m, copy.transform)
       f.list[f.index] = copy
     }
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [...this.originals.keys()])
+    })
   }
 
   end(): boolean {
@@ -674,7 +699,12 @@ export class RectRadiusDrag {
     this.rect.radius = single
       ? ([r, this.start[1], this.start[2], this.start[3]] as typeof this.start)
       : [r, r, r, r]
-    this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(this.s, [this.rect.id])
+    })
   }
 
   end(): boolean {

@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   Bitmap,
   DocumentSession,
+  ShapeMove,
   Stroke,
+  addShape,
+  color,
+  makeAppearance,
+  makeRect,
   addEffect,
   composeImage,
   invalidatePrefix,
@@ -169,5 +174,34 @@ describe('la caché se usa de verdad', () => {
     const ref = new Bitmap(W, H)
     composeImage(s.image, s.rasters, ref)
     expect(h.out.data).not.toEqual(ref.data)
+  })
+})
+
+describe('arrastrar formas con la caché', () => {
+  it('mover una forma de una capa inferior invalida; una de la caliente o superior no; siempre exacto', () => {
+    const { s, ids } = setup()
+    const lower = makeRect(4, 4, 20, 20, makeAppearance(color(255, 0, 0), null))
+    const hotShape = makeRect(30, 30, 20, 20, makeAppearance(color(0, 0, 255), null))
+    s.setActiveLayer(ids[0]!)
+    addShape(s, lower)
+    s.setActiveLayer(ids[3]!)
+    addShape(s, hotShape)
+    const h = harness(s)
+    h.expectExact()
+    expect(h.cache.valid).toBe(true)
+
+    // forma de la capa caliente: la caché de lo de debajo sigue valiendo
+    const m1 = new ShapeMove(s, [hotShape.id])
+    m1.moveBy(3, 2)
+    expect(h.cache.valid).toBe(true)
+    h.expectExact()
+    m1.end()
+
+    // forma de una capa inferior: se reconstruye con el resultado exacto
+    const m2 = new ShapeMove(s, [lower.id])
+    m2.moveBy(5, 5) // si no se invalidara, la forma movida se vería en su sitio antiguo
+    h.expectExact()
+    m2.end()
+    h.expectExact()
   })
 })
