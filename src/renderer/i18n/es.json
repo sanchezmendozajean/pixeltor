@@ -72,7 +72,10 @@
       "mergeVisible": "Combinar visibles",
       "flatten": "Acoplar imagen",
       "rasterizeEffects": "Rasterizar efectos de capa",
-      "lockAlpha": "Bloquear transparencia"
+      "lockAlpha": "Bloquear transparencia",
+      "group": "Agrupar capa",
+      "ungroup": "Desagrupar capas",
+      "clip": "Máscara de recorte"
     },
     "effect": {
       "add": {
@@ -369,6 +372,7 @@
   "notice": {
     "hidden": "La capa activa está oculta",
     "locked": "La capa activa está bloqueada",
+    "group": "Una capa de grupo no se pinta: elige una de sus capas",
     "floating": "Fija o cancela los píxeles flotantes antes de pintar",
     "isolation": "Modo aislamiento: Esc para salir"
   },
@@ -445,6 +449,9 @@
     "lock": "Bloquear capa",
     "lockAlpha": "Bloquear transparencia",
     "rename": "Renombrar capa",
+    "collapse": "Plegar grupo",
+    "expand": "Desplegar grupo",
+    "clipped": "Recortada sobre la capa de debajo",
     "moveUp": "Subir capa",
     "moveDown": "Bajar capa",
     "modes": {

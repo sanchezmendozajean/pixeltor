@@ -18,6 +18,12 @@ const dragShape = ref<string | null>(null)
 const dropIndex = ref<number | null>(null)
 
 const active = computed(() => docs.layers.find((l) => l.active))
+/** Grupos plegados: sus miembros no se listan. */
+const folded = computed(
+  () => new Set(docs.layers.filter((l) => l.isGroup && l.collapsed).map((l) => l.id))
+)
+const hidden = (l: { groupId: string | null }): boolean =>
+  !!l.groupId && folded.value.has(l.groupId)
 const opacityPct = computed(() => Math.round((active.value?.opacity ?? 1) * 100))
 
 function onShapeClick(layerId: string, id: string, e: MouseEvent): void {
@@ -92,8 +98,12 @@ function onDrop(rowIndex: number) {
     <ul class="list pt-scroll" role="listbox" :aria-label="t('panels.layers')">
       <template v-for="(l, i) in docs.layers" :key="l.id">
         <li
+          v-if="!hidden(l)"
           class="pt-lrow"
           :class="{
+            'is-group': l.isGroup,
+            'is-member': !!l.groupId,
+            'is-clip': l.clip,
             'is-current': l.active,
             'is-hidden': !l.visible,
             'is-drop': dropIndex === i && dragId !== null && dragId !== l.id && !dropAfter(i),
@@ -120,7 +130,19 @@ function onDrop(rowIndex: number) {
             <PtIcon :name="l.visible ? 'eye' : 'eyeOff'" />
           </button>
           <span class="pt-lbar" :style="{ background: l.color }" />
-          <LayerThumb :layer-id="l.id" />
+          <button
+            v-if="l.isGroup"
+            type="button"
+            class="pt-lcol fold"
+            :aria-label="t(l.collapsed ? 'layers.expand' : 'layers.collapse')"
+            :aria-expanded="!l.collapsed"
+            @click.stop="setProps(l.id, { collapsed: !l.collapsed })"
+          >
+            <PtIcon :name="l.collapsed ? 'chevRight' : 'chevDown'" />
+          </button>
+          <PtIcon v-if="l.isGroup" name="folder" class="gicon" />
+          <LayerThumb v-else :layer-id="l.id" />
+          <PtIcon v-if="l.clip" name="chevRight" class="clip" :title="t('layers.clipped')" />
           <input
             v-if="editing === l.id"
             :id="`ren-${l.id}`"
@@ -148,7 +170,7 @@ function onDrop(rowIndex: number) {
           </button>
         </li>
         <li
-          v-for="sh in l.shapes"
+          v-for="sh in hidden(l) ? [] : l.shapes"
           :key="sh.id"
           class="pt-lrow pt-srow"
           :class="{ 'is-selected': sh.selected, 'is-hidden': !sh.visible }"
@@ -212,6 +234,29 @@ button.pt-lcol {
   border: 0;
   background: none;
   padding: 0;
+}
+.is-member {
+  padding-left: 14px;
+}
+.fold {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon);
+}
+.gicon {
+  width: 16px;
+  height: 16px;
+  margin: 0 4px;
+  color: var(--icon);
+}
+.clip {
+  width: 10px;
+  height: 10px;
+  transform: rotate(90deg);
+  color: var(--text-secondary);
 }
 .indent {
   width: 38px;

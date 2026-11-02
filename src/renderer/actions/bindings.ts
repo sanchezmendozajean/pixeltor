@@ -24,6 +24,9 @@ import {
   rasterizeLayerEffects,
   convertToPath,
   makeCompound,
+  createGroup,
+  toggleClip,
+  ungroup,
   pathfinder,
   offsetPaths,
   outlineStroke,
@@ -380,6 +383,22 @@ export function registerAppActions(): void {
       has() &&
       (docs.rev, ses().activeLayer.shapes.length > 0 || ses().activeLayer.effects.length > 0),
     run: () => void rasterizeLayerEffects(ses(), ses().activeLayerId)
+  })
+  registerHandler('layer.group', {
+    enabled: () => has() && (docs.rev, !ses().activeLayer.isGroup && !ses().activeLayer.groupId),
+    run: () => void createGroup(ses())
+  })
+  registerHandler('layer.ungroup', {
+    enabled: () => has() && (docs.rev, !!(ses().activeLayer.isGroup || ses().activeLayer.groupId)),
+    run: () => {
+      const l = ses().activeLayer
+      void ungroup(ses(), l.isGroup ? l.id : l.groupId!)
+    }
+  })
+  registerHandler('layer.clip', {
+    enabled: () => has() && (docs.rev, !ses().activeLayer.isGroup || !!ses().activeLayer.clip),
+    run: () => void toggleClip(ses()),
+    checked: () => (docs.rev, has() && !!ses().activeLayer.clip)
   })
   registerHandler('layer.lockAlpha', {
     enabled: has,

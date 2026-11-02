@@ -291,10 +291,12 @@ export class DocumentSession {
     const img = this.image
     const i = img.layers.findIndex((l) => l.id === id)
     if (i < 0 || img.layers.length <= 1) return false
-    const tx = this.begin('Eliminar capa')
-    img.layers.splice(i, 1)
-    if (this.activeLayerId === id)
-      this.activeLayerId = img.layers[Math.min(i, img.layers.length - 1)]!.id
+    const doomed = img.layers[i]!.isGroup ? img.layers.filter((l) => l.groupId === id) : []
+    if (doomed.length >= img.layers.length) return false
+    const tx = this.begin(doomed.length ? 'Eliminar grupo' : 'Eliminar capa')
+    img.layers = img.layers.filter((l) => l.id !== id && l.groupId !== id)
+    if (!findLayer(img, this.activeLayerId))
+      this.activeLayerId = img.layers[Math.min(i - doomed.length, img.layers.length - 1)]!.id
     tx.commit({ model: true })
     return true
   }
@@ -322,11 +324,41 @@ export class DocumentSession {
   moveLayer(id: ID, to: number): boolean {
     const img = this.image
     const from = img.layers.findIndex((l) => l.id === id)
-    const dest = Math.max(0, Math.min(img.layers.length - 1, to))
-    if (from < 0 || from === dest) return false
+    if (from < 0) return false
+    const moved = img.layers[from]!
+    // un grupo se mueve con sus miembros (están justo debajo de su capa de grupo)
+    const block = moved.isGroup ? img.layers.filter((l) => l.groupId === moved.id) : []
+    block.push(moved)
+    const dest = Math.max(0, Math.min(img.layers.length - block.length, to))
+    if (from === dest && block.length === 1) return false
     const tx = this.begin('Reordenar capa')
-    const [l] = img.layers.splice(from, 1)
-    img.layers.splice(dest, 0, l!)
+    const rest = img.layers.filter((l) => !block.includes(l))
+    let at = dest
+    if (moved.isGroup) {
+      // un grupo no puede quedar dentro de otro: se queda encima del que lo contenga
+      while (at > 0 && at < rest.length) {
+        const below = rest[at - 1]!
+        const above = rest[at]!
+        if (below.groupId && (above.groupId === below.groupId || above.id === below.groupId))
+          at = rest.findIndex((l) => l.id === below.groupId) + 1
+        else break
+      }
+    }
+    rest.splice(at, 0, ...block)
+    img.layers = rest
+    if (!moved.isGroup) {
+      // una capa suelta dentro de un grupo se une a él; fuera de todos, queda libre
+      const below = img.layers[at - 1]
+      const above = img.layers[at + 1]
+      const g =
+        above?.groupId && below?.groupId === above.groupId
+          ? above.groupId
+          : above?.isGroup && below?.groupId === above.id
+            ? above.id
+            : undefined
+      if (g) moved.groupId = g
+      else delete moved.groupId
+    }
     tx.commit({ model: true })
     return true
   }
@@ -335,7 +367,10 @@ export class DocumentSession {
   setLayerProps(
     id: ID,
     patch: Partial<
-      Pick<Layer, 'name' | 'visible' | 'locked' | 'lockAlpha' | 'opacity' | 'blendMode'>
+      Pick<
+        Layer,
+        'name' | 'visible' | 'locked' | 'lockAlpha' | 'opacity' | 'blendMode' | 'collapsed' | 'clip'
+      >
     >
   ): void {
     const layer = findLayer(this.image, id)

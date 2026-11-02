@@ -78,7 +78,13 @@ export function getShape(s: DocumentSession, id: ID): Shape | null {
 
 /** Añade una forma encima de las demás de la capa activa y la selecciona. */
 export function addShape(s: DocumentSession, shape: Shape): boolean {
-  const layer = s.activeLayer
+  let layer = s.activeLayer
+  // una capa de grupo no tiene contenido propio: la forma va a su miembro de más arriba
+  if (layer.isGroup) {
+    const members = s.image.layers.filter((l) => l.groupId === layer.id)
+    layer = members[members.length - 1] ?? layer
+    if (layer.isGroup) return false
+  }
   if (layer.locked || !layer.visible) return false
   const tx = s.begin(`Crear ${shape.name}`)
   layer.shapes.push(shape)

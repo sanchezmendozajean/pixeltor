@@ -56,6 +56,11 @@ export interface LayerRow {
   blendMode: Layer['blendMode']
   color: string
   active: boolean
+  isGroup: boolean
+  collapsed: boolean
+  /** Id de la capa de grupo a la que pertenece. */
+  groupId: string | null
+  clip: boolean
   /** Tiene efectos activos. */
   fx: boolean
   /** De arriba abajo; los hijos de un grupo siguen a su grupo con `depth` mayor. */
@@ -106,6 +111,10 @@ export const useDocumentsStore = defineStore('documents', () => {
       blendMode: l.blendMode,
       color: l.color,
       active: l.id === s.activeLayerId,
+      isGroup: !!l.isGroup,
+      collapsed: !!l.collapsed,
+      groupId: l.groupId ?? null,
+      clip: !!l.clip,
       fx: hasActiveEffects(l.effects),
       shapes: flattenShapes(l.shapes, 0, s.selectedShapes)
     }))

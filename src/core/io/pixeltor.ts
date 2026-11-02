@@ -113,6 +113,7 @@ export function loadDocument(bytes: Uint8Array): LoadedDocument {
     img.width = clampSize(img.width)
     img.height = clampSize(img.height)
     img.layers.forEach((layer: Layer) => sanitizeLayer(layer))
+    sanitizeGroups(img.layers)
     for (const layer of img.layers) {
       const empty = (layer.raster as { empty?: boolean }).empty
       delete (layer.raster as { empty?: boolean }).empty
@@ -159,6 +160,23 @@ function sanitizeLayer(l: Layer): void {
   l.visible = l.visible !== false
   l.locked = !!l.locked
   l.lockAlpha = !!l.lockAlpha
+  if (!l.isGroup) delete l.isGroup
+  else l.isGroup = true
+  if (!l.collapsed) delete l.collapsed
+  if (!l.clip) delete l.clip
+  if (typeof l.groupId !== 'string') delete l.groupId
+}
+
+/** Quita las referencias a grupos que no existen o que no están justo encima del miembro. */
+function sanitizeGroups(layers: Layer[]): void {
+  layers.forEach((l, i) => {
+    if (!l.groupId) return
+    let j = i + 1
+    while (j < layers.length && layers[j]!.groupId === l.groupId) j++
+    const head = layers[j]
+    if (!head || head.id !== l.groupId || !head.isGroup) delete l.groupId
+  })
+  for (const l of layers) if (l.isGroup) delete l.groupId
 }
 
 /** Exporta la composición de una imagen como PNG, con escala entera (vecino más cercano). */

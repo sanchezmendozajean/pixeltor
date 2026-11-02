@@ -65,6 +65,14 @@ export interface Layer {
   /** [0] = forma inferior. */
   shapes: Shape[]
   effects: Effect[]
+  /** Capa de grupo: compone sus miembros (las capas contiguas justo debajo) y les aplica su opacidad y modo. */
+  isGroup?: boolean
+  /** Grupo plegado en el panel Capas. */
+  collapsed?: boolean
+  /** Si es miembro de un grupo, el id de la capa de grupo (un solo nivel). */
+  groupId?: ID
+  /** Máscara de recorte: sólo se ve donde la capa base (la de debajo) tiene alfa. */
+  clip?: boolean
 }
 
 /** Guía de la imagen: línea horizontal (`h`, posición y) o vertical (`v`, posición x), en px. */

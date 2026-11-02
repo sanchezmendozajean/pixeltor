@@ -8,6 +8,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Atajos de teclado personalizables** (Ayuda › Atajos de teclado…): lista del registro de acciones con búsqueda, grabación del atajo, aviso de conflicto con reasignación, quitar y restablecer (por acción o todos). Se guardan en los ajustes y alimentan menús, tooltips y la paleta de comandos.
 - **Buscatrazos** (Objeto › Buscatrazos): unir, restar la forma frontal, intersecar y excluir, en un solo paso deshacible. Usa `polygon-clipping` (MIT) para resolver bordes coincidentes y huecos; las curvas pasan a segmentos rectos, como en el resto de operaciones de trazados. El resultado conserva la apariencia de la forma frontal (la de atrás en «restar»).
+- **Grupos de capas** (Capa › Agrupar capa, `Ctrl+Alt+Mayús+G`): la capa de grupo compone a sus miembros en un búfer propio y les aplica su opacidad, modo de fusión y visibilidad; plegar y desplegar en el panel Capas, arrastrar una capa dentro o fuera del grupo, mover o eliminar el grupo con sus miembros y desagrupar. Un solo nivel de anidamiento; se guarda en el `.pixeltor` y se sanea al abrir.
+- **Máscara de recorte** (`Ctrl+Alt+G`): una capa sólo se ve donde su base (la de debajo, en la misma pila) tiene alfa; la base y sus recortes comparten opacidad y modo. Los búferes temporales de la composición se reutilizan.
 - Indicadores de relleno y contorno idénticos a los de Victoria, y texto de los paneles 1 px menor.
 - electron-builder: objetivos **portable** y **deb** además de NSIS y AppImage. NSIS y portable se generan y el ejecutable arranca en Windows; deb y AppImage sin verificar.
 

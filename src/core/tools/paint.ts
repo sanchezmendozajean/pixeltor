@@ -19,12 +19,13 @@ export interface StrokeOptions {
   symmetry?: Symmetry
 }
 
-export type PaintBlock = 'hidden' | 'locked' | 'floating' | null
+export type PaintBlock = 'hidden' | 'locked' | 'floating' | 'group' | null
 
 /** Motivo por el que no se puede pintar en la capa activa (para el cursor y la barra de estado). */
 export function paintBlockReason(s: DocumentSession): PaintBlock {
   const l = s.activeLayer
   if (s.selection.floating) return 'floating'
+  if (l.isGroup) return 'group'
   if (!l.visible) return 'hidden'
   if (l.locked) return 'locked'
   return null

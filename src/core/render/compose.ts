@@ -1,4 +1,4 @@
-import type { ID, PxImage } from '../model/types'
+import type { ID, Layer, PxImage } from '../model/types'
 import { Bitmap, type Rect, clipRect } from '../raster/bitmap'
 import { compositeAt, compositeOver } from '../raster/blend'
 import type { Shape } from '../model/shapes'
@@ -81,10 +81,11 @@ export function composeImage(
   let layerFx: Bitmap | null = null
   const ctx = { width: img.width, height: img.height, palettes: extras.palettes }
   const provider = extras.fx ?? syncFx
-  for (const layer of img.layers) {
-    if (!layer.visible || layer.opacity <= 0) continue
+
+  /** Contenido de una capa normal (ráster + formas + efectos); el bitmap es temporal y compartido. */
+  const layerSource = (layer: Layer): Bitmap | null => {
     let src = rasters.get(layer.raster.id)
-    if (!src) continue
+    if (!src) return null
     const pv = extras.preview && extras.preview.layerId === layer.id ? extras.preview.shape : null
     if (layer.shapes.length || pv) {
       // Estampado virtual: el ráster base + las formas visibles, de abajo arriba.
@@ -127,7 +128,90 @@ export function composeImage(
         )
       src = layerFx
     }
-    compositeOver(out, src, layer.blendMode, layer.opacity, r)
+    return src
+  }
+
+  const live = (l: Layer): boolean => l.visible && l.opacity > 0
+
+  /** Compone un elemento (capa o grupo) y pasa su contenido a `use`; los grupos usan un búfer propio. */
+  const withSource = (item: Layer, use: (src: Bitmap) => void): void => {
+    if (!item.isGroup) {
+      const src = layerSource(item)
+      if (src) use(src)
+      return
+    }
+    const g = acquire(img.width, img.height, r)
+    drawStack(
+      img.layers.filter((m) => m.groupId === item.id),
+      g
+    )
+    use(g)
+    release(g)
+  }
+
+  /** Dibuja una lista de capas de abajo arriba, agrupando cada capa con sus máscaras de recorte. */
+  const drawStack = (list: Layer[], dst: Bitmap): void => {
+    for (let i = 0; i < list.length;) {
+      const base = list[i]!
+      let j = i + 1
+      while (j < list.length && list[j]!.clip) j++
+      const clips = list.slice(i + 1, j).filter(live)
+      i = j
+      if (!live(base)) continue
+      if (!clips.length) {
+        withSource(base, (src) => compositeOver(dst, src, base.blendMode, base.opacity, r))
+        continue
+      }
+      // la base y sus recortes se componen aparte; el resultado se limita al alfa de la base
+      const b = acquire(img.width, img.height, r)
+      withSource(base, (src) => compositeOver(b, src, 'normal', 1, r))
+      for (const c of clips)
+        withSource(c, (src) => {
+          const tmp = acquire(img.width, img.height, r)
+          copyRegion(tmp, b, r)
+          compositeOver(tmp, src, c.blendMode, c.opacity, r)
+          for (let y = r.y; y < r.y + r.h; y++)
+            for (let x = r.x; x < r.x + r.w; x++) {
+              const p = (y * img.width + x) * 4
+              if (b.data[p + 3]) {
+                b.data[p] = tmp.data[p]!
+                b.data[p + 1] = tmp.data[p + 1]!
+                b.data[p + 2] = tmp.data[p + 2]!
+              }
+            }
+          release(tmp)
+        })
+      compositeOver(dst, b, base.blendMode, base.opacity, r)
+      release(b)
+    }
+  }
+
+  drawStack(
+    img.layers.filter((l) => !l.groupId),
+    out
+  )
+}
+
+// Búferes temporales reutilizados entre composiciones (evita reservar megabytes por trazo).
+const POOL = new Map<string, Bitmap[]>()
+
+function acquire(w: number, h: number, r: Rect): Bitmap {
+  const bmp = POOL.get(`${w}x${h}`)?.pop() ?? new Bitmap(w, h)
+  for (let y = r.y; y < r.y + r.h; y++) bmp.data.fill(0, (y * w + r.x) * 4, (y * w + r.x + r.w) * 4)
+  return bmp
+}
+
+function release(b: Bitmap): void {
+  const k = `${b.width}x${b.height}`
+  const list = POOL.get(k) ?? []
+  if (list.length < 6) list.push(b)
+  POOL.set(k, list)
+}
+
+function copyRegion(dst: Bitmap, src: Bitmap, r: Rect): void {
+  for (let y = r.y; y < r.y + r.h; y++) {
+    const o = (y * src.width + r.x) * 4
+    dst.data.set(src.data.subarray(o, o + r.w * 4), o)
   }
 }
 

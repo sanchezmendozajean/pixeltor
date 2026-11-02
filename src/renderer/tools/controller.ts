@@ -35,7 +35,7 @@ export function setActiveController(c: CanvasController | null): void {
   activeController = c
 }
 
-export type Notice = 'hidden' | 'locked' | 'floating' | null
+export type Notice = 'hidden' | 'locked' | 'floating' | 'group' | null
 
 interface PointerInfo {
   /** Coordenadas de pantalla relativas al visor. */
