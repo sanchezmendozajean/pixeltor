@@ -510,10 +510,15 @@ export class ShapeTools {
     return { id: sh.id, pos: apply(sh.transform, { x: d, y: d }) }
   }
 
-  /** Separación (en píxeles de imagen) entre la esquina y el tirador con radio 0: medio píxel (el contorno de selección va por el centro del píxel del borde) más 20 px de pantalla. */
+  /**
+   * Separación (en píxeles de imagen) entre la esquina y el tirador con radio 0: fija en la
+   * imagen (1,25 px: fuera del píxel del borde, por donde va el contorno) para que el tirador esté
+   * en el mismo sitio relativo a la forma a cualquier zoom; sólo con zoom bajo crece hasta que
+   * queden 16 px de pantalla y no se pise con el tirador de la caja.
+   */
   private radiusOffset(): number {
     const ws = this.getWs()
-    return ws ? 0.5 + 20 / ws.viewport.zoom : 0
+    return ws ? Math.max(1.25, 16 / ws.viewport.zoom) : 1.25
   }
 
   private radiusWidgetAt(p: Pointer): ID | null {
