@@ -731,7 +731,7 @@ export class RectRadiusDrag {
     if (!inv) return
     const l = apply(inv, { x: fx, y: fy })
     const max = Math.min(this.rect.w, this.rect.h) / 2
-    const r = Math.max(0, Math.min(max, Math.round((l.x + l.y) / 2)))
+    const r = Math.max(0, Math.min(max, Math.round((l.x + l.y) / 2 - 0.5)))
     this.rect.radius = single
       ? ([r, this.start[1], this.start[2], this.start[3]] as typeof this.start)
       : [r, r, r, r]

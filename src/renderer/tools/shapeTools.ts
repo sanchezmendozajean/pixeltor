@@ -500,8 +500,9 @@ export class ShapeTools {
     if (!ws || ws.session.selectedShapes.length !== 1) return null
     const sh = getShape(ws.session, ws.session.selectedShapes[0]!)
     if (!sh || sh.kind !== 'rect' || sh.locked) return null
-    // a 10 px de pantalla como mínimo de la esquina para no tapar el tirador de la caja
-    const d = Math.max(sh.radius[0], 10 / ws.viewport.zoom)
+    // a ~20 px de pantalla como mínimo de la esquina para no tapar el tirador de la caja, y
+    // siempre en el centro de un píxel (radio r → píxel r, centro r + 0,5)
+    const d = Math.max(sh.radius[0], Math.ceil(20 / ws.viewport.zoom)) + 0.5
     return { id: sh.id, pos: apply(sh.transform, { x: d, y: d }) }
   }
 

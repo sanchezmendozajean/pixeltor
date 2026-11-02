@@ -54,7 +54,7 @@ describe('widget de radio', () => {
     const r = makeRect(4, 4, 20, 20, makeAppearance(RED, null))
     addShape(s, r)
     const d = new RectRadiusDrag(s, r.id)
-    d.moveTo(4 + 6, 4 + 6)
+    d.moveTo(4 + 6.5, 4 + 6.5) // el widget está en el centro del píxel r
     d.end()
     const a = get(s, r.id)!
     expect(a.kind === 'rect' && a.radius).toEqual([6, 6, 6, 6])
