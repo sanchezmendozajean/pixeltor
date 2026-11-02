@@ -41,6 +41,13 @@ import {
 } from '@core/index'
 import { activeController } from '@/tools/controller'
 import { mirrorViewerFlags } from '@/session/viewer'
+import {
+  canCreateWorkspace,
+  deleteWorkspace,
+  resetWorkspace,
+  saveCurrentWorkspace
+} from '@/app/workspaces'
+import { PANEL_IDS } from '@shared/workspaces'
 import type { Viewport } from '@/viewport/Viewport'
 import { type LayoutPreset, MAX_VIEWERS, PRESET_COUNT } from '@core/index'
 import { ACTIONS } from './definitions'
@@ -436,6 +443,33 @@ export function registerAppActions(): void {
     enabled: () => has() && ws().viewers.length < MAX_VIEWERS,
     run: () => void ws().splitViewer(ws().activeViewerId, 'h')
   })
+  for (const id of PANEL_IDS)
+    registerHandler(`window.panel.${id}`, {
+      run: () => {
+        const i = ui.panelsVisible.indexOf(id)
+        if (i >= 0) ui.panelsVisible.splice(i, 1)
+        else ui.panelsVisible.push(id)
+      },
+      checked: () => ui.panelsVisible.includes(id)
+    })
+  const isCustom = () => ui.customWorkspaces.some((w) => w.id === ui.workspaceId)
+  registerHandler('window.workspace.new', {
+    enabled: canCreateWorkspace,
+    run: () => (ui.workspaceDialog = 'new')
+  })
+  registerHandler('window.workspace.save', {
+    enabled: isCustom,
+    run: () => void saveCurrentWorkspace()
+  })
+  registerHandler('window.workspace.rename', {
+    enabled: isCustom,
+    run: () => (ui.workspaceDialog = 'rename')
+  })
+  registerHandler('window.workspace.delete', {
+    enabled: isCustom,
+    run: () => void deleteWorkspace(ui.workspaceId)
+  })
+  registerHandler('window.workspace.reset', { run: resetWorkspace })
   registerHandler('window.closeViewer', {
     enabled: () => has() && ws().viewers.length > 1,
     run: () => {
@@ -448,6 +482,7 @@ export function registerAppActions(): void {
       enabled: has,
       run: () => {
         ws().applyPreset(p)
+        ui.viewerPreset = p
         mirrorViewerFlags(ws())
       }
     })

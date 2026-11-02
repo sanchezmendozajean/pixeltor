@@ -1,5 +1,7 @@
 // Contrato IPC tipado entre main, preload y renderer.
 
+import type { SavedWorkspace } from './workspaces'
+
 export type ThemeId = 'oscuro' | 'gris' | 'claro'
 
 export interface Settings {
@@ -10,6 +12,10 @@ export interface Settings {
   shortcuts: Record<string, string>
   /** Escala de la interfaz (1 = 100 %). */
   uiScale: number
+  /** Espacios de trabajo creados por el usuario (los integrados no se guardan). */
+  workspaces: SavedWorkspace[]
+  /** Espacio de trabajo con el que arranca la ventana. */
+  activeWorkspace: string
 }
 
 export const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5] as const
@@ -18,7 +24,9 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'oscuro',
   toolbarColumns: 1,
   shortcuts: {},
-  uiScale: 1
+  uiScale: 1,
+  workspaces: [],
+  activeWorkspace: 'essentials'
 }
 
 export const IPC = {

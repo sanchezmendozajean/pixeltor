@@ -12,7 +12,13 @@ import LayersPanel from '@/panels/LayersPanel.vue'
 import PropertiesPanel from '@/panels/PropertiesPanel.vue'
 import NavigatorPanel from '@/panels/NavigatorPanel.vue'
 import SwatchesPanel from '@/panels/SwatchesPanel.vue'
+import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
+
+const ui = useUiStore()
+/** Pestañas visibles según el espacio de trabajo; un grupo sin pestañas no se dibuja. */
+const shown = (tabs: PanelTab[]): PanelTab[] =>
+  tabs.filter((x) => ui.panelsVisible.includes(x.id as never))
 
 const properties: PanelTab[] = [
   { id: 'properties', label: 'panels.properties', empty: 'panels.emptyProperties' },
@@ -34,12 +40,12 @@ const color: PanelTab[] = [
 
 <template>
   <aside class="pt-dock" :aria-label="t('dock.label')">
-    <Panel :tabs="properties" :body-height="150">
+    <Panel v-if="shown(properties).length" :tabs="shown(properties)" :body-height="150">
       <template #properties><PropertiesPanel /></template>
       <template #navigator><NavigatorPanel /></template>
       <template #history><HistoryPanel /></template>
     </Panel>
-    <Panel :tabs="layers">
+    <Panel v-if="shown(layers).length" :tabs="shown(layers)">
       <template #layers><LayersPanel /></template>
       <template #appearance><AppearancePanel /></template>
       <template #align><AlignPanel /></template>
@@ -52,7 +58,7 @@ const color: PanelTab[] = [
         </div>
       </template>
     </Panel>
-    <Panel :tabs="color" :body-height="300">
+    <Panel v-if="shown(color).length" :tabs="shown(color)" :body-height="300">
       <template #color><ColorPanel /></template>
       <template #swatches><SwatchesPanel /></template>
       <template #gradient><GradientPanel /></template>

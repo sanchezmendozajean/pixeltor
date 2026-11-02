@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { BUILTIN_WORKSPACES, sanitizeWorkspaces } from '@shared/workspaces'
 import { DEFAULT_SETTINGS, type Settings, type ThemeId } from '@shared/ipc'
 
 const THEMES: ThemeId[] = ['oscuro', 'gris', 'claro']
@@ -18,6 +19,14 @@ function sanitize(raw: unknown): Settings {
     if (theme && THEMES.includes(theme)) out.theme = theme
     const cols = (raw as Partial<Settings>).toolbarColumns
     if (cols === 1 || cols === 2) out.toolbarColumns = cols
+    out.workspaces = sanitizeWorkspaces((raw as Partial<Settings>).workspaces)
+    const active = (raw as Partial<Settings>).activeWorkspace
+    if (
+      typeof active === 'string' &&
+      (BUILTIN_WORKSPACES.some((b) => b.id === active) ||
+        out.workspaces.some((w) => w.id === active))
+    )
+      out.activeWorkspace = active
     const scale = (raw as Partial<Settings>).uiScale
     if (typeof scale === 'number' && scale >= 0.75 && scale <= 2) out.uiScale = scale
     const sc = (raw as Partial<Settings>).shortcuts

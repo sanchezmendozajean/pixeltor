@@ -12,9 +12,11 @@ import StatusBar from '@/layout/StatusBar.vue'
 import TooltipHost from '@/components/TooltipHost.vue'
 import ColorPickerDialog from '@/dialogs/ColorPickerDialog.vue'
 import ShortcutsDialog from '@/dialogs/ShortcutsDialog.vue'
+import WorkspaceDialog from '@/dialogs/WorkspaceDialog.vue'
 import CommandPalette from '@/dialogs/CommandPalette.vue'
 import DialogHost from '@/dialogs/DialogHost.vue'
 import { registerAppActions } from '@/actions/bindings'
+import { restoreWorkspace } from '@/app/workspaces'
 import { handleKeydown } from '@/actions/registry'
 import { handleBeforeClose, listRecovery, startAutosave } from '@/app/documentOps'
 import { useDocumentsStore } from '@/stores/documents'
@@ -36,7 +38,7 @@ let offClose = (): void => {}
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
-  void ui.loadSettings()
+  void ui.loadSettings().then(restoreWorkspace)
   offClose = window.pixeltor.onBeforeClose(() => void handleBeforeClose())
   stopAutosave = startAutosave()
   // Tras un cierre inesperado quedan copias en recovery/.
@@ -61,10 +63,10 @@ onBeforeUnmount(() => {
         <h1 class="pt-sr">{{ t('app.name') }}</h1>
         <DocTabs />
         <div class="pt-viewports"><ViewerArea /></div>
-        <FramesStrip v-if="showPanels" />
+        <FramesStrip v-if="showPanels && !ui.stripHidden" />
       </main>
-      <IconColumn v-if="showPanels" />
-      <Dock v-if="showPanels" />
+      <IconColumn v-if="showPanels && ui.dockVisible" />
+      <Dock v-if="showPanels && ui.dockVisible" />
     </div>
     <StatusBar />
     <TooltipHost />
@@ -72,5 +74,6 @@ onBeforeUnmount(() => {
     <CommandPalette />
     <ColorPickerDialog />
     <ShortcutsDialog />
+    <WorkspaceDialog />
   </div>
 </template>

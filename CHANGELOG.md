@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
-## [Sin publicar] — F7 · Pulido y distribución (en curso)
+## [0.8.0] — F7 · Pulido y distribución
 
 ### Añadido
 
@@ -18,8 +18,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Caché de composición por capas**: mientras se edita la capa activa, la composición de las capas que quedan debajo se reutiliza (parte del mismo búfer que tendría la composición completa, así que el resultado es idéntico byte a byte; hay pruebas que lo comparan tras pintar, deshacer, reordenar, cambiar propiedades y añadir efectos, y una que demuestra que la caché se usa). Se invalida con un evento nuevo `layerIds` (capas tocadas, que emiten los trazos y la edición viva de efectos); cualquier otro cambio o deshacer la descarta. Los efectos asíncronos pendientes en capas inferiores la dejan como provisional. No se usa con grupos ni máscaras de recorte. Con 20 capas de 700×700 con contenido, recomponer la capa 16 pasa de 601 ms a 155 ms (Node). En la app, el scrubbing del desenfoque en 1000×1000 con 20 capas baja de ≈ 0,59 s a ≈ 0,41 s por resultado; sigue sin llegar a 150 ms (el desenfoque de una forma de 800×800 son ≈ 185 ms y el resto es el viaje al worker y la subida a la GPU). Pendiente: vista previa a media resolución mientras se arrastra el control.
 - **La caché de composición también cubre** el arrastre de formas (mover, escalar, rotar, radio de esquina) y de anclas y segmentos: avisan de qué capa tocan, y guías y selección de formas no invalidan nada.
 - **Presión de tableta** en pincel y borrador (casilla «Presión» en la barra de control, activada por defecto): con un lápiz de tableta el tamaño sigue la presión (1 px hasta el tamaño elegido) y se interpola a lo largo de cada segmento; con ratón no cambia nada y el lápiz (1 px pixel-perfect) la ignora. La lógica está en el core (`Stroke.move(x, y, presión)`) con pruebas; el e2e usa eventos de puntero `pen` sintéticos, así que no está probado con una tableta física. Sin curva de presión configurable ni inclinación.
+- **Espacios de trabajo** (selector en la barra de título): Esenciales, Animación, Vectores y Mínimo integrados, y los del usuario (Nuevo… con el estado actual, Guardar cambios, Renombrar, Eliminar, Restablecer). Un espacio guarda qué paneles se ven (Ventana › Paneles), el panel Imágenes (oculto, plegado o desplegado), la disposición de visores por defecto y las columnas de la barra de herramientas; el último usado se recuerda al abrir y los documentos sin disposición propia arrancan con la del espacio. Validado al leer los ajustes (hasta 20, nombres de 40 caracteres, no pisan a los integrados). Los objetos reactivos no pasan por IPC: se copian a JSON al guardar. No guarda _dónde_ está cada panel (el dock es fijo) ni sus alturas.
 - Indicadores de relleno y contorno idénticos a los de Victoria, y texto de los paneles 1 px menor.
 - electron-builder: objetivos **portable** y **deb** además de NSIS y AppImage. NSIS y portable se generan y el ejecutable arranca en Windows; deb y AppImage sin verificar.
+
+### No incluido en esta versión (decisión de alcance)
+
+- Rotación de vista (choca con el render pixel-perfect), estilos gráficos, capas enlazadas y WebP animado (opcional en la spec).
+- Importar y exportar SVG: retirado del alcance, el producto trabaja con mapas de bits.
+- Asociación de archivos, firma de código y auto-actualización (opcionales).
+- Verificación en Linux (AppImage y deb) sin hacer.
+- Rendimiento: el scrubbing del desenfoque de una forma muy grande en 20 capas sigue en ≈ 0,4 s (objetivo < 150 ms); falta la vista previa a media resolución.
 
 ## [0.7.0] — F6 · Visores divididos
 

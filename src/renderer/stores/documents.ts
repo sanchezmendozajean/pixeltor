@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useUiStore } from '@/stores/ui'
 import { computed, markRaw, ref, shallowRef } from 'vue'
 import {
   DocumentSession,
@@ -152,6 +153,9 @@ export const useDocumentsStore = defineStore('documents', () => {
     })
     activeId.value = id
     rev.value++
+    // los documentos sin disposición propia arrancan con la del espacio de trabajo
+    const preset = useUiStore().viewerPreset
+    if (preset !== 'single' && !session.doc.viewers) ws.applyPreset(preset)
     return ws
   }
 

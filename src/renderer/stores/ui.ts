@@ -1,5 +1,13 @@
 import { defineStore } from 'pinia'
 import type { ThemeId } from '@shared/ipc'
+import {
+  DEFAULT_WORKSPACE,
+  PANEL_IDS,
+  type PanelId,
+  type SavedWorkspace,
+  type WorkspaceLayout
+} from '@shared/workspaces'
+import { loadWorkspaces } from '@/app/workspaces'
 import { loadShortcutOverrides } from '@/actions/registry'
 import { DEFAULT_EXPORT, type ExportOptions } from '@/app/exportOps'
 import type { SheetImportState } from '@/app/importOps'
@@ -26,6 +34,15 @@ export const useUiStore = defineStore('ui', {
     onion: { enabled: false, before: 1, after: 1, opacity: 0.4, tint: true },
     /** Panel Imágenes desplegado (miniaturas grandes con duración). */
     stripExpanded: false,
+    /** Espacio de trabajo: paneles visibles, panel Imágenes, visores por defecto. */
+    dockVisible: true,
+    panelsVisible: [...PANEL_IDS] as PanelId[],
+    stripHidden: false,
+    viewerPreset: 'single' as WorkspaceLayout['viewers'],
+    workspaceId: DEFAULT_WORKSPACE,
+    customWorkspaces: [] as SavedWorkspace[],
+    /** Diálogo de nombre de espacio de trabajo: nuevo o renombrar el activo. */
+    workspaceDialog: null as null | 'new' | 'rename',
     /** Imágenes seleccionadas en el panel Imágenes. */
     selectedImages: [] as string[],
     /** Pide a un grupo de paneles que muestre la pestaña con este id. */
@@ -63,6 +80,8 @@ export const useUiStore = defineStore('ui', {
       this.toolbarColumns = s.toolbarColumns
       loadShortcutOverrides(s.shortcuts)
       this.uiScale = s.uiScale
+      this.workspaceId = s.activeWorkspace
+      loadWorkspaces(s.workspaces)
       window.pixeltor.ui.setScale(s.uiScale)
     },
     async setUiScale(f: number) {

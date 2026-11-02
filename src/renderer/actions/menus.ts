@@ -197,6 +197,33 @@ export const MENUS: MenuDef[] = [
       act('window.closeViewer'),
       {
         type: 'submenu',
+        label: 'menus.panels',
+        items: [
+          act('window.panel.properties'),
+          act('window.panel.navigator'),
+          act('window.panel.history'),
+          act('window.panel.layers'),
+          act('window.panel.appearance'),
+          act('window.panel.align'),
+          act('window.panel.effects'),
+          act('window.panel.color'),
+          act('window.panel.swatches'),
+          act('window.panel.gradient')
+        ]
+      },
+      {
+        type: 'submenu',
+        label: 'menus.workspace',
+        items: [
+          act('window.workspace.new'),
+          act('window.workspace.save'),
+          act('window.workspace.rename'),
+          act('window.workspace.delete'),
+          act('window.workspace.reset')
+        ]
+      },
+      {
+        type: 'submenu',
         label: 'menus.viewerLayout',
         items: [
           act('window.layout.single'),

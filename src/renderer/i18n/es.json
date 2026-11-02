@@ -16,6 +16,8 @@
     "theme": "Tema",
     "pathfinder": "Buscatrazos",
     "uiScale": "Escala de la interfaz",
+    "panels": "Paneles",
+    "workspace": "Espacio de trabajo",
     "viewerLayout": "Disposición de visores",
     "effectCategories": "Categorías de efectos"
   },
@@ -153,6 +155,25 @@
       "splitV": "Dividir visor en vertical",
       "splitH": "Dividir visor en horizontal",
       "closeViewer": "Cerrar visor",
+      "workspace": {
+        "new": "Nuevo espacio de trabajo…",
+        "save": "Guardar cambios del espacio de trabajo",
+        "rename": "Renombrar espacio de trabajo…",
+        "delete": "Eliminar espacio de trabajo",
+        "reset": "Restablecer espacio de trabajo"
+      },
+      "panel": {
+        "properties": "Propiedades",
+        "navigator": "Navegador",
+        "history": "Historial",
+        "layers": "Capas",
+        "appearance": "Apariencia",
+        "align": "Alinear",
+        "effects": "Efectos",
+        "color": "Color",
+        "swatches": "Muestras",
+        "gradient": "Degradado"
+      },
       "layout": {
         "single": "Disposición: un visor",
         "2v": "Disposición: 2 verticales",
@@ -234,7 +255,16 @@
     "searchSoon": "La paleta de comandos llega en F3"
   },
   "workspaces": {
-    "essentials": "Esenciales"
+    "essentials": "Esenciales",
+    "animation": "Animación",
+    "vectors": "Vectores",
+    "minimal": "Mínimo",
+    "dialogNew": "Nuevo espacio de trabajo",
+    "dialogRename": "Renombrar espacio de trabajo",
+    "name": "Nombre",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "limit": "Has llegado al máximo de espacios de trabajo."
   },
   "controlbar": {
     "label": "Barra de control",

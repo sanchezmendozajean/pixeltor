@@ -1,8 +1,47 @@
 <script setup lang="ts">
 import MenuBar from './MenuBar.vue'
 import PtIcon from '@/components/PtIcon.vue'
-import { actionShortcut } from '@/actions/registry'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { actionLabel, actionShortcut, execute, isEnabled } from '@/actions/registry'
+import { switchWorkspace, workspaceEntries, workspaceName } from '@/app/workspaces'
+import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
+
+const ui = useUiStore()
+const menu = ref<{ x: number; y: number } | null>(null)
+function open(e: MouseEvent): void {
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  menu.value = { x: r.left, y: r.bottom + 2 }
+}
+function dismiss(e: Event): void {
+  if (!menu.value) return
+  if (e instanceof KeyboardEvent && e.key !== 'Escape') return
+  if (e instanceof PointerEvent && (e.target as HTMLElement).closest('.wsmenu')) return
+  menu.value = null
+}
+function pick(id: string): void {
+  menu.value = null
+  void switchWorkspace(id)
+}
+function run(id: string): void {
+  menu.value = null
+  execute(id)
+}
+const ACTIONS = [
+  'window.workspace.new',
+  'window.workspace.save',
+  'window.workspace.rename',
+  'window.workspace.delete',
+  'window.workspace.reset'
+]
+onMounted(() => {
+  document.addEventListener('pointerdown', dismiss, true)
+  document.addEventListener('keydown', dismiss, true)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', dismiss, true)
+  document.removeEventListener('keydown', dismiss, true)
+})
 </script>
 
 <template>
@@ -22,11 +61,45 @@ import { t } from '@/i18n'
       type="button"
       class="pt-select pt-nodrag workspace"
       :data-tip="t('titlebar.workspace')"
-      :aria-label="`${t('titlebar.workspace')}: ${t('workspaces.essentials')}`"
+      :aria-label="`${t('titlebar.workspace')}: ${workspaceName(ui.workspaceId)}`"
+      aria-haspopup="menu"
+      :aria-expanded="!!menu"
+      @click="open"
     >
-      <span>{{ t('workspaces.essentials') }}</span>
+      <span>{{ workspaceName(ui.workspaceId) }}</span>
       <PtIcon name="chevDown" />
     </button>
+    <Teleport to="body">
+      <div
+        v-if="menu"
+        class="pt-menu wsmenu"
+        role="menu"
+        :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
+      >
+        <div
+          v-for="w in workspaceEntries()"
+          :key="w.id"
+          class="pt-mi"
+          role="menuitemradio"
+          :aria-checked="w.id === ui.workspaceId"
+          @click="pick(w.id)"
+        >
+          <span class="chk">{{ w.id === ui.workspaceId ? '✓' : '' }}</span>
+          {{ w.name }}
+        </div>
+        <div class="pt-msep" role="separator" />
+        <div
+          v-for="id in ACTIONS"
+          :key="id"
+          class="pt-mi"
+          role="menuitem"
+          :class="{ 'is-disabled': !isEnabled(id) }"
+          @click="run(id)"
+        >
+          {{ actionLabel(id) }}
+        </div>
+      </div>
+    </Teleport>
     <button type="button" class="pt-select pt-nodrag search" data-action="help.commandPalette">
       <PtIcon name="search" />
       <span class="grow">{{ t('titlebar.search') }}</span>
@@ -61,6 +134,16 @@ import { t } from '@/i18n'
   justify-content: flex-start;
   gap: var(--space-3);
   color: var(--text-secondary);
+}
+.wsmenu {
+  position: fixed;
+  z-index: 80;
+  min-width: 220px;
+}
+.chk {
+  position: absolute;
+  left: 10px;
+  width: 14px;
 }
 .grow {
   flex: 1;
