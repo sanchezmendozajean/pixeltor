@@ -57,7 +57,7 @@ import {
   makePolygon,
   makeRect,
   makeStar,
-  offsetPolygon,
+  multiply,
   selectShapes,
   shapeLines,
   shapesBox,
@@ -154,16 +154,19 @@ function currentAppearance(closed: boolean): Appearance {
  * de la caja, y no por la arista entre dos píxeles.
  */
 function outlineLines(sh: Shape): ReturnType<typeof shapeLines> {
-  const lines = shapeLines(sh)
-  if (sh.kind !== 'rect' && sh.kind !== 'ellipse') return lines
-  return lines.map((l) => {
-    if (!l.closed || l.pts.length < 3) return l
-    const xs = l.pts.map((p) => p.x)
-    const ys = l.pts.map((p) => p.y)
-    // una forma de menos de un píxel no admite el desplazamiento hacia dentro
-    if (Math.max(...xs) - Math.min(...xs) < 1.5 || Math.max(...ys) - Math.min(...ys) < 1.5) return l
-    return { ...l, pts: offsetPolygon(l.pts, -0.5) }
-  })
+  // Se construye la forma encogida medio píxel (y no se desplaza su polígono, que en esquinas
+  // redondeadas pequeñas deja picos hacia fuera). Con menos de 1,5 px se deja tal cual.
+  if (sh.kind === 'rect' && sh.w >= 1.5 && sh.h >= 1.5)
+    return shapeLines({
+      ...sh,
+      w: sh.w - 1,
+      h: sh.h - 1,
+      radius: sh.radius.map((r) => Math.max(0, r - 0.5)) as typeof sh.radius,
+      transform: multiply(sh.transform, [1, 0, 0, 1, 0.5, 0.5])
+    })
+  if (sh.kind === 'ellipse' && sh.rx >= 0.75 && sh.ry >= 0.75)
+    return shapeLines({ ...sh, rx: sh.rx - 0.5, ry: sh.ry - 0.5 })
+  return shapeLines(sh)
 }
 
 /** Trazado visible de una forma: el suyo, o el equivalente si es paramétrica (solo para mostrar). */

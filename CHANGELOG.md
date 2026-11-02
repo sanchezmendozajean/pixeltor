@@ -41,6 +41,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - Añadir un ancla con la pluma sobre una forma (p. ej. un rectángulo redondeado) lleva al centro de su píxel todas las anclas del trazado, no sólo la nueva. El cursor de la pluma se ha girado 90° en sentido horario (la punta queda arriba a la izquierda).
 - Los **tiradores de las anclas** (puntos de control de las curvas) también caen siempre en el centro de un píxel: al arrastrarlos, al sacarlos de un ancla (Convertir ancla / Alt) y al convertir o centrar formas con curvas; el tirador opuesto de un ancla suave se recoloca en un centro. Los tiradores creados con la pluma ya lo estaban.
 - Indicador de relleno/contorno: desaparecen las líneas grises «fantasma» en los bordes verticales del anillo del contorno (el recorte con clip-path se suavizaba entre píxeles); el anillo se dibuja ahora con sombras ajustadas a píxeles y el recorte sólo sirve para recibir los clics.
+- El contorno de selección de un rectángulo con las esquinas redondeadas ya no muestra picos hacia fuera en las esquinas cuando el radio es pequeño (se dibuja la forma encogida medio píxel en lugar de desplazar su polígono).
 - Arreglo menor: la etiqueta de zoom de la cabecera del visor no se actualizaba tras encajar la imagen.
 
 ### No incluido en esta versión (decisión de alcance)
