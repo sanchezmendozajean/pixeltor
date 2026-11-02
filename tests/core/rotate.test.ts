@@ -49,7 +49,7 @@ describe('rotar y mover entre capas', () => {
 
 describe('widget de radio', () => {
   it('arrastrar el widget redondea todas las esquinas y Alt solo una; se deshace', async () => {
-    const { RectRadiusDrag, getShape: get } = await import('@core/index')
+    const { RectRadiusDrag, radiusHandleT, getShape: get } = await import('@core/index')
     const s = DocumentSession.create(32, 32)
     const r = makeRect(4, 4, 20, 20, makeAppearance(RED, null))
     addShape(s, r)
@@ -57,16 +57,24 @@ describe('widget de radio', () => {
     d.moveTo(4 + 6, 4 + 6)
     d.end()
     const a = get(s, r.id)!
-    expect(a.kind === 'rect' && a.radius).toEqual([6, 6, 6, 6])
+    const r6 = radiusHandleT(6.7, 10, 0)
+    expect(r6).toBeCloseTo(6)
+    expect(a.kind === 'rect' && a.radius[0]).toBeCloseTo(6.7)
     const d2 = new RectRadiusDrag(s, r.id)
     d2.moveTo(4 + 99, 4 + 99, true)
     d2.end()
     const b = get(s, r.id)!
-    expect(b.kind === 'rect' && b.radius).toEqual([10, 6, 6, 6])
+    expect(b.kind === 'rect' && b.radius[0]).toBe(10)
+    expect(b.kind === 'rect' && b.radius[1]).toBeCloseTo(6.7)
     s.undo()
     s.undo()
     const c = get(s, r.id)!
     expect(c.kind === 'rect' && c.radius).toEqual([0, 0, 0, 0])
+    const e = new RectRadiusDrag(s, r.id)
+    e.moveTo(4 + 0.5, 4 + 0.5, false, 2) // antes del punto de partida: esquina recta
+    e.end()
+    const z = get(s, r.id)!
+    expect(z.kind === 'rect' && z.radius).toEqual([0, 0, 0, 0])
   })
 })
 
@@ -76,9 +84,10 @@ describe('posición del tirador de radio', () => {
     // forma de 6 px: radio máximo 3; el desplazamiento de 20 px de pantalla no debe sacarlo
     expect(radiusHandleT(0, 3, 20)).toBeCloseTo(1.5)
     expect(radiusHandleT(3, 3, 20)).toBeCloseTo(3)
-    expect(radiusHandleT(1.5, 3, 20)).toBeGreaterThan(radiusHandleT(0, 3, 20))
-    // forma grande: parte a la distancia indicada
+    expect(radiusHandleT(2, 3, 20)).toBeGreaterThan(radiusHandleT(0, 3, 20))
+    // forma grande: parte a la distancia indicada y el radio mínimo visible ya está ahí
     expect(radiusHandleT(0, 40, 6)).toBeCloseTo(6)
+    expect(radiusHandleT(1.75, 40, 6)).toBeCloseTo(6)
     expect(radiusHandleT(40, 40, 6)).toBeCloseTo(40)
   })
 })

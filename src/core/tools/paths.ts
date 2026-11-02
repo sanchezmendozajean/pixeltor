@@ -752,14 +752,33 @@ export class ShapeRotate {
 }
 
 /**
+ * Radio mínimo que cambia lo que se pinta: el píxel de la esquina (centro a 0,5 px de los lados)
+ * sólo sale del relleno cuando el radio supera 1 / (√2 − 1) − 0,5 ≈ 1,71. Por debajo la esquina
+ * se ve igual que con radio 0, así que el tirador se mueve sólo entre ese radio y el máximo.
+ */
+export const MIN_VISIBLE_RADIUS = 1.75
+
+/**
  * Distancia a lo largo de la diagonal (desde la esquina) a la que se dibuja el tirador del radio:
- * va de `offset` con radio 0 hasta el radio máximo, de modo que nunca sale de la forma ni queda
- * pegado a la esquina, y se mueve de forma continua con el radio.
+ * con radio 0 (esquina recta) está en `offset`; el resto del recorrido va del radio mínimo visible
+ * hasta el máximo, de modo que cualquier posición del tirador curva la esquina, nunca sale de la
+ * forma ni queda pegado a la esquina, y se mueve de forma continua con el radio.
  */
 export function radiusHandleT(radius: number, max: number, offset: number): number {
   if (max <= 0) return 0
   const off = Math.min(offset, max / 2)
-  return off + (Math.min(radius, max) * (max - off)) / max
+  const rmin = Math.min(MIN_VISIBLE_RADIUS, max)
+  if (radius <= 0 || max <= rmin) return off
+  return off + ((Math.min(radius, max) - rmin) / (max - rmin)) * (max - off)
+}
+
+/** Inversa de `radiusHandleT`: radio que corresponde a la posición t del tirador. */
+function radiusFromT(t: number, max: number, offset: number): number {
+  if (max <= 0) return 0
+  const off = Math.min(offset, max / 2)
+  const rmin = Math.min(MIN_VISIBLE_RADIUS, max)
+  if (t <= off || max <= rmin) return t <= off ? 0 : max
+  return rmin + (Math.min(t - off, max - off) / (max - off)) * (max - rmin)
 }
 
 /** Radio de esquina del rectángulo arrastrando el widget (Alt: solo la esquina superior izquierda). */
@@ -788,8 +807,7 @@ export class RectRadiusDrag {
     if (!inv) return
     const l = apply(inv, { x: fx, y: fy })
     const max = Math.min(this.rect.w, this.rect.h) / 2
-    const off = Math.min(offset, max / 2)
-    const r = max <= 0 ? 0 : Math.max(0, Math.min(max, (((l.x + l.y) / 2 - off) * max) / (max - off)))
+    const r = radiusFromT((l.x + l.y) / 2, max, offset)
     this.rect.radius = single
       ? ([r, this.start[1], this.start[2], this.start[3]] as typeof this.start)
       : [r, r, r, r]
