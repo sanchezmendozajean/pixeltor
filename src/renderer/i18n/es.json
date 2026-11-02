@@ -14,6 +14,7 @@
     "window": "Ventana",
     "help": "Ayuda",
     "theme": "Tema",
+    "pathfinder": "Buscatrazos",
     "viewerLayout": "Disposición de visores",
     "effectCategories": "Categorías de efectos"
   },
@@ -51,6 +52,12 @@
       "convertToPath": "Convertir en trazado",
       "compound": "Crear trazado compuesto",
       "releaseCompound": "Liberar trazado compuesto",
+      "pf": {
+        "unite": "Unir",
+        "minusFront": "Restar forma frontal",
+        "intersect": "Intersecar",
+        "exclude": "Excluir"
+      },
       "simplify": "Simplificar trazado",
       "offsetOut": "Expandir trazado 1 px",
       "offsetIn": "Contraer trazado 1 px",

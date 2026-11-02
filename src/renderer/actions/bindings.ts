@@ -24,6 +24,7 @@ import {
   rasterizeLayerEffects,
   convertToPath,
   makeCompound,
+  pathfinder,
   offsetPaths,
   outlineStroke,
   releaseCompound,
@@ -316,6 +317,11 @@ export function registerAppActions(): void {
     enabled: () => has() && (docs.rev, ses().selectedShapes.length > 1),
     run: () => void makeCompound(ses(), ses().selectedShapes)
   })
+  for (const op of ['unite', 'minusFront', 'intersect', 'exclude'] as const)
+    registerHandler(`object.pf.${op}`, {
+      enabled: () => has() && (docs.rev, ses().selectedShapes.length > 1),
+      run: () => void pathfinder(ses(), ses().selectedShapes, op)
+    })
   registerHandler('object.releaseCompound', {
     enabled: () =>
       shapesSelected() &&

@@ -78,6 +78,16 @@ export const MENUS: MenuDef[] = [
       sep,
       act('object.compound'),
       act('object.releaseCompound'),
+      {
+        type: 'submenu',
+        label: 'menus.pathfinder',
+        items: [
+          act('object.pf.unite'),
+          act('object.pf.minusFront'),
+          act('object.pf.intersect'),
+          act('object.pf.exclude')
+        ]
+      },
       act('object.outlineStroke'),
       act('object.offsetOut'),
       act('object.offsetIn'),
