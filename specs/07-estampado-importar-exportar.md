@@ -32,7 +32,6 @@ Invariante a probar: **el render de la imagen antes y después de cualquier esta
 | GIF animado | Una imagen por frame con su duración | F5 |
 | Hoja de sprites (sprite sheet) | Diálogo: tamaño de celda o filas/columnas, margen, espaciado, orden → una imagen por celda | F5 |
 | Secuencia de PNG | Seleccionar varios archivos → imágenes en orden alfabético natural | F5 |
-| SVG | Importar trazados como formas (rellenos/contornos sólidos y degradados lineales/radiales) | F7 |
 | Aseprite (`.ase/.aseprite`) | Capas y frames | futuro |
 | Paletas `.gpl`, `.pal`, `.hex`, `.ase` (Adobe swatch) | Panel Muestras | F3 |
 
@@ -58,6 +57,5 @@ Opciones comunes:
 | **APNG** | Animación con alfa completo | F5 |
 | **WebP animado** | Opcional | F7 |
 | **ICO** (Windows) | Combina varias imágenes del documento de distintos tamaños (16, 24, 32, 48, 64, 128, 256) en un `.ico` | F5 |
-| **SVG de píxeles** | Cada píxel como `rect` agrupado por color (para web) | F7 |
 
 Exportar es **no destructivo**: renderiza la composición completa (estampado virtual de formas y efectos) sin modificar el documento.

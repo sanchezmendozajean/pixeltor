@@ -61,6 +61,6 @@ Cada fase termina con: pruebas unitarias en verde, app ejecutable en Windows y L
 ## F7 · Pulido y distribución
 - Buscatrazos, estilos gráficos, grupos de capas, máscara de recorte, capas enlazadas (si cabe).
 - Atajos personalizables, workspaces personalizados, tema Gris medio, escala de UI.
-- Presión de tableta, rotación de vista, importación SVG, WebP animado.
+- Presión de tableta, rotación de vista, WebP animado.
 - Asociación de archivos, .deb, firma de código (si aplica), auto-actualización (opcional).
 - Revisión de accesibilidad y rendimiento.
