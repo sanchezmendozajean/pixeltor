@@ -159,3 +159,38 @@ describe('máscara de recorte', () => {
     expect(flat(s).get(3, 3) & 255).toBe(128)
   })
 })
+
+describe('correcciones de la revisión', () => {
+  it('una capa nueva sobre un miembro entra en el grupo y no rompe su bloque', () => {
+    const { s, a, b } = setup()
+    const g = createGroup(s, a.id)!
+    addToGroup(s, b.id, g.id)
+    s.setActiveLayer(b.id) // miembro de arriba
+    const n = s.addLayer('N')!
+    expect(n.groupId).toBe(g.id)
+    const back = loadDocument(saveDocument(s.doc, s.rasters)).doc.images[0]!.layers
+    expect(back.filter((l) => l.groupId === g.id)).toHaveLength(3)
+  })
+
+  it('no se duplica un grupo y la copia de una base queda tras sus recortes', () => {
+    const { s, a, b } = setup()
+    const g = createGroup(s, a.id)!
+    expect(s.duplicateLayer(g.id)).toBeNull()
+    ungroup(s, g.id)
+    toggleClip(s, b.id) // b recortada sobre a
+    const copy = s.duplicateLayer(a.id)!
+    const ids = s.image.layers.map((l) => l.id)
+    expect(ids.indexOf(copy.id)).toBeGreaterThan(ids.indexOf(b.id))
+    expect(s.image.layers.find((l) => l.id === b.id)!.clip).toBe(true)
+  })
+
+  it('soltar un grupo en su sitio no registra un paso de historial', () => {
+    const { s, a, b } = setup()
+    const g = createGroup(s, a.id)!
+    addToGroup(s, b.id, g.id)
+    const steps = s.history.entries.length
+    const start = s.image.layers.findIndex((l) => l.groupId === g.id)
+    expect(s.moveLayer(g.id, start)).toBe(false)
+    expect(s.history.entries.length).toBe(steps)
+  })
+})

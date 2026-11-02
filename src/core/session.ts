@@ -293,8 +293,11 @@ export class DocumentSession {
       img.layers.length
     )
     this.rasters.set(layer.raster.id, new Bitmap(img.width, img.height))
+    const active = img.layers.find((l) => l.id === this.activeLayerId)
     const at = img.layers.findIndex((l) => l.id === this.activeLayerId) + 1
     img.layers.splice(at, 0, layer)
+    // sobre un miembro de un grupo, la capa nueva entra en el grupo (si no, rompería su bloque)
+    if (active?.groupId) layer.groupId = active.groupId
     this.activeLayerId = layer.id
     tx.commit({ model: true })
     return layer
@@ -318,7 +321,8 @@ export class DocumentSession {
     const img = this.image
     const i = img.layers.findIndex((l) => l.id === id)
     const src = img.layers[i]
-    if (!src || img.layers.length >= MAX_LAYERS) return null
+    // duplicar un grupo entero no está admitido (la copia quedaría sin miembros)
+    if (!src || src.isGroup || img.layers.length >= MAX_LAYERS) return null
     const tx = this.begin('Duplicar capa')
     const copy: Layer = {
       ...cloneLayerMeta(src),
@@ -327,7 +331,10 @@ export class DocumentSession {
       raster: { ...src.raster, id: newId() }
     }
     this.rasters.set(copy.raster.id, this.rasters.get(src.raster.id)!.clone())
-    img.layers.splice(i + 1, 0, copy)
+    // la copia va tras las capas recortadas sobre el original, para no quitárselas
+    let at = i + 1
+    while (at < img.layers.length && img.layers[at]!.clip && !img.layers[at]!.isGroup) at++
+    img.layers.splice(at, 0, copy)
     this.activeLayerId = copy.id
     tx.commit({ model: true })
     return copy
@@ -343,7 +350,8 @@ export class DocumentSession {
     const block = moved.isGroup ? img.layers.filter((l) => l.groupId === moved.id) : []
     block.push(moved)
     const dest = Math.max(0, Math.min(img.layers.length - block.length, to))
-    if (from === dest && block.length === 1) return false
+    // el bloque de un grupo empieza en sus miembros: ahí es donde se compara el destino
+    if (from - (block.length - 1) === dest) return false
     const tx = this.begin('Reordenar capa')
     const rest = img.layers.filter((l) => !block.includes(l))
     let at = dest

@@ -90,18 +90,11 @@ export function invalidatePrefix(c: PrefixCache, img: PxImage, layerIds?: readon
     c.valid = false
 }
 
-/** ¿Alguna capa de la lista tiene un efecto cuyo resultado aún no ha llegado? */
-function pendingFx(layers: Layer[], fx: FxProvider | undefined): boolean {
-  if (!fx?.isPending) return false
+/** ¿Alguna capa de la lista (o sus formas) tiene efectos activos? */
+function hasFx(layers: Layer[]): boolean {
   const shapes = (list: Shape[]): boolean =>
-    list.some(
-      (sh) =>
-        (hasActiveEffects(sh.effects) && fx.isPending!(`shape:${sh.id}`)) ||
-        (sh.kind === 'group' && shapes(sh.children))
-    )
-  return layers.some(
-    (l) => (hasActiveEffects(l.effects) && fx.isPending!(`layer:${l.id}`)) || shapes(l.shapes)
-  )
+    list.some((sh) => hasActiveEffects(sh.effects) || (sh.kind === 'group' && shapes(sh.children)))
+  return layers.some((l) => hasActiveEffects(l.effects) || shapes(l.shapes))
 }
 
 /**
@@ -119,8 +112,9 @@ export function composeImage(
   if (r.w <= 0 || r.h <= 0) return
   const hot = extras.hotLayerId ? img.layers.findIndex((l) => l.id === extras.hotLayerId) : -1
   const cache = extras.prefix
-  if (cache && hot > 0 && !img.layers.some((l) => l.isGroup || l.clip)) {
-    const below = img.layers.slice(0, hot)
+  const below = img.layers.slice(0, Math.max(0, hot))
+  // con efectos en las capas de debajo (que se calculan aparte, por regiones) no se usa la caché
+  if (cache && hot > 0 && !img.layers.some((l) => l.isGroup || l.clip) && !hasFx(below)) {
     if (
       !cache.valid ||
       cache.layerId !== extras.hotLayerId ||
@@ -138,8 +132,7 @@ export function composeImage(
         preview: null
       })
       cache.layerId = extras.hotLayerId ?? null
-      // con efectos de capas inferiores aún por llegar, esta composición es provisional
-      cache.valid = !pendingFx(below, extras.fx)
+      cache.valid = true
     }
     for (let y = r.y; y < r.y + r.h; y++) {
       const o = (y * out.width + r.x) * 4
@@ -290,6 +283,8 @@ function acquire(w: number, h: number, r: Rect): Bitmap {
 
 function release(b: Bitmap): void {
   const k = `${b.width}x${b.height}`
+  // sólo se guardan búferes del tamaño en uso: al cambiar de tamaño se sueltan los demás
+  for (const other of POOL.keys()) if (other !== k) POOL.delete(other)
   const list = POOL.get(k) ?? []
   if (list.length < 6) list.push(b)
   POOL.set(k, list)

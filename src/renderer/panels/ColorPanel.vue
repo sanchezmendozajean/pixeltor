@@ -4,6 +4,7 @@
 import { computed, ref, watch } from 'vue'
 import { useColorsStore } from '@/stores/colors'
 import { hexToHsv, hexToRgba, hsvToHex, rgbaToHex } from '@/stores/colorUtil'
+import { arrowStep, clamp01 } from '@/app/colorKeys'
 import { t } from '@/i18n'
 
 const colors = useColorsStore()
@@ -58,37 +59,24 @@ function onHex(e: Event): void {
   else colors.stroke = hex
 }
 
-/** Teclado en los controles de color: flechas (Mayús = paso grande). */
-function arrows(e: KeyboardEvent): [number, number] | null {
-  const d = e.shiftKey ? 0.1 : 0.01
-  const k: Record<string, [number, number]> = {
-    ArrowLeft: [-d, 0],
-    ArrowRight: [d, 0],
-    ArrowUp: [0, -d],
-    ArrowDown: [0, d]
-  }
-  const v = k[e.key]
-  if (v) e.preventDefault()
-  return v ?? null
-}
-
-const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 function svKey(e: KeyboardEvent): void {
-  const a = arrows(e)
+  const a = arrowStep(e)
   if (!a) return
   hsv.value.s = clamp01(hsv.value.s + a[0])
   hsv.value.v = clamp01(hsv.value.v - a[1])
   commit()
 }
 function hueKey(e: KeyboardEvent): void {
-  const a = arrows(e)
+  const a = arrowStep(e)
   if (!a) return
   hsv.value.h = Math.min(360, Math.max(0, hsv.value.h + (a[0] + a[1]) * 360))
   commit()
 }
-const svText = computed(
-  () =>
-    `${Math.round(hsv.value.s * 100)} % de saturación, ${Math.round(hsv.value.v * 100)} % de brillo`
+const svText = computed(() =>
+  t('color.saturationBrightness', {
+    s: Math.round(hsv.value.s * 100),
+    v: Math.round(hsv.value.v * 100)
+  })
 )
 
 const hueColor = computed(() => hsvToHex(hsv.value.h, 1, 1))

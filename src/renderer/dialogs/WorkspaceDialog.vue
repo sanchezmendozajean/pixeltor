@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Nombre de un espacio de trabajo: crear uno con el estado actual o renombrar el activo.
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { createWorkspace, renameWorkspace, workspaceName } from '@/app/workspaces'
 import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
@@ -42,6 +42,7 @@ function onKey(e: KeyboardEvent): void {
   }
 }
 window.addEventListener('keydown', onKey, true)
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
 </script>
 
 <template>

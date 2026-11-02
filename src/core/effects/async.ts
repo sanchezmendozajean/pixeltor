@@ -29,8 +29,6 @@ export interface FxProvider {
     out: Rect,
     ctx: EffectContext
   ): Region
-  /** ¿Hay un cálculo en curso o en cola para esa ranura? (sin él, todo resultado es definitivo) */
-  isPending?(slot: string): boolean
 }
 
 /** Proveedor síncrono (exportar, estampar, pruebas). */
@@ -60,10 +58,6 @@ export class AsyncFxProvider implements FxProvider {
     private readonly onBusy: (busy: boolean) => void = () => {},
     private readonly maxEntries = 48
   ) {}
-
-  isPending(slot: string): boolean {
-    return this.inflight.has(slot) || this.queued.has(slot)
-  }
 
   get busy(): boolean {
     return this.pending > 0

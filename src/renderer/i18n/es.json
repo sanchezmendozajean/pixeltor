@@ -513,7 +513,8 @@
     "hex": "Valor hexadecimal",
     "primary": "Color de relleno",
     "secondary": "Color de contorno",
-    "saturationValue": "Saturación y brillo"
+    "saturationValue": "Saturación y brillo",
+    "saturationBrightness": "{s} % de saturación, {v} % de brillo"
   },
   "commands": {
     "title": "Paleta de comandos",

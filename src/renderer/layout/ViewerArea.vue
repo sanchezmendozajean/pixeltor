@@ -18,7 +18,11 @@ function bind(ws: Workspace | null): void {
   tick.value++
   if (!ws) return
   mirrorViewerFlags(ws)
-  off = ws.onLayout(() => tick.value++)
+  // cualquier cambio de disposición (cerrar un visor, cambiar el activo…) puede cambiar el visor activo
+  off = ws.onLayout(() => {
+    mirrorViewerFlags(ws)
+    tick.value++
+  })
 }
 
 watch(() => docs.active, bind, { immediate: true })

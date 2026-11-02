@@ -52,10 +52,21 @@ export function getSettings(): Settings {
 }
 
 /** Guardado atómico: escribe en .tmp y renombra. */
-export async function updateSettings(patch: Partial<Settings>): Promise<Settings> {
+let writing: Promise<unknown> = Promise.resolve()
+
+export function updateSettings(patch: Partial<Settings>): Promise<Settings> {
   current = sanitize({ ...current, ...patch })
-  const tmp = `${file()}.tmp`
-  await writeFile(tmp, JSON.stringify(current, null, 2), 'utf8')
-  await rename(tmp, file())
-  return current
+  const snapshot = JSON.stringify(current, null, 2)
+  const result = current
+  // las escrituras se encadenan: dos cambios seguidos compartirían el mismo .tmp y el segundo
+  // renombrado fallaría
+  const run = async (): Promise<Settings> => {
+    const tmp = `${file()}.tmp`
+    await writeFile(tmp, snapshot, 'utf8')
+    await rename(tmp, file())
+    return result
+  }
+  const next = writing.then(run, run)
+  writing = next.catch(() => undefined)
+  return next
 }

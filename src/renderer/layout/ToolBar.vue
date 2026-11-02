@@ -35,7 +35,7 @@ const MODES = [
   {
     id: 'none',
     label: 'toolbar.none',
-    svg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M5 19 19 5" stroke="#F0524F"/>'
+    svg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M5 19 19 5" style="stroke: var(--danger)"/>'
   }
 ] as const
 </script>
