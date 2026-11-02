@@ -1083,10 +1083,12 @@
 .pt-fswidget__stroke.is-top {
   z-index: 3;
 }
-/* El contorno es un marco hueco: su color sólo se ve en el anillo (ancho --ring). */
+/* El botón del contorno sólo recibe los clics: un marco hueco (clip-path, para que el hueco deje
+   pasar los clics al relleno) transparente. Se ve a través de .pt-fswidget__face. */
 .pt-fswidget__stroke {
   --ring: 6px;
-  /* clip-path (no máscara) para que el hueco también deje pasar los clics al relleno. */
+  background: transparent;
+  box-shadow: none;
   clip-path: polygon(
     evenodd,
     0 0,
@@ -1101,13 +1103,21 @@
     var(--ring) var(--ring)
   );
 }
-.pt-fswidget__stroke::after {
-  content: '';
+/* Dibujo del anillo: la caja es el hueco y las sombras (sin recortes, ajustadas a píxeles) pintan
+   hacia fuera borde negro, borde blanco, color, borde blanco y borde negro. */
+.pt-fswidget__face {
   position: absolute;
-  inset: var(--ring);
+  z-index: 0;
+  pointer-events: none;
   box-shadow:
     0 0 0 1px #000,
-    0 0 0 2px #fff;
+    0 0 0 2px #fff,
+    0 0 0 calc(var(--ring) - 2px) var(--paint),
+    0 0 0 calc(var(--ring) - 1px) #fff,
+    0 0 0 var(--ring) #000;
+}
+.pt-fswidget__face.is-top {
+  z-index: 3;
 }
 .pt-toolbar.is-two {
   width: 76px;

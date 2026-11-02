@@ -15,6 +15,7 @@ const ui = useUiStore()
 const two = computed(() => ui.toolbarColumns === 2)
 const size = computed(() => (two.value ? 50 : 30))
 const chip = computed(() => Math.round(size.value * 0.66))
+const ring = computed(() => Math.max(6, Math.round(chip.value * 0.3)))
 const modeSize = computed(() => (two.value ? 17 : 10))
 
 const SWAP_SVG =
@@ -110,6 +111,20 @@ const MODES = [
         role="group"
         :aria-label="t('toolbar.fillStroke')"
       >
+        <!-- Dibujo del contorno (anillo de color con marco negro y blanco); el botón de abajo sólo recibe los clics. -->
+        <span
+          class="pt-fswidget__face"
+          :class="{ 'is-top': colors.target === 'stroke' }"
+          :style="{
+            width: `${chip - 2 * ring}px`,
+            height: `${chip - 2 * ring}px`,
+            left: `${size - chip + ring}px`,
+            top: `${size - chip + ring}px`,
+            '--ring': `${ring}px`,
+            '--paint': colors.stroke
+          }"
+          aria-hidden="true"
+        />
         <button
           type="button"
           class="pt-fswidget__stroke"
@@ -119,8 +134,7 @@ const MODES = [
             height: `${chip}px`,
             left: `${size - chip}px`,
             top: `${size - chip}px`,
-            '--ring': `${Math.max(6, Math.round(chip * 0.3))}px`,
-            background: colors.stroke
+            '--ring': `${ring}px`
           }"
           :aria-label="`${t('controlbar.stroke')} ${colors.stroke}`"
           :aria-pressed="colors.target === 'stroke'"
