@@ -350,3 +350,32 @@ describe('escalar un trazado centrado', () => {
     expect(shapesBox(s, [r.id])).toEqual({ x: b.x, y: b.y, w: b.w, h: b.h })
   })
 })
+
+describe('tiradores en el centro de los píxeles', () => {
+  const frac = (v: number) => Math.abs(v - Math.floor(v) - 0.5)
+  const handlesCentered = (sh: PathShape) =>
+    sh.subpaths.every((sp) =>
+      sp.anchors.every((a) =>
+        [a.in, a.out].every((h) => !h || (frac(h.x) < 1e-9 && frac(h.y) < 1e-9))
+      )
+    )
+
+  it('un rectángulo redondeado o una elipse convertidos, y arrastrar un tirador', () => {
+    const s = DocumentSession.create(64, 64)
+    const r = makeRect(7, 9, 26, 20, makeAppearance(RED, null))
+    r.radius = [5, 5, 5, 5]
+    const e = makeEllipse(40, 40, 9, 7, makeAppearance(RED, null))
+    addShape(s, r)
+    addShape(s, e)
+    for (const id of [r.id, e.id]) {
+      centerAnchors(s, [id])
+      expect(handlesCentered(getShape(s, id) as PathShape)).toBe(true)
+    }
+    const sh = getShape(s, e.id) as PathShape
+    expect(sh.subpaths[0]!.anchors[0]!.out).not.toBeNull()
+    const d = new AnchorDrag(s, e.id, [{ subpath: 0, index: 0, part: 'out' }])
+    d.moveBy(1.3, 2.4)
+    d.end()
+    expect(handlesCentered(getShape(s, e.id) as PathShape)).toBe(true)
+  })
+})

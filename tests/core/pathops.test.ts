@@ -214,9 +214,9 @@ describe('tiradores', () => {
     pull.pullTo(35, 12)
     pull.end()
     const a = path(s, r.id).subpaths[0]!.anchors[1]!
-    expect(a.out).toEqual({ x: 30, y: 7 })
+    expect(a.out).toEqual({ x: 30.5, y: 7.5 }) // el tirador cae en el centro de un píxel
     // el rectángulo se convierte con las anclas en el centro de sus píxeles (el rectángulo se encoge medio píxel: ancla en x = 19,5)
-    expect(a.in).toEqual({ x: 9, y: -6 })
+    expect(a.in).toEqual({ x: 8.5, y: -6.5 })
     expect(hitSegment(s, r.id, 15, 25, 1)).toBe(true)
     expect(hitSegment(s, r.id, 15, 15, 1)).toBe(false)
     s.undo()
