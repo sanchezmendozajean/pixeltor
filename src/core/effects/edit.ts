@@ -164,7 +164,13 @@ export function liveUpdateEffect(
   if (!m) lives.set(s, (m = new Map()))
   if (!m.has(key)) m.set(key, s.begin('Editar efecto'))
   patchEffect(e, patch)
-  s.emit({ imageId: s.activeImageId, dirty: null, structure: true })
+  const layerId = t.kind === 'layer' ? t.id : findShape(s, t.id)?.layer.id
+  s.emit({
+    imageId: s.activeImageId,
+    dirty: null,
+    structure: true,
+    layerIds: layerId ? [layerId] : undefined
+  })
 }
 
 export function commitEffectEdit(s: DocumentSession, key: string): void {

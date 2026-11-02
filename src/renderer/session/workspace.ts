@@ -11,6 +11,8 @@ import {
 } from '@core/index'
 import {
   AsyncFxProvider,
+  invalidatePrefix,
+  newPrefixCache,
   type LayoutNode,
   type SavedViewers,
   cloneLayout,
@@ -53,6 +55,8 @@ export class Workspace {
   private redrawListeners = new Set<(r: Rect | null) => void>()
   private viewListeners = new Set<() => void>()
   private unsub: () => void
+  /** Composición de las capas bajo la activa (se reutiliza mientras se edita la activa). */
+  private readonly prefix = newPrefixCache()
   private frameBmp: Bitmap | null = null
   /** Contador de cambios del documento (para cachés de papel cebolla). */
   version = 0
@@ -83,6 +87,7 @@ export class Workspace {
     this.recompose(null)
     this.unsub = session.onChange((e) => {
       this.version++
+      invalidatePrefix(this.prefix, session.image, e.layerIds)
       const i = session.image
       if (i.width !== this.composite.width || i.height !== this.composite.height) {
         this.composite = new Bitmap(i.width, i.height)
@@ -404,6 +409,8 @@ export class Workspace {
       floating: f ? { layerId: s.activeLayerId, pixels: f } : null,
       fx: this.fx,
       palettes: s.doc.palettes,
+      prefix: this.prefix,
+      hotLayerId: s.activeLayerId,
       preview: this.preview ? { layerId: s.activeLayerId, shape: this.preview } : null
     })
     for (const fn of this.redrawListeners) fn(rect)

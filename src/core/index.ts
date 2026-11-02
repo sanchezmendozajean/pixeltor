@@ -8,7 +8,14 @@ export { newId } from './model/ids'
 export { Bitmap, rgba, type Rect } from './raster/bitmap'
 export { PixelMask, type MaskOp, type FloatingPixels } from './raster/mask'
 export { compositeOver } from './raster/blend'
-export { composeImage, effectsReach } from './render/compose'
+export {
+  composeImage,
+  effectsReach,
+  invalidatePrefix,
+  newPrefixCache,
+  type ComposeExtras,
+  type PrefixCache
+} from './render/compose'
 export * from './effects/registry'
 export * from './effects/types'
 export * from './effects/region'

@@ -58,6 +58,50 @@ export interface ComposeExtras {
   fx?: FxProvider
   /** Paletas del documento (salida «ajustar a paleta» de los efectos). */
   palettes?: Palette[]
+  /**
+   * Caché de la composición de las capas que quedan debajo de la capa «caliente» (la que se está
+   * editando). Sólo se usa en imágenes sin grupos ni recortes; el resultado es idéntico al de
+   * componer todo (se parte del mismo búfer que habría en ese punto).
+   */
+  prefix?: PrefixCache
+  hotLayerId?: ID
+}
+
+export interface PrefixCache {
+  layerId: ID | null
+  bmp: Bitmap | null
+  valid: boolean
+}
+
+export const newPrefixCache = (): PrefixCache => ({ layerId: null, bmp: null, valid: false })
+
+/**
+ * Invalida la caché tras un cambio. Con `layerIds` (capas tocadas) sólo se descarta si alguna
+ * queda debajo de la capa caliente; sin él (cambio desconocido) siempre.
+ */
+export function invalidatePrefix(c: PrefixCache, img: PxImage, layerIds?: readonly ID[]): void {
+  if (!c.valid) return
+  if (!layerIds) {
+    c.valid = false
+    return
+  }
+  const hot = img.layers.findIndex((l) => l.id === c.layerId)
+  if (hot < 0 || layerIds.some((id) => img.layers.findIndex((l) => l.id === id) < hot))
+    c.valid = false
+}
+
+/** ¿Alguna capa de la lista tiene un efecto cuyo resultado aún no ha llegado? */
+function pendingFx(layers: Layer[], fx: FxProvider | undefined): boolean {
+  if (!fx?.isPending) return false
+  const shapes = (list: Shape[]): boolean =>
+    list.some(
+      (sh) =>
+        (hasActiveEffects(sh.effects) && fx.isPending!(`shape:${sh.id}`)) ||
+        (sh.kind === 'group' && shapes(sh.children))
+    )
+  return layers.some(
+    (l) => (hasActiveEffects(l.effects) && fx.isPending!(`layer:${l.id}`)) || shapes(l.shapes)
+  )
 }
 
 /**
@@ -73,9 +117,52 @@ export function composeImage(
 ): void {
   const r = clipRect(rect ?? { x: 0, y: 0, w: img.width, h: img.height }, img.width, img.height)
   if (r.w <= 0 || r.h <= 0) return
+  const hot = extras.hotLayerId ? img.layers.findIndex((l) => l.id === extras.hotLayerId) : -1
+  const cache = extras.prefix
+  if (cache && hot > 0 && !img.layers.some((l) => l.isGroup || l.clip)) {
+    const below = img.layers.slice(0, hot)
+    if (
+      !cache.valid ||
+      cache.layerId !== extras.hotLayerId ||
+      !cache.bmp ||
+      cache.bmp.width !== img.width ||
+      cache.bmp.height !== img.height
+    ) {
+      if (!cache.bmp || cache.bmp.width !== img.width || cache.bmp.height !== img.height)
+        cache.bmp = new Bitmap(img.width, img.height)
+      else cache.bmp.data.fill(0)
+      const full = { x: 0, y: 0, w: img.width, h: img.height }
+      composeInto(img, rasters, below, cache.bmp, full, {
+        ...extras,
+        floating: null,
+        preview: null
+      })
+      cache.layerId = extras.hotLayerId ?? null
+      // con efectos de capas inferiores aún por llegar, esta composición es provisional
+      cache.valid = !pendingFx(below, extras.fx)
+    }
+    for (let y = r.y; y < r.y + r.h; y++) {
+      const o = (y * out.width + r.x) * 4
+      out.data.set(cache.bmp.data.subarray(o, o + r.w * 4), o)
+    }
+    composeInto(img, rasters, img.layers.slice(hot), out, r, extras)
+    return
+  }
   for (let y = r.y; y < r.y + r.h; y++) {
     out.data.fill(0, (y * out.width + r.x) * 4, (y * out.width + r.x + r.w) * 4)
   }
+  composeInto(img, rasters, img.layers, out, r, extras)
+}
+
+/** Compone `layers` (de abajo arriba) sobre lo que ya hay en `out`, limitándose a `r`. */
+function composeInto(
+  img: PxImage,
+  rasters: ReadonlyMap<ID, Bitmap>,
+  layers: Layer[],
+  out: Bitmap,
+  r: Rect,
+  extras: ComposeExtras
+): void {
   let scratch: Bitmap | null = null
   let shapeScratch: Bitmap | null = null
   let layerFx: Bitmap | null = null
@@ -187,7 +274,7 @@ export function composeImage(
   }
 
   drawStack(
-    img.layers.filter((l) => !l.groupId),
+    layers.filter((l) => !l.groupId),
     out
   )
 }

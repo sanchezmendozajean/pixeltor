@@ -38,6 +38,11 @@ export interface ChangeEvent {
   dirty: Rect | null
   /** Cambió la estructura de capas, sus propiedades o la selección. */
   structure: boolean
+  /**
+   * Capas cuyo contenido o efectos cambiaron, cuando se sabe con seguridad. Sin este dato (cualquier
+   * otro cambio, deshacer…) hay que suponer que pudo cambiar cualquier capa.
+   */
+  layerIds?: ID[]
 }
 
 interface TileRecord {
@@ -150,7 +155,15 @@ export class Transaction {
     if (!tiles.length && !opts.model) return false
     const cmd = new EditCommand(this.label, tiles, this.before, this.s.snapshot(), this.mergeKey)
     this.s.history.record(cmd)
-    this.s.emit({ imageId: this.s.activeImageId, dirty: this.dirty, structure: !!opts.model })
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: this.dirty,
+      structure: !!opts.model,
+      // un cambio sólo de píxeles toca únicamente las capas cuyas teselas se guardaron
+      layerIds: opts.model
+        ? undefined
+        : [...new Set([...this.saved.values()].map((t) => t.layerId))]
+    })
     return true
   }
 }
