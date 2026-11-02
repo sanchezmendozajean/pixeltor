@@ -67,3 +67,24 @@ test('el selector de color cambia el relleno y el elemento activo queda encima',
   await dlg.getByRole('button', { name: 'Cancelar' }).click()
   await expect(fill).toHaveCSS('background-color', 'rgb(255, 128, 0)')
 })
+
+test('la escala de la interfaz se aplica desde el menú Ver y se guarda', async () => {
+  await launch()
+  await page.getByRole('button', { name: 'Ver', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Escala de la interfaz' }).hover()
+  await page.getByRole('menuitem', { name: 'Interfaz al 125 %' }).click()
+  const saved = await page.evaluate(
+    async () =>
+      (
+        await (
+          globalThis as unknown as {
+            pixeltor: { settings: { get(): Promise<{ uiScale: number }> } }
+          }
+        ).pixeltor.settings.get()
+      ).uiScale
+  )
+  expect(saved).toBe(1.25)
+  // el zoom de la ventana cambia el tamaño en píxeles CSS visibles
+  const w = await page.evaluate(() => (globalThis as unknown as { innerWidth: number }).innerWidth)
+  expect(w).toBeLessThan(1500)
+})

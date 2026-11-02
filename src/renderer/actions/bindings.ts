@@ -55,7 +55,7 @@ import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import { useDocumentsStore } from '@/stores/documents'
 import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
-import type { ThemeId } from '@shared/ipc'
+import { type ThemeId, UI_SCALES } from '@shared/ipc'
 
 /** Portapapeles interno de píxeles (el del sistema llega con la importación de imágenes). */
 let clipboard: { bitmap: Bitmap; x: number; y: number } | null = null
@@ -79,6 +79,11 @@ export function registerAppActions(): void {
     }
   }
 
+  for (const f of UI_SCALES)
+    registerHandler(`view.uiScale.${Math.round(f * 100)}`, {
+      run: () => void ui.setUiScale(f),
+      checked: () => ui.uiScale === f
+    })
   for (const theme of ['oscuro', 'gris', 'claro'] as ThemeId[]) {
     registerHandler(`theme.${theme}`, {
       run: () => void ui.setTheme(theme),

@@ -113,6 +113,11 @@ export const ACTIONS: ActionDef[] = [
   a('theme.oscuro'),
   a('theme.gris'),
   a('theme.claro'),
+  a('view.uiScale.90'),
+  a('view.uiScale.100'),
+  a('view.uiScale.110'),
+  a('view.uiScale.125'),
+  a('view.uiScale.150'),
   // Ventana
   a('window.splitV', 'Ctrl+Alt+V', 'layoutV'),
   a('window.splitH', 'Ctrl+Alt+H', 'layoutH'),

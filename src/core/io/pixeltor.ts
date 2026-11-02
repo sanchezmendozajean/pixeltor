@@ -1,6 +1,7 @@
 // Lectura y escritura del contenedor `.pixeltor` (specs/10).
 
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
+import { sanitizeViewers } from '../viewers/layout'
 import { APP_NAME, clampSize } from '../model/document'
 import { FORMAT_VERSION } from '../model/version'
 import type { ID, Layer, PixeltorDocument } from '../model/types'
@@ -106,6 +107,9 @@ export function loadDocument(bytes: Uint8Array): LoadedDocument {
       `El archivo usa el formato ${raw.formatVersion}, más nuevo que el soportado (${FORMAT_VERSION}). Actualiza Pixeltor.`
     )
   const doc = migrate(raw)
+  const viewers = sanitizeViewers(doc.viewers)
+  if (viewers) doc.viewers = viewers
+  else delete doc.viewers
 
   const warnings: string[] = []
   const rasters = new Map<ID, Bitmap>()

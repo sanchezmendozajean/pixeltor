@@ -174,6 +174,17 @@ export const MENUS: MenuDef[] = [
         type: 'submenu',
         label: 'menus.theme',
         items: [act('theme.oscuro'), act('theme.gris'), act('theme.claro')]
+      },
+      {
+        type: 'submenu',
+        label: 'menus.uiScale',
+        items: [
+          act('view.uiScale.90'),
+          act('view.uiScale.100'),
+          act('view.uiScale.110'),
+          act('view.uiScale.125'),
+          act('view.uiScale.150')
+        ]
       }
     ]
   },

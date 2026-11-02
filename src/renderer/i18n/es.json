@@ -15,6 +15,7 @@
     "help": "Ayuda",
     "theme": "Tema",
     "pathfinder": "Buscatrazos",
+    "uiScale": "Escala de la interfaz",
     "viewerLayout": "Disposición de visores",
     "effectCategories": "Categorías de efectos"
   },
@@ -134,6 +135,13 @@
       "onion": "Papel cebolla",
       "play": "Reproducir / pausar",
       "tiled": "Modo mosaico",
+      "uiScale": {
+        "90": "Interfaz al 90 %",
+        "100": "Interfaz al 100 %",
+        "110": "Interfaz al 110 %",
+        "125": "Interfaz al 125 %",
+        "150": "Interfaz al 150 %"
+      },
       "syncViewers": "Sincronizar zoom y posición"
     },
     "theme": {

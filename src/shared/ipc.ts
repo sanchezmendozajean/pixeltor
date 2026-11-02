@@ -8,12 +8,17 @@ export interface Settings {
   toolbarColumns: 1 | 2
   /** Atajos personalizados: id de acción → atajo canónico ('' = sin atajo). */
   shortcuts: Record<string, string>
+  /** Escala de la interfaz (1 = 100 %). */
+  uiScale: number
 }
+
+export const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5] as const
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'oscuro',
   toolbarColumns: 1,
-  shortcuts: {}
+  shortcuts: {},
+  uiScale: 1
 }
 
 export const IPC = {
@@ -57,6 +62,8 @@ export type CloseChoice = 'save' | 'discard' | 'cancel'
 export interface PixeltorApi {
   platform: string
   getAppVersion(): Promise<string>
+  /** Escala de la interfaz (zoom de la ventana, no del lienzo). */
+  ui: { setScale(factor: number): void }
   settings: {
     get(): Promise<Settings>
     set(patch: Partial<Settings>): Promise<Settings>

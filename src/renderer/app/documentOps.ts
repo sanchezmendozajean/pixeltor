@@ -17,6 +17,14 @@ function toast(msg: string): void {
   useUiStore().toast = msg
 }
 
+/** Bytes del documento con la disposición de visores actual. */
+function serialize(ws: Workspace): Uint8Array {
+  const viewers = ws.snapshotViewers()
+  if (viewers) ws.session.doc.viewers = viewers
+  else delete ws.session.doc.viewers
+  return saveDocument(ws.session.doc, ws.session.rasters)
+}
+
 export function newDocument(width: number, height: number): void {
   docs().newDocument(width, height)
 }
@@ -51,7 +59,7 @@ export async function openFile(path?: string): Promise<void> {
 
 /** Devuelve true si el documento quedó guardado. */
 export async function saveWorkspace(ws: Workspace, saveAs = false): Promise<boolean> {
-  const bytes = saveDocument(ws.session.doc, ws.session.rasters)
+  const bytes = serialize(ws)
   const path = await window.pixeltor.files.save({
     path: saveAs ? null : ws.filePath,
     suggestedName: ws.name,
@@ -121,7 +129,7 @@ export function startAutosave(intervalMs = AUTOSAVE_MS): () => void {
       const stamp = ws.session.history.position * 1e6 + ws.session.history.entries.length
       if (lastAutosaved.get(ws.id) === stamp) continue
       lastAutosaved.set(ws.id, stamp)
-      const bytes = saveDocument(ws.session.doc, ws.session.rasters)
+      const bytes = serialize(ws)
       void window.pixeltor.autosave.write(ws.session.doc.id, ws.name, bytes)
     }
   }, intervalMs)

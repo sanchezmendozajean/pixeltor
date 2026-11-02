@@ -18,6 +18,8 @@ function sanitize(raw: unknown): Settings {
     if (theme && THEMES.includes(theme)) out.theme = theme
     const cols = (raw as Partial<Settings>).toolbarColumns
     if (cols === 1 || cols === 2) out.toolbarColumns = cols
+    const scale = (raw as Partial<Settings>).uiScale
+    if (typeof scale === 'number' && scale >= 0.75 && scale <= 2) out.uiScale = scale
     const sc = (raw as Partial<Settings>).shortcuts
     out.shortcuts = {}
     if (sc && typeof sc === 'object')

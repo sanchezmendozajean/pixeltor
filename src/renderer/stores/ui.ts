@@ -46,6 +46,8 @@ export const useUiStore = defineStore('ui', {
     keyShape: '' as string,
     /** Columnas de la barra de herramientas (se recuerda entre sesiones). */
     toolbarColumns: 1 as 1 | 2,
+    /** Escala de la interfaz (se recuerda entre sesiones). */
+    uiScale: 1,
     /** Número de anclas seleccionadas con la Selección directa (para habilitar botones). */
     anchorCount: 0,
     /** Selector de color abierto para este destino. */
@@ -60,6 +62,13 @@ export const useUiStore = defineStore('ui', {
       this.applyTheme(s.theme)
       this.toolbarColumns = s.toolbarColumns
       loadShortcutOverrides(s.shortcuts)
+      this.uiScale = s.uiScale
+      window.pixeltor.ui.setScale(s.uiScale)
+    },
+    async setUiScale(f: number) {
+      this.uiScale = f
+      window.pixeltor.ui.setScale(f)
+      await window.pixeltor.settings.set({ uiScale: f })
     },
     async setToolbarColumns(n: 1 | 2) {
       this.toolbarColumns = n

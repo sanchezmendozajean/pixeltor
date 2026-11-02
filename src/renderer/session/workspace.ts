@@ -12,6 +12,8 @@ import {
 import {
   AsyncFxProvider,
   type LayoutNode,
+  type SavedViewers,
+  cloneLayout,
   type LayoutPreset,
   MAX_VIEWERS,
   PRESET_COUNT,
@@ -76,6 +78,7 @@ export class Workspace {
     this.layout = leaf(first.id)
     this.activeViewerId = first.id
     this.ctx = first
+    this.restoreViewers(session.doc.viewers)
     this.composite = new Bitmap(img.width, img.height)
     this.recompose(null)
     this.unsub = session.onChange((e) => {
@@ -95,6 +98,55 @@ export class Workspace {
   }
 
   // ---------- Visores (specs/09) ----------
+
+  /** Ajustes de visores y disposición para guardarlos en el documento. */
+  snapshotViewers(): SavedViewers | undefined {
+    const single = this.viewers.length === 1
+    const v = this.viewers[0]!
+    // un único visor con los ajustes por defecto no se guarda
+    if (single && !v.imageId && v.pixelGrid && v.showPaths && !v.onion && v.tiled === 'none')
+      return undefined
+    return {
+      layout: cloneLayout(this.layout),
+      active: this.activeViewerId,
+      viewers: this.viewers.map((x) => ({
+        id: x.id,
+        ...(x.imageId ? { imageId: x.imageId } : {}),
+        pixelGrid: x.pixelGrid,
+        showPaths: x.showPaths,
+        onion: x.onion,
+        tiled: x.tiled,
+        sync: x.sync
+      }))
+    }
+  }
+
+  /** Reconstruye los visores de un documento abierto (el primero ya existe; se reutiliza). */
+  private restoreViewers(saved: SavedViewers | undefined): void {
+    if (!saved) return
+    const ids = leaves(saved.layout)
+    this.viewers.length = 0
+    this.viewerSeq = 0
+    const map = new Map<string, string>()
+    for (const sid of ids) {
+      const v = this.addViewer(this.session.image.width, this.session.image.height)
+      map.set(sid, v.id)
+      const s = saved.viewers.find((x) => x.id === sid)
+      if (!s) continue
+      v.imageId =
+        s.imageId && this.session.doc.images.some((i) => i.id === s.imageId) ? s.imageId : null
+      v.pixelGrid = s.pixelGrid ?? true
+      v.showPaths = s.showPaths ?? true
+      v.onion = s.onion ?? false
+      v.tiled = s.tiled ?? 'none'
+      v.sync = s.sync ?? false
+    }
+    const remap = (n: LayoutNode): LayoutNode =>
+      n.kind === 'leaf' ? leaf(map.get(n.viewer)!) : { ...n, a: remap(n.a), b: remap(n.b) }
+    this.layout = remap(saved.layout)
+    this.activeViewerId = map.get(saved.active ?? ids[0]!) ?? this.viewers[0]!.id
+    this.ctx = this.activeViewer
+  }
 
   /** Zoom/desplazamiento del visor que atiende la entrada (lo usan las herramientas). */
   get viewport(): Viewport {

@@ -1,5 +1,7 @@
 // Modelo de documento (specs/02). Solo el subconjunto de F1: sin formas ni efectos todavía.
 
+import type { SavedViewers } from '../viewers/layout'
+
 export type ID = string
 export type RGBA = { r: number; g: number; b: number; a: number }
 
@@ -106,6 +108,8 @@ export interface PixeltorDocument {
   /** Paletas del documento; la primera es la activa del panel Muestras. */
   palettes?: Palette[]
   animation: { loop: 'loop' | 'pingpong' | 'once' }
+  /** Disposición de visores y ajustes de cada uno (opcional). */
+  viewers?: SavedViewers
   settings: DocumentSettings
   metadata: { createdAt: string; modifiedAt: string; app: string }
 }

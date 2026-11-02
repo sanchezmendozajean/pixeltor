@@ -96,3 +96,66 @@ export function cloneLayout(n: LayoutNode): LayoutNode {
     ? { kind: 'leaf', viewer: n.viewer }
     : { kind: 'split', dir: n.dir, ratio: n.ratio, a: cloneLayout(n.a), b: cloneLayout(n.b) }
 }
+
+// ---------- Persistencia ----------
+
+const TILE_MODES = ['none', 'both', 'h', 'v']
+
+/** Ajustes de un visor que se guardan en el documento (no el zoom ni el desplazamiento). */
+export interface SavedViewer {
+  id: string
+  imageId?: string
+  pixelGrid?: boolean
+  showPaths?: boolean
+  onion?: boolean
+  tiled?: 'none' | 'both' | 'h' | 'v'
+  sync?: boolean
+}
+
+export interface SavedViewers {
+  layout: LayoutNode
+  viewers: SavedViewer[]
+  active?: string
+}
+
+function sanitizeNode(raw: unknown, depth: number, seen: Set<string>): LayoutNode | null {
+  if (!raw || typeof raw !== 'object' || depth > 4) return null
+  const n = raw as Record<string, unknown>
+  if (n['kind'] === 'leaf') {
+    const id = n['viewer']
+    if (typeof id !== 'string' || !id || id.length > 32 || seen.has(id)) return null
+    seen.add(id)
+    return leaf(id)
+  }
+  if (n['kind'] !== 'split' || (n['dir'] !== 'v' && n['dir'] !== 'h')) return null
+  const a = sanitizeNode(n['a'], depth + 1, seen)
+  const b = sanitizeNode(n['b'], depth + 1, seen)
+  if (!a || !b) return null
+  const ratio = typeof n['ratio'] === 'number' && Number.isFinite(n['ratio']) ? n['ratio'] : 0.5
+  return { kind: 'split', dir: n['dir'], ratio: clampRatio(ratio), a, b }
+}
+
+/** Valida lo leído de un archivo: devuelve undefined si no es una disposición utilizable. */
+export function sanitizeViewers(raw: unknown): SavedViewers | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const r = raw as Record<string, unknown>
+  const seen = new Set<string>()
+  const layout = sanitizeNode(r['layout'], 0, seen)
+  if (!layout || seen.size > MAX_VIEWERS) return undefined
+  const byId = new Map<string, SavedViewer>()
+  if (Array.isArray(r['viewers']))
+    for (const v of r['viewers'] as Record<string, unknown>[]) {
+      if (!v || typeof v['id'] !== 'string' || !seen.has(v['id'])) continue
+      const out: SavedViewer = { id: v['id'] }
+      if (typeof v['imageId'] === 'string') out.imageId = v['imageId']
+      for (const k of ['pixelGrid', 'showPaths', 'onion', 'sync'] as const)
+        if (typeof v[k] === 'boolean') out[k] = v[k]
+      if (typeof v['tiled'] === 'string' && TILE_MODES.includes(v['tiled']))
+        out.tiled = v['tiled'] as SavedViewer['tiled']
+      byId.set(out.id, out)
+    }
+  // todo visor del árbol tiene ajustes (por defecto si faltan)
+  const viewers = [...seen].map((id) => byId.get(id) ?? { id })
+  const active = typeof r['active'] === 'string' && seen.has(r['active']) ? r['active'] : undefined
+  return { layout, viewers, active }
+}
