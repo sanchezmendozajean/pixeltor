@@ -144,3 +144,45 @@ test('desenfoque gaussiano de una forma grande: tiempo hasta el primer resultado
   console.log(`[perf] gaussiano (añadir y calcular, incluye la UI): ${ms} ms`)
   expect(ms).toBeLessThan(5000)
 })
+
+test('scrubbing del radio del gaussiano: tiempo de cada resultado', async () => {
+  const range = page.locator('.fx .card input[type="range"]').first()
+  await expect(range).toBeVisible()
+  const max = Number(await range.getAttribute('max'))
+  const min = Number(await range.getAttribute('min'))
+  const times = await range.evaluate(
+    async (el, [lo, hi]) => {
+      const input = el as { value: string; dispatchEvent(e: unknown): void }
+      const g = globalThis as unknown as {
+        Event: new (t: string, o?: unknown) => unknown
+        document: { querySelector(s: string): unknown }
+        performance: { now(): number }
+        requestAnimationFrame(cb: () => void): void
+      }
+      const frame = () => new Promise<void>((r) => g.requestAnimationFrame(() => r()))
+      const out: number[] = []
+      for (let i = 0; i < 10; i++) {
+        const v = Math.round(lo! + ((hi! - lo!) * (i + 1)) / 11)
+        const t0 = g.performance.now()
+        input.value = String(v)
+        input.dispatchEvent(new g.Event('input', { bubbles: true }))
+        // el indicador «Calculando…» aparece y desaparece al llegar el resultado
+        let seen = false
+        for (let n = 0; n < 400; n++) {
+          await frame()
+          const busy = !!g.document.querySelector('[role="status"]')
+          if (busy) seen = true
+          else if (seen || n > 3) break
+        }
+        out.push(g.performance.now() - t0)
+      }
+      return out
+    },
+    [min, max]
+  )
+  const sorted = [...times].sort((a, b) => a - b)
+  console.log(
+    `[perf] scrubbing gaussiano: mediana ${sorted[5]!.toFixed(0)} ms · p90 ${sorted[8]!.toFixed(0)} ms · máx ${sorted[9]!.toFixed(0)} ms (${times.map((t) => t.toFixed(0)).join(', ')})`
+  )
+  expect(sorted[9]!).toBeLessThan(3000)
+})

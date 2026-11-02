@@ -14,7 +14,14 @@ import {
   invertPlane,
   parseColor
 } from './kernels'
-import { type Region, cropRegion, expandRect, makeRegion, regionIndex } from './region'
+import {
+  type Region,
+  cropRegion,
+  expandRect,
+  intersectRect,
+  makeRegion,
+  regionIndex
+} from './region'
 import type { EffectDef, ParamDef, ParamValue } from './types'
 
 type P = Record<string, ParamValue>
@@ -247,7 +254,30 @@ const pixelOutline: EffectDef = {
   }
 }
 
-/** Desenfoca RGBA premultiplicado con `blur`; `mode`: both | alpha | color. */
+/** Caja mínima que contiene los píxeles con alfa > 0 de la región, o null si está vacía. */
+function alphaBounds(input: Region): Rect | null {
+  const { x, y, w, h } = input.rect
+  let x0 = w
+  let x1 = -1
+  let y0 = h
+  let y1 = -1
+  for (let j = 0; j < h; j++) {
+    const row = j * w * 4 + 3
+    for (let i = 0; i < w; i++)
+      if (input.data[row + i * 4]) {
+        if (i < x0) x0 = i
+        if (i > x1) x1 = i
+        if (j < y0) y0 = j
+        y1 = j
+      }
+  }
+  return x1 < 0 ? null : { x: x + x0, y: y + y0, w: x1 - x0 + 1, h: y1 - y0 + 1 }
+}
+
+/**
+ * Desenfoca RGBA premultiplicado con `blur`; `mode`: both | alpha | color. Sólo se calcula la zona
+ * que el contenido puede alcanzar (caja del alfa + radio): fuera de ella el resultado es 0.
+ */
 function blurRegion(
   input: Region,
   out: Rect,
@@ -255,7 +285,11 @@ function blurRegion(
   mode: string,
   blur: (p: Plane, w: number, h: number) => Plane
 ): Region {
-  const e = expandRect(out, pad)
+  const res = makeRegion(out)
+  const content = alphaBounds(input)
+  if (!content) return res
+  const e = intersectRect(expandRect(out, pad), expandRect(content, pad))
+  if (e.w <= 0 || e.h <= 0) return res
   const a = channelPlane(input, e, 3)
   const pr = [0, 1, 2].map((c) => {
     const ch = channelPlane(input, e, c)
@@ -264,10 +298,18 @@ function blurRegion(
   })
   const blurredA = blur(a, e.w, e.h)
   const bp = mode === 'alpha' ? pr : pr.map((p) => blur(p, e.w, e.h))
-  const res = makeRegion(out)
-  for (let y = 0; y < out.h; y++)
-    for (let x = 0; x < out.w; x++) {
-      const pi = (y + out.y - e.y) * e.w + (x + out.x - e.x)
+  // en el modo «ambos» fuera de la zona calculada todo es 0: se recorre sólo esa zona
+  const full = mode !== 'both'
+  const xa = full ? 0 : Math.max(0, e.x - out.x)
+  const xb = full ? out.w : Math.min(out.w, e.x + e.w - out.x)
+  const ya = full ? 0 : Math.max(0, e.y - out.y)
+  const yb = full ? out.h : Math.min(out.h, e.y + e.h - out.y)
+  for (let y = ya; y < yb; y++)
+    for (let x = xa; x < xb; x++) {
+      const px = x + out.x - e.x
+      const py = y + out.y - e.y
+      const inside = px >= 0 && py >= 0 && px < e.w && py < e.h
+      const pi = py * e.w + px
       const o = (y * out.w + x) * 4
       const ii = regionIndex(input, out.x + x, out.y + y)
       if (mode === 'alpha') {
@@ -276,10 +318,10 @@ function blurRegion(
           res.data[o + 1] = input.data[ii + 1]!
           res.data[o + 2] = input.data[ii + 2]!
         }
-        res.data[o + 3] = clampByte(blurredA[pi]!)
+        res.data[o + 3] = inside ? clampByte(blurredA[pi]!) : 0
         continue
       }
-      const wa = blurredA[pi]!
+      const wa = inside ? blurredA[pi]! : 0
       if (wa > 0) {
         res.data[o] = clampByte((bp[0]![pi]! / wa) * 255)
         res.data[o + 1] = clampByte((bp[1]![pi]! / wa) * 255)

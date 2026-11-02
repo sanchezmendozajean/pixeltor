@@ -36,3 +36,22 @@ describe('rendimiento de efectos (1000×1000)', () => {
     expect(EFFECTS.has(type)).toBe(true)
   })
 })
+
+describe('desenfoque de contenido pequeño en una imagen grande', () => {
+  it('sólo cuesta lo que ocupa el contenido (forma de 100×100 en 1000×1000)', () => {
+    const small = new Bitmap(1000, 1000)
+    for (let y = 100; y < 200; y++) for (let x = 100; x < 200; x++) small.set(x, y, 0xff0000ff)
+    const fx = newEffect('gaussian-blur')!
+    fx.params['radius'] = 8
+    const ms = best(() =>
+      applyEffects(
+        [fx],
+        regionFromBitmap(small),
+        { x: 0, y: 0, w: 1000, h: 1000 },
+        { width: 1000, height: 1000 }
+      )
+    )
+    console.log(`gaussian-blur (100×100 en 1000×1000): ${ms.toFixed(0)} ms`)
+    expect(ms).toBeLessThan(60)
+  })
+})
