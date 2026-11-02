@@ -101,8 +101,8 @@ test('escalar con la caja, convertir en trazado y mover un ancla', async () => {
   await expect(page.getByRole('button', { name: 'Convertir en trazado' })).toBeVisible()
 
   await page.keyboard.press('a')
-  // el ancla del rectángulo convertido está en el centro del píxel de la esquina
-  await page.mouse.move(cx + corner(70) + zoom / 2, cy + corner(70) + zoom / 2)
+  // el ancla de la esquina del rectángulo convertido está en el centro de su último píxel
+  await page.mouse.move(cx + corner(70) - zoom / 2, cy + corner(70) - zoom / 2)
   await page.mouse.down()
   await page.mouse.move(cx + 90, cy + 50, { steps: 5 })
   await page.mouse.up()
