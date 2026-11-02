@@ -667,6 +667,10 @@ export class ShapeScale {
       if (!f) continue
       const copy = cloneShape(orig)
       scaleShape(copy, sx, sy, anchor.x, anchor.y)
+      // un trazado escalado sigue con las anclas en centros de píxel (si no, se descuadraría
+      // medio píxel de su dibujo)
+      if (copy.kind === 'path' && isPixelCentered(orig as PathShape))
+        for (const sp of copy.subpaths) for (const a of sp.anchors) centerAnchor(copy.transform, a)
       f.list[f.index] = copy
     }
     this.s.emit({

@@ -39,6 +39,7 @@ export {
   renderShapeCached,
   renderShapeRegion,
   pixelBounds,
+  isPixelCentered,
   shapeAlphaAt,
   shapeLines,
   type ShapeBitmap

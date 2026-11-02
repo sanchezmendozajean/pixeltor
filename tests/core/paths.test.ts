@@ -21,6 +21,9 @@ import {
   makeStar,
   renderShape,
   shapesBox,
+  isPixelCentered,
+  pixelBounds,
+  renderShapeRegion,
   type PathShape
 } from '@core/index'
 
@@ -327,5 +330,23 @@ describe('trazados con las anclas en centros de píxel', () => {
     expect(addAnchorAt(s, r.id, 20, 9.5, 4)).toBe(true)
     const after = alpha(getShape(s, r.id) as PathShape)
     expect(after).toEqual(before)
+  })
+})
+
+describe('escalar un trazado centrado', () => {
+  it('sigue centrado y su caja coincide con los píxeles pintados', () => {
+    const s = DocumentSession.create(64, 64)
+    const r = makeRect(7, 9, 26, 20, makeAppearance(RED, null))
+    r.radius = [4, 4, 4, 4]
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    const box = shapesBox(s, [r.id])!
+    const sc = new ShapeScale(s, [r.id], box)
+    sc.scaleBy({ x: box.x, y: box.y }, 1.37, 1.21)
+    sc.end()
+    const sh = getShape(s, r.id) as PathShape
+    expect(isPixelCentered(sh)).toBe(true)
+    const b = pixelBounds(renderShapeRegion(sh, 64, 64))!
+    expect(shapesBox(s, [r.id])).toEqual({ x: b.x, y: b.y, w: b.w, h: b.h })
   })
 })
