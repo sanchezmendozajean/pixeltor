@@ -725,13 +725,16 @@ export class RectRadiusDrag {
     this.tx = s.begin('Radio de esquina')
   }
 
-  /** (fx, fy) en coordenadas de imagen; el radio es la proyección sobre la diagonal de la esquina. */
-  moveTo(fx: number, fy: number, single = false): void {
+  /**
+   * (fx, fy) en coordenadas de imagen; el radio es la proyección sobre la diagonal de la esquina,
+   * descontando la separación `offset` que el tirador guarda con radio 0.
+   */
+  moveTo(fx: number, fy: number, single = false, offset = 0): void {
     const inv = invert(this.rect.transform)
     if (!inv) return
     const l = apply(inv, { x: fx, y: fy })
     const max = Math.min(this.rect.w, this.rect.h) / 2
-    const r = Math.max(0, Math.min(max, Math.round((l.x + l.y) / 2 - 0.5)))
+    const r = Math.max(0, Math.min(max, Math.round((l.x + l.y) / 2 - 0.5 - offset)))
     this.rect.radius = single
       ? ([r, this.start[1], this.start[2], this.start[3]] as typeof this.start)
       : [r, r, r, r]
