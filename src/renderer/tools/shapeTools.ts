@@ -56,6 +56,7 @@ import {
   makePolygon,
   makeRect,
   makeStar,
+  offsetPolygon,
   selectShapes,
   shapeLines,
   shapesBox,
@@ -144,6 +145,24 @@ function currentAppearance(closed: boolean): Appearance {
   // Los contornos de formas cerradas quedan dentro del cuadro delimitador.
   if (closed) for (const s of ap.strokes) s.align = 'inside'
   return ap
+}
+
+/**
+ * Contorno que se dibuja de una forma seleccionada o bajo el cursor. Rectángulos y elipses se
+ * dibujan por el centro de los píxeles de su borde (0,5 px hacia dentro), igual que los tiradores
+ * de la caja, y no por la arista entre dos píxeles.
+ */
+function outlineLines(sh: Shape): ReturnType<typeof shapeLines> {
+  const lines = shapeLines(sh)
+  if (sh.kind !== 'rect' && sh.kind !== 'ellipse') return lines
+  return lines.map((l) => {
+    if (!l.closed || l.pts.length < 3) return l
+    const xs = l.pts.map((p) => p.x)
+    const ys = l.pts.map((p) => p.y)
+    // una forma de menos de un píxel no admite el desplazamiento hacia dentro
+    if (Math.max(...xs) - Math.min(...xs) < 1.5 || Math.max(...ys) - Math.min(...ys) < 1.5) return l
+    return { ...l, pts: offsetPolygon(l.pts, -0.5) }
+  })
 }
 
 /** Trazado visible de una forma: el suyo, o el equivalente si es paramétrica (solo para mostrar). */
@@ -1078,7 +1097,7 @@ export class ShapeTools {
         if (!selected && item.id !== this.hoverId) continue
         const sh = resolveShape(s, item.id) ?? item
         const entry: ShapeOverlay = {
-          lines: shapeLines(sh),
+          lines: outlineLines(sh),
           color: layerColor,
           thick: selected && s.selectedShapes.length > 1 && item.id === useUiStore().keyShape,
           box: null,
