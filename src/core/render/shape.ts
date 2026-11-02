@@ -9,7 +9,8 @@ import {
   dilate,
   emptyCoverage,
   erode,
-  fillPolygons
+  fillPolygons,
+  fillPolygonsClosed
 } from '../raster/scan'
 import { type Polyline, thickStroke, thinStroke } from '../raster/stroke'
 import { apply, flattenCubic, isTranslateOnly, multiply } from '../geometry/geometry'
@@ -17,6 +18,7 @@ import type {
   GradientPaint,
   GroupShape,
   Mat2D,
+  PathShape,
   Shape,
   Stroke,
   SubPath,
@@ -140,6 +142,20 @@ export interface ShapeMasks {
   thin?: Coverage
 }
 
+/** ¿Todas las anclas del trazado están (en imagen) en el centro de un píxel? */
+export function isPixelCentered(s: PathShape): boolean {
+  const near = (v: number): boolean => Math.abs(v - Math.floor(v) - 0.5) < 1e-6
+  return (
+    s.subpaths.length > 0 &&
+    s.subpaths.every((sp) =>
+      sp.anchors.every((a) => {
+        const p = apply(s.transform, a.p)
+        return near(p.x) && near(p.y)
+      })
+    )
+  )
+}
+
 function fillMask(s: Shape, lines: Polyline[], w: number, h: number): ShapeMasks {
   if (s.kind === 'line') return { fill: emptyCoverage(w, h) }
   const er = ellipsePixelRect(s)
@@ -148,8 +164,11 @@ function fillMask(s: Shape, lines: Polyline[], w: number, h: number): ShapeMasks
     return { fill: m.fill, thin: m.outline }
   }
   const rule = s.kind === 'path' ? s.fillRule : 'nonzero'
+  // Un trazado con todas las anclas en centros de píxel pinta también los píxeles que su
+  // contorno atraviesa por el centro; así el contorno y el dibujo coinciden.
+  const fill = s.kind === 'path' && isPixelCentered(s) ? fillPolygonsClosed : fillPolygons
   return {
-    fill: fillPolygons(
+    fill: fill(
       lines.map((l) => l.pts),
       rule,
       w,

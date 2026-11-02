@@ -9,6 +9,36 @@ export type Coverage = Uint8Array
 
 export const emptyCoverage = (w: number, h: number): Coverage => new Uint8Array(w * h)
 
+const TIE = 1e-6
+
+/**
+ * Relleno con el borde incluido: un píxel cuyo centro cae justo sobre el contorno también se
+ * pinta (en todos los lados). Es la unión del relleno normal y el del polígono movido TIE en x, en
+ * y y en ambos, que recoge los centros que quedan exactamente en el borde derecho/inferior.
+ */
+export function fillPolygonsClosed(
+  polys: Vec2[][],
+  rule: FillRule,
+  w: number,
+  h: number
+): Coverage {
+  const a = fillPolygons(polys, rule, w, h)
+  for (const [dx, dy] of [
+    [TIE, 0],
+    [0, TIE],
+    [TIE, TIE]
+  ] as const) {
+    const b = fillPolygons(
+      polys.map((p) => p.map((q) => ({ x: q.x + dx, y: q.y + dy }))),
+      rule,
+      w,
+      h
+    )
+    for (let i = 0; i < a.length; i++) a[i] = a[i]! | b[i]!
+  }
+  return a
+}
+
 export function fillPolygons(polys: Vec2[][], rule: FillRule, w: number, h: number): Coverage {
   const cov = emptyCoverage(w, h)
   const rows: { x: number; dir: number }[][] = Array.from({ length: h }, () => [])

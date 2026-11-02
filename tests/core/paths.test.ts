@@ -60,7 +60,7 @@ describe('convertir en trazado', () => {
     const after = render(s).data
     let diff = 0
     for (let i = 3; i < after.length; i += 4) if (!!after[i] !== !!before[i]) diff++
-    expect(diff).toBeLessThan(12)
+    expect(diff).toBeLessThan(30)
     const e = makeEllipse(16, 16, 8, 8, makeAppearance(RED, null))
     addShape(s, e)
     expect(convertToPath(s, [e.id])).toBe(true)
@@ -258,10 +258,10 @@ describe('anclas en el centro de los píxeles', () => {
 describe('convertir un rectángulo en trazado', () => {
   const pixels = (s: DocumentSession, id: string): string => {
     const r = renderShape(getShape(s, id)!, s.image.width, s.image.height)
-    return r ? [...r.data].filter((_, i) => i % 4 === 3).join('') : ''
+    return r ? [...r.data].filter((_, i) => i % 4 === 3).map((v) => (v ? 1 : 0)).join('') : ''
   }
 
-  it('lleva las anclas al centro de los píxeles sin cambiar lo que se pinta', () => {
+  it('lleva las anclas al centro de los píxeles sin cambiar el relleno', () => {
     for (const stroke of [null, color(0, 0, 255)]) {
       const s = DocumentSession.create(64, 64)
       const r = makeRect(7, 9, 26, 20, makeAppearance(RED, stroke))
@@ -273,17 +273,59 @@ describe('convertir un rectángulo en trazado', () => {
         expect(a.p.x - Math.floor(a.p.x)).toBeCloseTo(0.5)
         expect(a.p.y - Math.floor(a.p.y)).toBeCloseTo(0.5)
       }
-      expect(pixels(s, r.id)).toBe(before)
+      // el relleno es idéntico; el contorno de 1 px queda sobre el borde en vez de una fila fuera
+      if (!stroke) expect(pixels(s, r.id)).toBe(before)
     }
   })
 
-  it('un rectángulo redondeado no se desplaza al convertirlo', () => {
+  it('un rectángulo redondeado apenas cambia al convertirlo', () => {
     const s = DocumentSession.create(64, 64)
     const r = makeRect(7, 9, 26, 20, makeAppearance(RED, null))
     r.radius = [4, 4, 4, 4]
     addShape(s, r)
     const before = pixels(s, r.id)
     convertToPath(s, [r.id])
-    expect(pixels(s, r.id)).toBe(before)
+    const after = pixels(s, r.id)
+    let diff = 0
+    for (let i = 0; i < after.length; i++) if (after[i] !== before[i]) diff++
+    expect(diff).toBeLessThan(30)
+  })
+})
+
+describe('trazados con las anclas en centros de píxel', () => {
+  const alpha = (sh: PathShape) =>
+    [...renderShape(sh, 32, 32)!.data].filter((_, i) => i % 4 === 3).map((v): number => (v ? 1 : 0))
+
+  it('pintan también los píxeles que su contorno atraviesa (borde incluido en todos los lados)', () => {
+    const s = DocumentSession.create(32, 32)
+    const r = makeRect(4, 4, 10, 8, makeAppearance(RED, null))
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    const sh = getShape(s, r.id) as PathShape
+    const px = alpha(sh)
+    expect(px.reduce((a, b) => a + b, 0)).toBe(80) // 10 × 8, como el rectángulo
+    expect(px[4 * 32 + 4]).toBe(1) // esquina superior izquierda
+    expect(px[11 * 32 + 13]).toBe(1) // esquina inferior derecha
+    expect(px[12 * 32 + 13]).toBe(0)
+  })
+
+  it('la caja de selección cubre los píxeles pintados', () => {
+    const s = DocumentSession.create(32, 32)
+    const r = makeRect(4, 4, 10, 8, makeAppearance(RED, null))
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    expect(shapesBox(s, [r.id])).toEqual({ x: 4, y: 4, w: 10, h: 8 })
+  })
+
+  it('añadir un ancla a un rectángulo redondeado no cambia el dibujo', () => {
+    const s = DocumentSession.create(64, 64)
+    const r = makeRect(7, 9, 26, 20, makeAppearance(RED, null))
+    r.radius = [4, 4, 4, 4]
+    addShape(s, r)
+    convertToPath(s, [r.id])
+    const before = alpha(getShape(s, r.id) as PathShape)
+    expect(addAnchorAt(s, r.id, 20, 9.5, 4)).toBe(true)
+    const after = alpha(getShape(s, r.id) as PathShape)
+    expect(after).toEqual(before)
   })
 })

@@ -1,6 +1,6 @@
 // Edición de trazados y transformaciones de caja (specs/05): convertir en trazado, anclas y escalado.
 
-import { apply, invert, multiply } from '../geometry/geometry'
+import { apply, invert, isTranslateOnly, multiply } from '../geometry/geometry'
 import {
   type Anchor,
   type Mat2D,
@@ -12,7 +12,7 @@ import {
   cloneShape
 } from '../model/shapes'
 import type { ID } from '../model/types'
-import { shapeLines } from '../render/shape'
+import { isPixelCentered, shapeLines } from '../render/shape'
 import type { DocumentSession } from '../session'
 import { findShape, layersOf } from './shapes'
 
@@ -26,16 +26,37 @@ const corner = (x: number, y: number): Anchor => ({
 })
 
 /**
- * Trazado editable de una forma: igual que `toPath`, pero un rectángulo de esquinas rectas lleva
- * sus anclas al centro de los píxeles, y se rasteriza exactamente igual (lo comprueban las pruebas).
- * Elipses, polígonos y esquinas redondeadas se convierten sin tocar su geometría (centrarlas los
- * movería medio píxel); «Centrar anclas en los píxeles» las centra a petición.
+ * Trazado editable de una forma: igual que `toPath`, pero un rectángulo o una elipse (sin rotar)
+ * se encogen medio píxel para que sus anclas caigan en los centros de los píxeles del borde. Un
+ * trazado con todas las anclas centradas pinta también los píxeles que su contorno atraviesa, así
+ * que el relleno se conserva (exacto en rectángulos; aproximado en esquinas redondeadas y
+ * elipses). El contorno de 1 px de un rectángulo, que cae una fila/columna más allá del relleno,
+ * queda ahora sobre el borde del relleno.
  */
 export function toEditablePath(sh: Shape): PathShape {
-  const p = toPath(sh)
-  if (sh.kind === 'rect' && sh.radius.every((r) => r === 0))
-    for (const sp of p.subpaths) for (const a of sp.anchors) centerAnchor(p.transform, a)
-  return p
+  if ((sh.kind === 'rect' || sh.kind === 'ellipse') && isTranslateOnly(sh.transform)) {
+    const p =
+      sh.kind === 'rect'
+        ? toPath({
+            ...sh,
+            w: Math.max(0, sh.w - 1),
+            h: Math.max(0, sh.h - 1),
+            radius: sh.radius
+          })
+        : toPath({ ...sh, rx: Math.max(0, sh.rx - 0.5), ry: Math.max(0, sh.ry - 0.5) })
+    const shift = (v: Vec2 | null): Vec2 | null => v && { x: v.x + 0.5, y: v.y + 0.5 }
+    for (const sp of p.subpaths)
+      for (const an of sp.anchors) {
+        if (sh.kind === 'rect') {
+          an.p = shift(an.p)!
+          an.in = shift(an.in)
+          an.out = shift(an.out)
+        }
+        centerAnchor(p.transform, an)
+      }
+    return p
+  }
+  return toPath(sh)
 }
 
 /** Convierte una forma paramétrica en trazado (conserva la transformación y la apariencia). */
@@ -566,12 +587,14 @@ export function shapesBox(s: DocumentSession, ids: ID[]): Box | null {
   for (const id of ids) {
     const f = findShape(s, id)
     if (!f) continue
+    // un trazado centrado ocupa también los píxeles que su contorno atraviesa: medio píxel más
+    const m = f.shape.kind === 'path' && isPixelCentered(f.shape) ? 0.5 : 0
     for (const l of shapeLines(f.shape))
       for (const p of l.pts) {
-        x0 = Math.min(x0, p.x)
-        y0 = Math.min(y0, p.y)
-        x1 = Math.max(x1, p.x)
-        y1 = Math.max(y1, p.y)
+        x0 = Math.min(x0, p.x - m)
+        y0 = Math.min(y0, p.y - m)
+        x1 = Math.max(x1, p.x + m)
+        y1 = Math.max(y1, p.y + m)
       }
   }
   return x0 === Infinity ? null : { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
