@@ -230,6 +230,17 @@ describe('anclas en el centro de los píxeles', () => {
     expect(allCentered(getShape(s, id) as PathShape)).toBe(true)
   })
 
+  it('añadir un ancla con la pluma centra también las anclas que ya había (rect redondeado)', () => {
+    const s = DocumentSession.create(64, 64)
+    const r = makeRect(7, 9, 26, 20, makeAppearance(RED, null))
+    r.radius = [4, 4, 4, 4]
+    addShape(s, r)
+    expect(addAnchorAt(s, r.id, 20, 9, 4)).toBe(true)
+    expect(allCentered(getShape(s, r.id) as PathShape)).toBe(true)
+    s.undo()
+    expect(getShape(s, r.id)!.kind).toBe('rect')
+  })
+
   it('«centrar anclas» arregla formas con anclas entre píxeles, es un paso y se deshace', () => {
     const s = DocumentSession.create(32, 32)
     const r = makeRect(4, 4, 10, 10, makeAppearance(RED, null))

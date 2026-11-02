@@ -489,8 +489,9 @@ export function addAnchorAt(
   sp.anchors[b.i] = r.a
   if ((b.i + 1) % sp.anchors.length === 0) sp.anchors[0] = r.b
   else sp.anchors[b.i + 1] = r.b
-  centerAnchor(sh.transform, r.mid)
   sp.anchors.splice(b.i + 1, 0, r.mid)
+  // al editar, todas las anclas del trazado pasan al centro de su píxel (no sólo la nueva)
+  for (const q of sh.subpaths) for (const a of q.anchors) centerAnchor(sh.transform, a)
   tx.commit({ model: true })
   return true
 }

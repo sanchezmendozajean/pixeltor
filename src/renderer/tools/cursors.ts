@@ -6,11 +6,13 @@ export type CursorKind =
 /** Flecha de selección directa: contorno negro con relleno blanco (hueca), como en Illustrator. */
 const ARROW = '<path d="M4 2 L4 19 L8.5 15 L11.5 21.5 L14.5 20 L11.5 13.8 L17.5 13.8 Z"'
 
-/** Pluma: plumín apuntando abajo-izquierda; la punta es el punto activo. */
+/** Pluma: plumín apuntando arriba-izquierda (girado 90° en sentido horario); la punta es el punto activo. */
 const NIB =
+  '<g transform="rotate(90 13 13)">' +
   '<path d="M3 22 L6.5 11 L13 6 L19 12 L14 18.5 Z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>' +
   '<path d="M6.5 11 L12 16.5" stroke="#000" stroke-width="1.2"/>' +
-  '<circle cx="11" cy="11" r="1.6" fill="#000"/>'
+  '<circle cx="11" cy="11" r="1.6" fill="#000"/>' +
+  '</g>'
 
 const svg = (body: string): string =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">${body}</svg>`
@@ -19,24 +21,24 @@ const badge = (inner: string): string =>
   `<g transform="translate(16 15)"><rect x="0" y="0" width="9" height="9" rx="1" fill="#fff" stroke="#000"/>${inner}</g>`
 
 const BODY: Record<CursorKind, { svg: string; x: number; y: number }> = {
-  pen: { svg: svg(NIB), x: 3, y: 22 },
+  pen: { svg: svg(NIB), x: 4, y: 3 },
   'pen-plus': {
     svg: svg(NIB + badge('<path d="M2 4.5 H7 M4.5 2 V7" stroke="#000" stroke-width="1.4"/>')),
-    x: 3,
-    y: 22
+    x: 4,
+    y: 3
   },
   'pen-minus': {
     svg: svg(NIB + badge('<path d="M2 4.5 H7" stroke="#000" stroke-width="1.4"/>')),
-    x: 3,
-    y: 22
+    x: 4,
+    y: 3
   },
   'pen-convert': {
     svg: svg(
       NIB +
         badge('<path d="M1.5 6.5 L4.5 2.5 L7.5 6.5" fill="none" stroke="#000" stroke-width="1.3"/>')
     ),
-    x: 3,
-    y: 22
+    x: 4,
+    y: 3
   },
   direct: {
     svg: svg(`${ARROW} fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>`),
