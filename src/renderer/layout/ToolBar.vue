@@ -5,10 +5,12 @@ import PtIcon from '@/components/PtIcon.vue'
 import { actionLabel, execute } from '@/actions/registry'
 import { TOOLBAR } from '@/tools/catalog'
 import { useColorsStore } from '@/stores/colors'
+import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
 
 const colors = useColorsStore()
+const tools = useToolsStore()
 const ui = useUiStore()
 
 // Relleno y contorno como en Illustrator: la disposición cambia con una o dos columnas.
@@ -39,6 +41,34 @@ const MODES = [
     svg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M5 19 19 5" style="stroke: var(--danger)"/>'
   }
 ] as const
+
+type PaintMode = (typeof MODES)[number]['id']
+
+/** Modo de pintura de relleno o contorno: «ninguno» es el interruptor de las opciones de la herramienta. */
+function modeOf(target: 'fill' | 'stroke'): PaintMode {
+  if (!(target === 'fill' ? tools.useFill : tools.useStroke)) return 'none'
+  return (target === 'fill' ? colors.fillGradient : colors.strokeGradient) ? 'gradient' : 'color'
+}
+
+function setMode(m: PaintMode): void {
+  const on = m !== 'none'
+  if (colors.target === 'fill') {
+    tools.useFill = on
+    colors.fillGradient = m === 'gradient'
+  } else {
+    tools.useStroke = on
+    colors.strokeGradient = m === 'gradient'
+  }
+}
+
+/** Fondo del cuadro de relleno según su modo. */
+const fillBackground = computed(() => {
+  const m = modeOf('fill')
+  if (m === 'gradient') return `linear-gradient(to right, ${colors.fill}, ${colors.stroke})`
+  if (m === 'none')
+    return 'linear-gradient(to top right, transparent calc(50% - 1px), var(--danger) calc(50% - 1px), var(--danger) calc(50% + 1px), transparent calc(50% + 1px)) #fff'
+  return colors.fill
+})
 </script>
 
 <!-- eslint-disable vue/no-v-html -- los SVG son constantes del propio componente -->
@@ -121,7 +151,7 @@ const MODES = [
             left: `${size - chip + ring}px`,
             top: `${size - chip + ring}px`,
             '--ring': `${ring}px`,
-            '--paint': colors.stroke
+            '--paint': modeOf('stroke') === 'none' ? 'transparent' : colors.stroke
           }"
           aria-hidden="true"
         />
@@ -145,7 +175,7 @@ const MODES = [
           type="button"
           class="pt-fswidget__fill"
           :class="{ 'is-top': colors.target === 'fill' }"
-          :style="{ width: `${chip - 1}px`, height: `${chip - 1}px`, background: colors.fill }"
+          :style="{ width: `${chip - 1}px`, height: `${chip - 1}px`, background: fillBackground }"
           :aria-label="`${t('controlbar.fill')} ${colors.fill}`"
           :aria-pressed="colors.target === 'fill'"
           @click="colors.target = 'fill'"
@@ -198,10 +228,12 @@ const MODES = [
         v-for="m in MODES"
         :key="m.id"
         type="button"
-        :class="{ 'is-active': m.id === 'color' }"
+        :class="{ 'is-active': m.id === modeOf(colors.target) }"
+        :aria-pressed="m.id === modeOf(colors.target)"
         :style="{ width: `${modeSize}px`, height: `${modeSize + 6}px` }"
         :data-tip="t(m.label)"
         :aria-label="t(m.label)"
+        @click="setMode(m.id)"
       >
         <svg
           viewBox="0 0 24 24"

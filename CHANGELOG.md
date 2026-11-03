@@ -44,6 +44,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - El contorno de selección de un rectángulo con las esquinas redondeadas ya no muestra picos hacia fuera en las esquinas cuando el radio es pequeño (se dibuja la forma encogida medio píxel en lugar de desplazar su polígono).
 - Arreglo menor: la etiqueta de zoom de la cabecera del visor no se actualizaba tras encajar la imagen.
 
+### Modos de pintura de la barra de herramientas
+
+- Los botones **Color / Degradado / Ninguno** bajo el indicador de relleno y contorno ya funcionan: actúan sobre el que esté activo (relleno o contorno) y se aplican a las **formas nuevas**. «Ninguno» equivale a desmarcar Relleno/Contorno en las opciones de la herramienta (los dos controles están sincronizados); «Degradado» crea la forma con un degradado lineal entre el color de relleno y el de contorno (editable después en Degradado/Apariencia). El indicador muestra el degradado, o una barra roja si no hay relleno; con contorno «ninguno» el anillo queda hueco.
+- No cambian las formas ya creadas (se editan en Apariencia) ni las herramientas de píxeles (lápiz, pincel, bote), que siguen usando el color de relleno.
+
 ### No incluido en esta versión (decisión de alcance)
 
 - Rotación de vista (choca con el render pixel-perfect), estilos gráficos, capas enlazadas y WebP animado (opcional en la spec).

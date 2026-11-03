@@ -135,6 +135,22 @@ const rgba = (n: number) => ({
   a: n & 255
 })
 
+/** Los modos «degradado» de la barra de herramientas: la forma nueva lleva un degradado lineal. */
+function withPaintModes(shape: Shape): Shape {
+  const c = useColorsStore()
+  if (!c.fillGradient && !c.strokeGradient) return shape
+  const fill = rgba(hexToRgba(c.fill))
+  const stroke = rgba(hexToRgba(c.stroke))
+  const ap = shape.appearance
+  const fills = ap.fills.map((f) =>
+    c.fillGradient ? { ...f, paint: defaultGradient(shape, 'linear', fill, stroke) } : f
+  )
+  const strokes = ap.strokes.map((st) =>
+    c.strokeGradient ? { ...st, paint: defaultGradient(shape, 'linear', stroke, fill) } : st
+  )
+  return { ...shape, appearance: { ...ap, fills, strokes } }
+}
+
 function currentAppearance(closed: boolean): Appearance {
   const t = useToolsStore()
   const c = useColorsStore()
@@ -245,6 +261,7 @@ export class ShapeTools {
 
   /** Muestra la vista previa y publica su tamaño en píxeles para la barra de estado. */
   private setPreview(ws: Workspace, shape: Shape | null): void {
+    if (shape) shape = withPaintModes(shape)
     ws.setPreview(shape)
     const b = shape
       ? pixelBounds(renderShapeRegion(shape, ws.session.image.width, ws.session.image.height))
@@ -982,7 +999,7 @@ export class ShapeTools {
       this.drag = null
       this.snapLines = []
       this.setPreview(ws, null)
-      if (shape) addShape(ws.session, shape)
+      if (shape) addShape(ws.session, withPaintModes(shape))
     }
   }
 
@@ -1001,7 +1018,10 @@ export class ShapeTools {
       replaceSubpath(ws.session, cont.shapeId, cont.subpath, p.anchors, closed)
       return
     }
-    addShape(ws.session, makePath([{ closed, anchors: p.anchors }], currentAppearance(closed)))
+    addShape(
+      ws.session,
+      withPaintModes(makePath([{ closed, anchors: p.anchors }], currentAppearance(closed)))
+    )
   }
 
   cancelPen(): void {

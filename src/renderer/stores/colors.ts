@@ -6,7 +6,10 @@ export const useColorsStore = defineStore('colors', {
     fill: '#000000',
     stroke: '#FFFFFF',
     /** Cuál de los dos recibe los cambios del selector. */
-    target: 'fill' as 'fill' | 'stroke'
+    target: 'fill' as 'fill' | 'stroke',
+    /** Las formas nuevas llevan un degradado (de relleno a contorno) en lugar de un color liso. */
+    fillGradient: false,
+    strokeGradient: false
   }),
   actions: {
     swap() {
