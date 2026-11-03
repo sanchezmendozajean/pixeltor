@@ -1,0 +1,47 @@
+# Verifica Windows y Linux (specs/20): lint, tipos, pruebas, build, e2e de Electron y empaquetado.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      # Los benchmarks miden tiempos y dependen de la máquina: sólo las pruebas funcionales.
+      - run: npx vitest run --exclude "tests/core/bench/**" --exclude "node_modules/**"
+      - run: npm run build
+      - name: e2e (Linux, con pantalla virtual)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum npx playwright test
+      - name: e2e (Windows)
+        if: runner.os == 'Windows'
+        run: npx playwright test
+      - name: Empaquetar (Linux: AppImage y deb)
+        if: runner.os == 'Linux'
+        run: npx electron-builder --linux
+      - name: Empaquetar (Windows: NSIS y portable)
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pixeltor-${{ runner.os }}
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: warn
