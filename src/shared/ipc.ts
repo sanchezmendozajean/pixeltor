@@ -16,6 +16,8 @@ export interface Settings {
   workspaces: SavedWorkspace[]
   /** Espacio de trabajo con el que arranca la ventana. */
   activeWorkspace: string
+  /** Buscar actualizaciones al iniciar (sólo instaladores que se actualizan solos). */
+  autoUpdate: boolean
 }
 
 export const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5] as const
@@ -26,7 +28,8 @@ export const DEFAULT_SETTINGS: Settings = {
   shortcuts: {},
   uiScale: 1,
   workspaces: [],
-  activeWorkspace: 'essentials'
+  activeWorkspace: 'essentials',
+  autoUpdate: true
 }
 
 export const IPC = {
@@ -41,6 +44,7 @@ export const IPC = {
   paletteImport: 'palette:import',
   paletteExport: 'palette:export',
   confirmClose: 'dialog:confirmClose',
+  updatesCheck: 'updates:check',
   autosaveWrite: 'autosave:write',
   autosaveRemove: 'autosave:remove',
   autosaveList: 'autosave:list',
@@ -113,6 +117,10 @@ export interface PixeltorApi {
       suggestedName: string
       bytes: Record<'gpl' | 'pal' | 'hex' | 'png', Uint8Array>
     }): Promise<string | null>
+  }
+  updates: {
+    /** Búsqueda manual (Ayuda › Buscar actualizaciones…): informa del resultado con un diálogo. */
+    check(): Promise<void>
   }
   dialogs: {
     confirmClose(name: string): Promise<CloseChoice>

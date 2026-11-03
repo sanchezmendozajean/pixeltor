@@ -29,6 +29,7 @@ function sanitize(raw: unknown): Settings {
       out.activeWorkspace = active
     const scale = (raw as Partial<Settings>).uiScale
     if (typeof scale === 'number' && scale >= 0.75 && scale <= 2) out.uiScale = scale
+    if ((raw as Partial<Settings>).autoUpdate === false) out.autoUpdate = false
     const sc = (raw as Partial<Settings>).shortcuts
     out.shortcuts = {}
     if (sc && typeof sc === 'object')

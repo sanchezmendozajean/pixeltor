@@ -65,6 +65,8 @@ export const useUiStore = defineStore('ui', {
     toolbarColumns: 1 as 1 | 2,
     /** Escala de la interfaz (se recuerda entre sesiones). */
     uiScale: 1,
+    /** Buscar actualizaciones al iniciar. */
+    autoUpdate: true,
     /** Número de anclas seleccionadas con la Selección directa (para habilitar botones). */
     anchorCount: 0,
     /** Selector de color abierto para este destino. */
@@ -80,6 +82,7 @@ export const useUiStore = defineStore('ui', {
       this.toolbarColumns = s.toolbarColumns
       loadShortcutOverrides(s.shortcuts)
       this.uiScale = s.uiScale
+      this.autoUpdate = s.autoUpdate
       this.workspaceId = s.activeWorkspace
       loadWorkspaces(s.workspaces)
       window.pixeltor.ui.setScale(s.uiScale)
@@ -88,6 +91,10 @@ export const useUiStore = defineStore('ui', {
       this.uiScale = f
       window.pixeltor.ui.setScale(f)
       await window.pixeltor.settings.set({ uiScale: f })
+    },
+    async setAutoUpdate(on: boolean) {
+      this.autoUpdate = on
+      await window.pixeltor.settings.set({ autoUpdate: on })
     },
     async setToolbarColumns(n: 1 | 2) {
       this.toolbarColumns = n

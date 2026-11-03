@@ -9,6 +9,11 @@ files:
 extraResources:
   - from: resources/licenses
     to: licenses
+# Las versiones se publican como «releases» de GitHub; electron-updater lee latest*.yml de ahí.
+publish:
+  provider: github
+  owner: sanchezmendozajean
+  repo: pixeltor
 asar: true
 win:
   target:

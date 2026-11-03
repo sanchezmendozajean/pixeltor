@@ -20,6 +20,7 @@ const api: PixeltorApi = {
     import: () => ipcRenderer.invoke(IPC.paletteImport),
     export: (req) => ipcRenderer.invoke(IPC.paletteExport, req)
   },
+  updates: { check: () => ipcRenderer.invoke(IPC.updatesCheck) },
   dialogs: {
     confirmClose: (name) => ipcRenderer.invoke(IPC.confirmClose, name)
   },

@@ -148,6 +148,8 @@ export const ACTIONS: ActionDef[] = [
   // Ayuda
   a('help.commandPalette', 'Ctrl+K', 'search'),
   a('help.shortcuts', undefined, 'keyboard'),
+  a('help.checkUpdates'),
+  a('help.autoUpdate'),
   a('help.about', undefined, 'info'),
   // Selección de píxeles (Intro fija, Esc cancela, flechas desplazan)
   a('selection.commit', 'Enter'),

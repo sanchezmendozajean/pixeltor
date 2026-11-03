@@ -125,6 +125,11 @@ export function registerAppActions(): void {
     checked: () => !ui.showPaths
   })
   registerHandler('help.shortcuts', { run: () => (ui.shortcutsDialog = true) })
+  registerHandler('help.checkUpdates', { run: () => void window.pixeltor.updates.check() })
+  registerHandler('help.autoUpdate', {
+    run: () => void ui.setAutoUpdate(!ui.autoUpdate),
+    checked: () => ui.autoUpdate
+  })
   registerHandler('help.commandPalette', { run: () => (ui.palette = !ui.palette) })
   registerHandler('view.guides', {
     run: () => (ui.showGuides = !ui.showGuides),

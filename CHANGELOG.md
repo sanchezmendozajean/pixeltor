@@ -56,11 +56,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Miniaturas del panel Imágenes**: se redibujaban (recomponiendo todas las imágenes, con capas y efectos, en el hilo principal) en cada cambio, también mientras se arrastraba un parámetro; ahora se espera 150 ms sin cambios. Era la mayor parte del coste con muchas capas.
 - Medido en la aplicación (1000×1000, forma grande, 20 capas): el scrubbing del gaussiano baja de ≈410 ms a ≈145 ms de mediana por resultado (objetivo < 150 ms; p90 ≈ 180 ms). Tras un trazo largo hay un único redibujado de miniaturas de ≈130 ms al soltar.
 
+### Actualización automática
+
+- Pixeltor busca versiones nuevas en las «releases» de GitHub unos segundos después de arrancar (se puede desactivar en Ayuda › *Buscar actualizaciones al iniciar*) y a petición en Ayuda › *Buscar actualizaciones…*. Si hay una, pregunta si descargarla (en segundo plano) y la instala al cerrar la aplicación (el cierre sigue preguntando por los cambios sin guardar). Sólo avisa cuando hay una versión nueva; la búsqueda manual también informa de que está al día o de un fallo.
+- Se actualizan solos el instalador de Windows (NSIS) y el AppImage de Linux. La versión portable y el .deb no pueden: la búsqueda manual abre la página de versiones. En desarrollo (sin empaquetar) no hace nada.
+- Dependencia nueva: `electron-updater` (el actualizador estándar de electron-builder; verifica la descarga con la firma de hash de `latest*.yml`). `electron-builder.yml` declara la publicación en GitHub y `.github/workflows/release.yml` publica los instaladores al subir una etiqueta `v*`.
+- Sin firma de código (decisión de alcance), Windows SmartScreen puede avisar al instalar; la actualización no depende de ella.
+
 ### No incluido en esta versión (decisión de alcance)
 
 - Rotación de vista (choca con el render pixel-perfect), estilos gráficos, capas enlazadas y WebP animado (opcional en la spec).
 - Importar y exportar SVG: retirado del alcance, el producto trabaja con mapas de bits.
-- Asociación de archivos, firma de código y auto-actualización (opcionales).
+- Asociación de archivos y firma de código (opcionales).
 - Verificación en Linux (AppImage y deb) sin hacer.
 - Rendimiento: el scrubbing del desenfoque de una forma muy grande en 20 capas sigue en ≈ 0,4 s (objetivo < 150 ms); falta la vista previa a media resolución.
 

@@ -188,6 +188,8 @@
     "help": {
       "commandPalette": "Paleta de comandos",
       "shortcuts": "Atajos de teclado…",
+      "checkUpdates": "Buscar actualizaciones…",
+      "autoUpdate": "Buscar actualizaciones al iniciar",
       "about": "Acerca de Pixeltor"
     },
     "tool": {

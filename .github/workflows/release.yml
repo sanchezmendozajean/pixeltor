@@ -1,0 +1,31 @@
+# Publica una versión: al subir una etiqueta v* (por ejemplo v0.8.1) se compila en Windows y Linux y
+# se adjuntan los instaladores, los latest*.yml y los .blockmap a una «release» de GitHub; de ahí los
+# lee la actualización automática de la aplicación (src/main/updater.ts).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Empaquetar y publicar
+        run: npx electron-builder ${{ runner.os == 'Windows' && '--win' || '--linux' }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
