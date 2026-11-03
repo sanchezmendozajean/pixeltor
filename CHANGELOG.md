@@ -49,6 +49,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - Los botones **Color / Degradado / Ninguno** bajo el indicador de relleno y contorno ya funcionan: actúan sobre el que esté activo (relleno o contorno) y se aplican a las **formas nuevas**. «Ninguno» equivale a desmarcar Relleno/Contorno en las opciones de la herramienta (los dos controles están sincronizados); «Degradado» crea la forma con un degradado lineal entre el color de relleno y el de contorno (editable después en Degradado/Apariencia). El indicador muestra el degradado, o una barra roja si no hay relleno; con contorno «ninguno» el anillo queda hueco.
 - No cambian las formas ya creadas (se editan en Apariencia) ni las herramientas de píxeles (lápiz, pincel, bote), que siguen usando el color de relleno.
 
+### Rendimiento del desenfoque al arrastrar
+
+- **Borrador a media resolución**: mientras se arrastra un parámetro de un efecto, los desenfoques (gaussiano y de caja) se calculan a media resolución y se amplían (~4× menos trabajo); al soltar se recalcula el resultado exacto, así que lo exportado y lo que queda en el documento no cambia (el borrador nunca se guarda ni se exporta; hay pruebas de que sin borrador el resultado es idéntico y con él la diferencia media es pequeña).
+- El bucle final del desenfoque ya no recorre la región pixel a pixel con búsquedas por píxel en el modo habitual (≈20 % menos en el cálculo exacto) y la firma de la caché de efectos recorre los bytes de 4 en 4.
+- Medido en la aplicación (1000×1000, forma grande): el scrubbing baja de ≈410 ms a ≈280 ms por resultado en un documento limpio; con muchas capas debajo domina la composición y sigue cerca de 400 ms, por encima del objetivo de 150 ms.
+
 ### No incluido en esta versión (decisión de alcance)
 
 - Rotación de vista (choca con el render pixel-perfect), estilos gráficos, capas enlazadas y WebP animado (opcional en la spec).

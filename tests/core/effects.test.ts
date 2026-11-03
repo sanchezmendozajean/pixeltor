@@ -244,3 +244,35 @@ describe('efectos', () => {
     expect(getEffects(s, L)).toHaveLength(2)
   })
 })
+
+describe('borrador de desenfoque (arrastrar un parámetro)', () => {
+  function scene() {
+    const s = DocumentSession.create(160, 160)
+    const bmp = s.bitmapOf(s.activeLayer.id)
+    for (let y = 40; y < 120; y++) for (let x = 30; x < 130; x++) bmp.set(x, y, 0xff8000ff)
+    const L = { kind: 'layer', id: s.activeLayer.id } as const
+    const b = addEffect(s, L, 'gaussian-blur')!
+    updateEffect(s, L, b.id, { params: { radius: 12 } })
+    return s
+  }
+  const render = (s: DocumentSession, draft?: boolean) => {
+    const out = new Bitmap(s.image.width, s.image.height)
+    composeImage(s.image, s.rasters, out, undefined, { draft })
+    return out
+  }
+
+  it('sin borrador el resultado es el exacto de siempre', () => {
+    const s = scene()
+    expect(render(s, false).data).toEqual(render(s).data)
+  })
+
+  it('el borrador se parece al resultado exacto (diferencia media pequeña)', () => {
+    const s = scene()
+    const exact = render(s)
+    const draft = render(s, true)
+    let diff = 0
+    for (let i = 3; i < exact.data.length; i += 4) diff += Math.abs(exact.data[i]! - draft.data[i]!)
+    expect(diff / (exact.width * exact.height)).toBeLessThan(4) // sobre 255
+    expect(draft.data).not.toEqual(exact.data)
+  })
+})

@@ -37,6 +37,12 @@ export const syncFx: FxProvider = {
 }
 
 function fnv(d: Uint8ClampedArray, h = 0x811c9dc5): number {
+  // de 4 en 4 bytes (4× menos vueltas) cuando el búfer está alineado
+  if (d.byteOffset % 4 === 0 && d.length % 4 === 0) {
+    const w = new Uint32Array(d.buffer, d.byteOffset, d.length >> 2)
+    for (let i = 0; i < w.length; i++) h = Math.imul(h ^ w[i]!, 0x01000193) >>> 0
+    return h
+  }
   for (let i = 0; i < d.length; i++) h = Math.imul(h ^ d[i]!, 0x01000193) >>> 0
   return h
 }
@@ -76,7 +82,7 @@ export class AsyncFxProvider implements FxProvider {
 
     // sólo viajan (y se firman) los píxeles que el cálculo puede leer
     const sub = cropRegion(input, need)
-    const key = `${slot}|${JSON.stringify(effects)}|${out.x},${out.y},${out.w},${out.h}|${ctx.width}x${ctx.height}|${fnv(sub.data)}`
+    const key = `${slot}|${JSON.stringify(effects)}|${out.x},${out.y},${out.w},${out.h}|${ctx.width}x${ctx.height}${ctx.draft ? '|draft' : ''}|${fnv(sub.data)}`
     const hit = this.cache.get(key)
     if (hit) {
       this.cache.delete(key)

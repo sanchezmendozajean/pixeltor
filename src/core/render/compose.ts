@@ -58,6 +58,8 @@ export interface ComposeExtras {
   fx?: FxProvider
   /** Paletas del documento (salida «ajustar a paleta» de los efectos). */
   palettes?: Palette[]
+  /** Vista previa aproximada de efectos mientras se edita un parámetro (ver `EffectContext.draft`). */
+  draft?: boolean
   /**
    * Caché de la composición de las capas que quedan debajo de la capa «caliente» (la que se está
    * editando). Sólo se usa en imágenes sin grupos ni recortes; el resultado es idéntico al de
@@ -159,7 +161,12 @@ function composeInto(
   let scratch: Bitmap | null = null
   let shapeScratch: Bitmap | null = null
   let layerFx: Bitmap | null = null
-  const ctx = { width: img.width, height: img.height, palettes: extras.palettes }
+  const ctx = {
+    width: img.width,
+    height: img.height,
+    palettes: extras.palettes,
+    draft: extras.draft
+  }
   const provider = extras.fx ?? syncFx
 
   /** Contenido de una capa normal (ráster + formas + efectos); el bitmap es temporal y compartido. */

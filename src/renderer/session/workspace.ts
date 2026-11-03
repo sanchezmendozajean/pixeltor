@@ -7,6 +7,7 @@ import {
   type Shape,
   type Rect,
   composeImage,
+  isEditingEffect,
   effectsReach
 } from '@core/index'
 import {
@@ -409,6 +410,7 @@ export class Workspace {
       floating: f ? { layerId: s.activeLayerId, pixels: f } : null,
       fx: this.fx,
       palettes: s.doc.palettes,
+      draft: isEditingEffect(s),
       prefix: this.prefix,
       hotLayerId: s.activeLayerId,
       preview: this.preview ? { layerId: s.activeLayerId, shape: this.preview } : null

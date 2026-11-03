@@ -18,6 +18,11 @@ export interface EffectContext {
   width: number
   height: number
   palettes?: Palette[]
+  /**
+   * Borrador: mientras se arrastra un parámetro, los desenfoques se calculan a media resolución
+   * (aproximado). Al soltar se recalcula el resultado exacto.
+   */
+  draft?: boolean
 }
 
 export interface EffectDef {

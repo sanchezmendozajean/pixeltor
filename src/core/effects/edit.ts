@@ -173,6 +173,11 @@ export function liveUpdateEffect(
   })
 }
 
+/** ¿Se está arrastrando algún parámetro de efecto (cambio vivo sin confirmar)? */
+export function isEditingEffect(s: DocumentSession): boolean {
+  return (lives.get(s)?.size ?? 0) > 0
+}
+
 export function commitEffectEdit(s: DocumentSession, key: string): void {
   const m = lives.get(s)
   const tx = m?.get(key)

@@ -274,6 +274,32 @@ function alphaBounds(input: Region): Rect | null {
   return x1 < 0 ? null : { x: x + x0, y: y + y0, w: x1 - x0 + 1, h: y1 - y0 + 1 }
 }
 
+/** Desenfoque aproximado a media resolución: reduce 2×2 (media), desenfoca con la mitad de radio y amplía. */
+function blurHalf(
+  p: Plane,
+  w: number,
+  h: number,
+  blur: (p: Plane, w: number, h: number, k: number) => Plane
+): Plane {
+  const hw = (w + 1) >> 1
+  const hh = (h + 1) >> 1
+  const small = new Float32Array(hw * hh) as Plane
+  for (let y = 0; y < hh; y++)
+    for (let x = 0; x < hw; x++) {
+      const x1 = Math.min(w - 1, 2 * x + 1)
+      const y1 = Math.min(h - 1, 2 * y + 1)
+      small[y * hw + x] =
+        (p[2 * y * w + 2 * x]! + p[2 * y * w + x1]! + p[y1 * w + 2 * x]! + p[y1 * w + x1]!) / 4
+    }
+  const b = blur(small, hw, hh, 0.5)
+  const out = new Float32Array(w * h) as Plane
+  for (let y = 0; y < h; y++) {
+    const row = (y >> 1) * hw
+    for (let x = 0; x < w; x++) out[y * w + x] = b[row + (x >> 1)]!
+  }
+  return out
+}
+
 /**
  * Desenfoca RGBA premultiplicado con `blur`; `mode`: both | alpha | color. Sólo se calcula la zona
  * que el contenido puede alcanzar (caja del alfa + radio): fuera de ella el resultado es 0.
@@ -283,7 +309,9 @@ function blurRegion(
   out: Rect,
   pad: number,
   mode: string,
-  blur: (p: Plane, w: number, h: number) => Plane
+  /** `k` es la escala de resolución (1 = completa, 0,5 = borrador): el radio se multiplica por k. */
+  blur: (p: Plane, w: number, h: number, k: number) => Plane,
+  draft = false
 ): Region {
   const res = makeRegion(out)
   const content = alphaBounds(input)
@@ -296,14 +324,36 @@ function blurRegion(
     for (let i = 0; i < ch.length; i++) ch[i] = (ch[i]! * a[i]!) / 255
     return ch
   })
-  const blurredA = blur(a, e.w, e.h)
-  const bp = mode === 'alpha' ? pr : pr.map((p) => blur(p, e.w, e.h))
+  // Borrador (sólo al arrastrar): se desenfoca a media resolución y se amplía; ~4× menos trabajo
+  const half = draft && e.w >= 64 && e.h >= 64
+  const run = (p: Plane): Plane => (half ? blurHalf(p, e.w, e.h, blur) : blur(p, e.w, e.h, 1))
+  const blurredA = run(a)
+  const bp = mode === 'alpha' ? pr : pr.map(run)
   // en el modo «ambos» fuera de la zona calculada todo es 0: se recorre sólo esa zona
   const full = mode !== 'both'
   const xa = full ? 0 : Math.max(0, e.x - out.x)
   const xb = full ? out.w : Math.min(out.w, e.x + e.w - out.x)
   const ya = full ? 0 : Math.max(0, e.y - out.y)
   const yb = full ? out.h : Math.min(out.h, e.y + e.h - out.y)
+  if (mode === 'both') {
+    // camino rápido (el habitual): todo el recorrido cae dentro de la zona calculada
+    const [b0, b1, b2] = bp as [Plane, Plane, Plane]
+    const d = res.data
+    for (let y = ya; y < yb; y++) {
+      let pi = (y + out.y - e.y) * e.w + (xa + out.x - e.x)
+      let o = (y * out.w + xa) * 4
+      for (let x = xa; x < xb; x++, pi++, o += 4) {
+        const wa = blurredA[pi]!
+        if (wa > 0) {
+          d[o] = clampByte((b0[pi]! / wa) * 255)
+          d[o + 1] = clampByte((b1[pi]! / wa) * 255)
+          d[o + 2] = clampByte((b2[pi]! / wa) * 255)
+        }
+        d[o + 3] = clampByte(wa)
+      }
+    }
+    return res
+  }
   for (let y = ya; y < yb; y++)
     for (let x = xa; x < xb; x++) {
       const px = x + out.x - e.x
@@ -311,8 +361,8 @@ function blurRegion(
       const inside = px >= 0 && py >= 0 && px < e.w && py < e.h
       const pi = py * e.w + px
       const o = (y * out.w + x) * 4
-      const ii = regionIndex(input, out.x + x, out.y + y)
       if (mode === 'alpha') {
+        const ii = regionIndex(input, out.x + x, out.y + y)
         if (ii >= 0) {
           res.data[o] = input.data[ii]!
           res.data[o + 1] = input.data[ii + 1]!
@@ -327,7 +377,10 @@ function blurRegion(
         res.data[o + 1] = clampByte((bp[1]![pi]! / wa) * 255)
         res.data[o + 2] = clampByte((bp[2]![pi]! / wa) * 255)
       }
-      res.data[o + 3] = mode === 'color' ? (ii >= 0 ? input.data[ii + 3]! : 0) : clampByte(wa)
+      if (mode === 'color') {
+        const ii = regionIndex(input, out.x + x, out.y + y)
+        res.data[o + 3] = ii >= 0 ? input.data[ii + 3]! : 0
+      } else res.data[o + 3] = clampByte(wa)
     }
   return res
 }
@@ -344,9 +397,14 @@ const gaussianBlurFx: EffectDef = {
   category: 'blur',
   params: [floatP('radius', 0, 64, 2), channelsParam],
   influence: (p) => blurReach(n(p, 'radius')),
-  apply: (input, out, p) =>
-    blurRegion(input, out, blurReach(n(p, 'radius')), p['channels'] as string, (pl, w, h) =>
-      gaussianBlur(pl, w, h, n(p, 'radius'))
+  apply: (input, out, p, ctx) =>
+    blurRegion(
+      input,
+      out,
+      blurReach(n(p, 'radius')),
+      p['channels'] as string,
+      (pl, w, h, k) => gaussianBlur(pl, w, h, n(p, 'radius') * k),
+      ctx.draft
     )
 }
 
@@ -355,13 +413,22 @@ const boxBlurFx: EffectDef = {
   category: 'blur',
   params: [intP('rx', 0, 64, 2), intP('ry', 0, 64, 2), intP('iterations', 1, 4, 1), channelsParam],
   influence: (p) => (Math.max(n(p, 'rx'), n(p, 'ry')) + 1) * n(p, 'iterations'),
-  apply: (input, out, p) =>
+  apply: (input, out, p, ctx) =>
     blurRegion(
       input,
       out,
       (Math.max(n(p, 'rx'), n(p, 'ry')) + 1) * n(p, 'iterations'),
       p['channels'] as string,
-      (pl, w, h) => boxBlur(pl, w, h, n(p, 'rx'), n(p, 'ry'), n(p, 'iterations'))
+      (pl, w, h, k) =>
+        boxBlur(
+          pl,
+          w,
+          h,
+          Math.round(n(p, 'rx') * k),
+          Math.round(n(p, 'ry') * k),
+          n(p, 'iterations')
+        ),
+      ctx.draft
     )
 }
 
