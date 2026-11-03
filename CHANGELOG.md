@@ -53,7 +53,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 - **Borrador a media resolución**: mientras se arrastra un parámetro de un efecto, los desenfoques (gaussiano y de caja) se calculan a media resolución y se amplían (~4× menos trabajo); al soltar se recalcula el resultado exacto, así que lo exportado y lo que queda en el documento no cambia (el borrador nunca se guarda ni se exporta; hay pruebas de que sin borrador el resultado es idéntico y con él la diferencia media es pequeña).
 - El bucle final del desenfoque ya no recorre la región pixel a pixel con búsquedas por píxel en el modo habitual (≈20 % menos en el cálculo exacto) y la firma de la caché de efectos recorre los bytes de 4 en 4.
-- Medido en la aplicación (1000×1000, forma grande): el scrubbing baja de ≈410 ms a ≈280 ms por resultado en un documento limpio; con muchas capas debajo domina la composición y sigue cerca de 400 ms, por encima del objetivo de 150 ms.
+- **Miniaturas del panel Imágenes**: se redibujaban (recomponiendo todas las imágenes, con capas y efectos, en el hilo principal) en cada cambio, también mientras se arrastraba un parámetro; ahora se espera 150 ms sin cambios. Era la mayor parte del coste con muchas capas.
+- Medido en la aplicación (1000×1000, forma grande, 20 capas): el scrubbing del gaussiano baja de ≈410 ms a ≈145 ms de mediana por resultado (objetivo < 150 ms; p90 ≈ 180 ms). Tras un trazo largo hay un único redibujado de miniaturas de ≈130 ms al soltar.
 
 ### No incluido en esta versión (decisión de alcance)
 

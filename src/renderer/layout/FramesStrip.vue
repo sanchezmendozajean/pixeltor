@@ -87,14 +87,23 @@ function drawThumbs(): void {
     el.getContext('2d')!.putImageData(data, 0, 0)
   }
 }
-let raf = 0
-function scheduleThumbs(): void {
-  cancelAnimationFrame(raf)
-  raf = requestAnimationFrame(drawThumbs)
+// Recomponer todas las imágenes en el hilo principal es caro (con capas y efectos, cientos de ms):
+// se espera a que cesen los cambios (arrastrar un parámetro, un trazo largo) antes de redibujar.
+const THUMB_DELAY = 150
+let timer = 0
+function scheduleThumbs(delay = THUMB_DELAY): void {
+  clearTimeout(timer)
+  timer = window.setTimeout(() => requestAnimationFrame(drawThumbs), delay)
 }
-onMounted(scheduleThumbs)
-onBeforeUnmount(() => cancelAnimationFrame(raf))
-watch(() => [docs.rev, ui.stripExpanded, images.value.length], scheduleThumbs, { flush: 'post' })
+onMounted(() => scheduleThumbs(0))
+onBeforeUnmount(() => clearTimeout(timer))
+watch(
+  () => [docs.rev, ui.stripExpanded, images.value.length],
+  () => scheduleThumbs(),
+  {
+    flush: 'post'
+  }
+)
 
 // ---- selección ----
 function pick(id: ID, e: MouseEvent): void {
