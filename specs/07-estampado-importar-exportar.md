@@ -55,7 +55,7 @@ Opciones comunes:
 | **Hoja de sprites** | Disposición: horizontal, vertical, rejilla (columnas), empaquetada; relleno (padding) y extrusión de bordes; JSON de metadatos (formato *hash* o *array* compatible con TexturePacker/Aseprite: frame, duración, sourceSize) | F5 |
 | **GIF animado** | Paleta global o por frame, umbral de transparencia, bucle, duración por imagen (redondeada a 10 ms, con aviso) | F5 |
 | **APNG** | Animación con alfa completo | F5 |
-| **WebP animado** | Opcional | F7 |
+| **WebP animado** | Opcional. **Diferido** (2026-11-04): hasta que se necesite o haya una alternativa mejor | F7 |
 | **ICO** (Windows) | Combina varias imágenes del documento de distintos tamaños (16, 24, 32, 48, 64, 128, 256) en un `.ico` | F5 |
 
 Exportar es **no destructivo**: renderiza la composición completa (estampado virtual de formas y efectos) sin modificar el documento.

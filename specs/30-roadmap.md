@@ -61,6 +61,6 @@ Cada fase termina con: pruebas unitarias en verde, app ejecutable en Windows y L
 ## F7 · Pulido y distribución
 - Buscatrazos, estilos gráficos, grupos de capas, máscara de recorte, capas enlazadas (si cabe).
 - Atajos personalizables, workspaces personalizados, tema Gris medio, escala de UI.
-- Presión de tableta, rotación de vista, WebP animado.
+- Presión de tableta. _Diferidos por decisión del usuario (2026-11-04), mapeados pero sin implementar por ahora: **rotación de vista** y **WebP animado** (este último hasta que se necesite o aparezca una alternativa mejor; el APNG cubre el caso de uso)._
 - Asociación de archivos, .deb, firma de código (si aplica), auto-actualización (opcional).
 - Revisión de accesibilidad y rendimiento.
