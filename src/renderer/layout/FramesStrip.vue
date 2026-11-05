@@ -382,7 +382,8 @@ const excluded = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-1);
+  /* el margen vertical evita que overflow recorte el borde (box-shadow) de la imagen activa */
+  padding: 2px var(--space-1);
   overflow-x: auto;
   min-width: 0;
 }
