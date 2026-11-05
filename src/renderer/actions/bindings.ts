@@ -17,6 +17,10 @@ import {
   isolateGroup,
   addEffect,
   addImage,
+  canMergeDown,
+  cropToSelection,
+  flattenLayers,
+  mergeDown,
   deleteImages,
   duplicateImages,
   setActiveImage,
@@ -124,6 +128,37 @@ export function registerAppActions(): void {
     run: viewerFlag('showPaths'),
     checked: () => !ui.showPaths
   })
+  registerHandler('view.snapPixel', {
+    run: () => (ui.snap.grid = !ui.snap.grid),
+    checked: () => ui.snap.grid
+  })
+  // Modo vista previa: oculta trazados, cuadrícula de píxeles y guías; al salir restaura lo que había.
+  registerHandler('view.preview', {
+    enabled: () => !!docs.active,
+    run: () => {
+      const w = docs.active
+      if (!w) return
+      const set = (k: 'pixelGrid' | 'showPaths', on: boolean): void => {
+        if (w.activeViewer[k] !== on) w.activeViewer[k] = on
+      }
+      if (ui.preview) {
+        set('showPaths', ui.preview.paths)
+        set('pixelGrid', ui.preview.grid)
+        ui.showGuides = ui.preview.guides
+        ui.preview = null
+      } else {
+        ui.preview = { paths: ui.showPaths, grid: ui.pixelGrid, guides: ui.showGuides }
+        set('showPaths', false)
+        set('pixelGrid', false)
+        ui.showGuides = false
+      }
+      mirrorViewerFlags(w)
+      w.refreshView()
+    },
+    checked: () => !!ui.preview
+  })
+  registerHandler('edit.preferences', { run: () => (ui.dialog = 'prefs') })
+  registerHandler('help.about', { run: () => (ui.dialog = 'about') })
   registerHandler('help.shortcuts', { run: () => (ui.shortcutsDialog = true) })
   registerHandler('help.checkUpdates', { run: () => void window.pixeltor.updates.check() })
   registerHandler('help.autoUpdate', {
@@ -299,6 +334,12 @@ export function registerAppActions(): void {
     enabled: has,
     run: () => void duplicateImages(ses(), [ses().activeImageId])
   })
+  registerHandler('image.size', { enabled: has, run: () => (ui.dialog = 'imageSize') })
+  registerHandler('image.canvasSize', { enabled: has, run: () => (ui.dialog = 'canvas') })
+  registerHandler('image.crop', {
+    enabled: () => has() && (docs.rev, !!ses().selection.mask && !ses().selection.mask!.isEmpty()),
+    run: () => void cropToSelection(ses())
+  })
   registerHandler('image.delete', {
     enabled: () => has() && (docs.rev, ses().doc.images.length > 1),
     run: () => void deleteImages(ses(), [ses().activeImageId])
@@ -405,6 +446,18 @@ export function registerAppActions(): void {
       has() &&
       (docs.rev, ses().activeLayer.shapes.length > 0 || ses().activeLayer.effects.length > 0),
     run: () => void rasterizeLayerEffects(ses(), ses().activeLayerId)
+  })
+  registerHandler('layer.mergeDown', {
+    enabled: () => has() && (docs.rev, canMergeDown(ses())),
+    run: () => void mergeDown(ses())
+  })
+  registerHandler('layer.mergeVisible', {
+    enabled: () => has() && (docs.rev, ses().image.layers.filter((l) => l.visible).length > 1),
+    run: () => void flattenLayers(ses(), true)
+  })
+  registerHandler('layer.flatten', {
+    enabled: () => has() && (docs.rev, ses().image.layers.length > 1),
+    run: () => void flattenLayers(ses(), false)
   })
   registerHandler('layer.group', {
     enabled: () => has() && (docs.rev, !ses().activeLayer.isGroup && !ses().activeLayer.groupId),

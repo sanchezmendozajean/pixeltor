@@ -421,6 +421,37 @@
     "openFailed": "No se pudo abrir el archivo."
   },
   "dialogs": {
+    "prefs": {
+      "title": "Preferencias",
+      "theme": "Tema",
+      "scale": "Escala de la interfaz",
+      "columns": "Columnas de herramientas",
+      "autoUpdate": "Buscar actualizaciones al iniciar",
+      "shortcuts": "Atajos de teclado…",
+      "close": "Cerrar"
+    },
+    "about": {
+      "title": "Acerca de Pixeltor",
+      "tagline": "Editor de pixel art con capas inteligentes.",
+      "version": "Versión {v}",
+      "close": "Cerrar"
+    },
+    "imageSize": {
+      "title": "Tamaño de imagen",
+      "keepRatio": "Mantener proporción",
+      "hint": "Se escala por vecino más cercano (sin suavizado)."
+    },
+    "canvas": {
+      "title": "Tamaño de lienzo",
+      "current": "Actual: {w} × {h} px",
+      "width": "Ancho",
+      "height": "Alto",
+      "anchor": "Ancla",
+      "apply": "Aceptar",
+      "cancel": "Cancelar",
+      "px": "px",
+      "limit": "Entre 1 y 2048 px"
+    },
     "new": {
       "title": "Nuevo documento",
       "width": "Ancho",

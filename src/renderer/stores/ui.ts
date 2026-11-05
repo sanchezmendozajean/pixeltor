@@ -50,7 +50,7 @@ export const useUiStore = defineStore('ui', {
     /** Paleta de comandos abierta (Ctrl+K). */
     palette: false,
     /** Diálogo modal abierto. */
-    dialog: null as null | 'new' | 'export' | 'recovery' | 'sheet',
+    dialog: null as null | 'new' | 'export' | 'recovery' | 'sheet' | 'canvas' | 'imageSize' | 'prefs' | 'about',
     /** Configuración del diálogo «Importar hoja de sprites». */
     sheetImport: null as SheetImportState | null,
     /** Mensaje breve no bloqueante (errores y avisos). */
@@ -73,6 +73,8 @@ export const useUiStore = defineStore('ui', {
     colorPicker: null as null | 'fill' | 'stroke',
     /** Diálogo de atajos de teclado abierto. */
     shortcutsDialog: false,
+    /** Modo vista previa (sin overlays): guarda qué estaba visible para restaurarlo. */
+    preview: null as null | { paths: boolean; grid: boolean; guides: boolean },
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }
   }),
   actions: {

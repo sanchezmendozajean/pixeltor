@@ -2,9 +2,10 @@
 // Diálogos modales de F1: Nuevo documento, Exportar PNG y Recuperar documentos; más el aviso breve.
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { RecoveryEntry } from '@shared/ipc'
-import { MAX_SIZE } from '@core/index'
+import { MAX_SIZE, resizeCanvas, resizeImage, type CanvasAnchor } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import { discardRecovery, listRecovery, newDocument, recover } from '@/app/documentOps'
+import { UI_SCALES, type ThemeId } from '@shared/ipc'
 import { exportAs } from '@/app/exportOps'
 import { confirmSheetImport, sheetCellCount } from '@/app/importOps'
 import { useDocumentsStore } from '@/stores/documents'
@@ -36,6 +37,50 @@ const exportCount = computed(() => {
     : s.doc.images.filter((i) => i.includeInAnimation).length
 })
 const recovery = ref<RecoveryEntry[]>([])
+const cw = ref(32)
+const ch = ref(32)
+const anchor = ref<CanvasAnchor>({ x: 1, y: 1 })
+const ANCHORS = [0, 1, 2] as const
+const validCanvas = computed(
+  () =>
+    Number.isInteger(cw.value) &&
+    Number.isInteger(ch.value) &&
+    cw.value >= 1 &&
+    ch.value >= 1 &&
+    cw.value <= MAX_SIZE &&
+    ch.value <= MAX_SIZE
+)
+const currentSize = computed(() => {
+  void docs.rev
+  return { w: docs.session?.image.width ?? 0, h: docs.session?.image.height ?? 0 }
+})
+const THEMES: ThemeId[] = ['oscuro', 'gris', 'claro']
+const appVersion = ref('')
+function openShortcuts(): void {
+  close()
+  ui.shortcutsDialog = true
+}
+const keepRatio = ref(true)
+function onImgW(): void {
+  const { w, h } = currentSize.value
+  if (keepRatio.value && w > 0) ch.value = Math.max(1, Math.round((cw.value * h) / w))
+}
+function onImgH(): void {
+  const { w, h } = currentSize.value
+  if (keepRatio.value && h > 0) cw.value = Math.max(1, Math.round((ch.value * w) / h))
+}
+function doImageSize(): void {
+  const s = docs.session
+  if (!s || !validCanvas.value) return
+  resizeImage(s, cw.value, ch.value)
+  close()
+}
+function doCanvas(): void {
+  const s = docs.session
+  if (!s || !validCanvas.value) return
+  resizeCanvas(s, cw.value, ch.value, anchor.value)
+  close()
+}
 
 const validSize = computed(
   () =>
@@ -89,6 +134,12 @@ function setPreset(n: number): void {
 watch(
   () => ui.dialog,
   async (d) => {
+    if ((d === 'canvas' || d === 'imageSize') && docs.session) {
+      cw.value = docs.session.image.width
+      ch.value = docs.session.image.height
+      anchor.value = { x: 1, y: 1 }
+    }
+    if (d === 'about' && !appVersion.value) appVersion.value = await window.pixeltor.getAppVersion()
     if (d === 'recovery') recovery.value = await listRecovery()
   },
   { immediate: true }
@@ -189,6 +240,243 @@ watch(
         </button>
         <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg" :disabled="!validSize">
           {{ t('dialogs.new.create') }}
+        </button>
+      </div>
+    </form>
+
+    <div
+      v-else-if="ui.dialog === 'prefs'"
+      class="pt-dialog box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dlg-prefs"
+    >
+      <div class="pt-dialog__head">
+        <span id="dlg-prefs">{{ t('dialogs.prefs.title') }}</span>
+      </div>
+      <div class="pt-dialog__body col">
+        <div class="pt-form">
+          <div class="pt-formrow">
+            <label for="pt-theme">{{ t('dialogs.prefs.theme') }}</label>
+            <select
+              id="pt-theme"
+              class="pt-select"
+              :value="ui.theme"
+              @change="ui.setTheme(($event.target as HTMLSelectElement).value as ThemeId)"
+            >
+              <option v-for="th in THEMES" :key="th" :value="th">
+                {{ t(`actions.theme.${th}` as I18nKey) }}
+              </option>
+            </select>
+          </div>
+          <div class="pt-formrow">
+            <label for="pt-scale">{{ t('dialogs.prefs.scale') }}</label>
+            <select
+              id="pt-scale"
+              class="pt-select"
+              :value="ui.uiScale"
+              @change="ui.setUiScale(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="f in UI_SCALES" :key="f" :value="f">
+                {{ Math.round(f * 100) }} %
+              </option>
+            </select>
+          </div>
+          <div class="pt-formrow">
+            <label for="pt-cols">{{ t('dialogs.prefs.columns') }}</label>
+            <select
+              id="pt-cols"
+              class="pt-select"
+              :value="ui.toolbarColumns"
+              @change="
+                ui.setToolbarColumns(
+                  Number(($event.target as HTMLSelectElement).value) === 2 ? 2 : 1
+                )
+              "
+            >
+              <option :value="1">1</option>
+              <option :value="2">2</option>
+            </select>
+          </div>
+          <label class="pt-check-label">
+            <input
+              type="checkbox"
+              :checked="ui.autoUpdate"
+              @change="ui.setAutoUpdate(($event.target as HTMLInputElement).checked)"
+            />
+            {{ t('dialogs.prefs.autoUpdate') }}
+          </label>
+          <div>
+            <button type="button" class="pt-btn pt-btn--secondary" @click="openShortcuts">
+              {{ t('dialogs.prefs.shortcuts') }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="pt-dialog__foot">
+        <button type="button" class="pt-btn pt-btn--primary pt-btn--lg" @click="close">
+          {{ t('dialogs.prefs.close') }}
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-else-if="ui.dialog === 'about'"
+      class="pt-dialog box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dlg-about"
+    >
+      <div class="pt-dialog__head">
+        <span id="dlg-about">{{ t('dialogs.about.title') }}</span>
+      </div>
+      <div class="pt-dialog__body col">
+        <p>{{ t('dialogs.about.tagline') }}</p>
+        <p class="pt-hint">{{ t('dialogs.about.version', { v: appVersion }) }}</p>
+      </div>
+      <div class="pt-dialog__foot">
+        <button type="button" class="pt-btn pt-btn--primary pt-btn--lg" @click="close">
+          {{ t('dialogs.about.close') }}
+        </button>
+      </div>
+    </div>
+
+    <form
+      v-else-if="ui.dialog === 'imageSize'"
+      class="pt-dialog box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dlg-isize"
+      @submit.prevent="doImageSize"
+    >
+      <div class="pt-dialog__head">
+        <span id="dlg-isize">{{ t('dialogs.imageSize.title') }}</span>
+      </div>
+      <div class="pt-dialog__body col">
+        <div class="pt-form">
+          <p class="pt-hint">
+            {{ t('dialogs.canvas.current', { w: currentSize.w, h: currentSize.h }) }}
+          </p>
+          <div class="pt-formrow">
+            <label for="iw">{{ t('dialogs.canvas.width') }}</label>
+            <span class="pt-numbox">
+              <input
+                id="iw"
+                v-model.number="cw"
+                class="pt-input"
+                type="number"
+                min="1"
+                :max="MAX_SIZE"
+                autofocus
+                @input="onImgW"
+              />
+              <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
+            </span>
+          </div>
+          <div class="pt-formrow">
+            <label for="ih">{{ t('dialogs.canvas.height') }}</label>
+            <span class="pt-numbox">
+              <input
+                id="ih"
+                v-model.number="ch"
+                class="pt-input"
+                type="number"
+                min="1"
+                :max="MAX_SIZE"
+                @input="onImgH"
+              />
+              <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
+            </span>
+          </div>
+          <label class="pt-check-label">
+            <input v-model="keepRatio" type="checkbox" />
+            {{ t('dialogs.imageSize.keepRatio') }}
+          </label>
+          <p class="pt-hint">{{ t('dialogs.imageSize.hint') }}</p>
+          <p v-if="!validCanvas" class="pt-errmsg">{{ t('dialogs.canvas.limit') }}</p>
+        </div>
+      </div>
+      <div class="pt-dialog__foot">
+        <button type="button" class="pt-btn pt-btn--secondary pt-btn--lg" @click="close">
+          {{ t('dialogs.canvas.cancel') }}
+        </button>
+        <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg" :disabled="!validCanvas">
+          {{ t('dialogs.canvas.apply') }}
+        </button>
+      </div>
+    </form>
+
+    <form
+      v-else-if="ui.dialog === 'canvas'"
+      class="pt-dialog box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dlg-canvas"
+      @submit.prevent="doCanvas"
+    >
+      <div class="pt-dialog__head">
+        <span id="dlg-canvas">{{ t('dialogs.canvas.title') }}</span>
+      </div>
+      <div class="pt-dialog__body col">
+        <div class="pt-form">
+          <p class="pt-hint">
+            {{ t('dialogs.canvas.current', { w: currentSize.w, h: currentSize.h }) }}
+          </p>
+          <div class="pt-formrow">
+            <label for="cw">{{ t('dialogs.canvas.width') }}</label>
+            <span class="pt-numbox">
+              <input
+                id="cw"
+                v-model.number="cw"
+                class="pt-input"
+                type="number"
+                min="1"
+                :max="MAX_SIZE"
+                autofocus
+              />
+              <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
+            </span>
+          </div>
+          <div class="pt-formrow">
+            <label for="ch">{{ t('dialogs.canvas.height') }}</label>
+            <span class="pt-numbox">
+              <input
+                id="ch"
+                v-model.number="ch"
+                class="pt-input"
+                type="number"
+                min="1"
+                :max="MAX_SIZE"
+              />
+              <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
+            </span>
+          </div>
+          <div class="pt-formrow">
+            <span class="pt-formlbl">{{ t('dialogs.canvas.anchor') }}</span>
+            <span class="anchor" role="radiogroup" :aria-label="t('dialogs.canvas.anchor')">
+              <template v-for="y in ANCHORS" :key="y">
+                <button
+                  v-for="x in ANCHORS"
+                  :key="x"
+                  type="button"
+                  class="anchor__cell"
+                  :class="{ 'is-on': anchor.x === x && anchor.y === y }"
+                  role="radio"
+                  :aria-checked="anchor.x === x && anchor.y === y"
+                  @click="anchor = { x, y }"
+                />
+              </template>
+            </span>
+          </div>
+          <p v-if="!validCanvas" class="pt-errmsg">{{ t('dialogs.canvas.limit') }}</p>
+        </div>
+      </div>
+      <div class="pt-dialog__foot">
+        <button type="button" class="pt-btn pt-btn--secondary pt-btn--lg" @click="close">
+          {{ t('dialogs.canvas.cancel') }}
+        </button>
+        <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg" :disabled="!validCanvas">
+          {{ t('dialogs.canvas.apply') }}
         </button>
       </div>
     </form>
@@ -421,6 +709,26 @@ watch(
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+}
+.anchor {
+  display: grid;
+  grid-template-columns: repeat(3, 20px);
+  gap: 2px;
+}
+.anchor__cell {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border-input, var(--border));
+  border-radius: var(--radius-sm, 2px);
+  background: var(--bg-input, transparent);
+}
+.anchor__cell:hover {
+  background: var(--bg-hover);
+}
+.anchor__cell.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 .rec {
   list-style: none;

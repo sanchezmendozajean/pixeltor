@@ -2,6 +2,16 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Cada fase del roadmap (`specs/30-roadmap.md`) cierra con una entrada.
 
+## [Sin publicar]
+
+### Añadido
+
+- **Tamaño de lienzo** (Imagen › Tamaño de lienzo…): ancho, alto y ancla 3×3; recorta o amplía los rásters de todas las capas de la imagen activa y desplaza formas y guías. **Recortar a la selección** usa el mismo comando. Un solo paso deshacible.
+- **Tamaño de imagen** (Imagen › Tamaño de imagen…): escala la imagen por vecino más cercano, con opción de mantener la proporción; las formas se escalan con ella. Los grosores de contorno y los efectos conservan sus valores en píxeles.
+- **Combinar capas** (Capa › Combinar hacia abajo, Combinar visibles y Aplanar imagen): se compone con el mismo código que el visor, así que el render no cambia (hay pruebas); la capa resultante conserva el nombre de la base.
+- **Preferencias** (Edición › Preferencias…): tema, escala de la interfaz, columnas de la barra de herramientas, actualización automática y acceso a los atajos. **Acerca de Pixeltor** con la versión.
+- **Ver › Vista previa** (`Ctrl+Shift+Y`): oculta trazados, cuadrícula de píxeles y guías, y al salir restaura lo que había. **Ver › Ajustar al píxel** conmuta el mismo ajuste «cuadrícula» de la barra de estado.
+
 ## [0.8.0] — F7 · Pulido y distribución
 
 ### Añadido
