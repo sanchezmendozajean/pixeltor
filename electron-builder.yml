@@ -15,6 +15,11 @@ publish:
   owner: sanchezmendozajean
   repo: pixeltor
 asar: true
+fileAssociations:
+  - ext: pixeltor
+    name: Documento de Pixeltor
+    description: Documento de Pixeltor
+    role: Editor
 win:
   target:
     - target: nsis

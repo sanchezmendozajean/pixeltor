@@ -11,6 +11,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 - **Combinar capas** (Capa › Combinar hacia abajo, Combinar visibles y Aplanar imagen): se compone con el mismo código que el visor, así que el render no cambia (hay pruebas); la capa resultante conserva el nombre de la base.
 - **Preferencias** (Edición › Preferencias…): tema, escala de la interfaz, columnas de la barra de herramientas, actualización automática y acceso a los atajos. **Acerca de Pixeltor** con la versión.
 - **Ver › Vista previa** (`Ctrl+Shift+Y`): oculta trazados, cuadrícula de píxeles y guías, y al salir restaura lo que había. **Ver › Ajustar al píxel** conmuta el mismo ajuste «cuadrícula» de la barra de estado.
+- **Asociación de archivos** (.pixeltor): el instalador registra la extensión; un doble clic abre el documento al arrancar o, con la app ya abierta, en una pestaña nueva (segunda instancia). Probado en e2e sólo con el argumento de línea de comandos; el registro en el sistema no se ha verificado.
+- Corrección: la barra de estado no actualizaba el tamaño de la imagen tras cambiarlo.
 
 ## [0.8.0] — F7 · Pulido y distribución
 

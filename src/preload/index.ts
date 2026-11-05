@@ -4,6 +4,12 @@ import { IPC, type PixeltorApi, type Settings } from '@shared/ipc'
 const api: PixeltorApi = {
   platform: process.platform,
   getAppVersion: () => ipcRenderer.invoke(IPC.appVersion) as Promise<string>,
+  takePendingOpen: () => ipcRenderer.invoke(IPC.pendingOpen) as Promise<string[]>,
+  onOpenPaths: (handler) => {
+    const listener = (_e: Electron.IpcRendererEvent, paths: string[]) => handler(paths)
+    ipcRenderer.on(IPC.openPaths, listener)
+    return () => ipcRenderer.removeListener(IPC.openPaths, listener)
+  },
   ui: { setScale: (factor) => webFrame.setZoomFactor(factor) },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet) as Promise<Settings>,

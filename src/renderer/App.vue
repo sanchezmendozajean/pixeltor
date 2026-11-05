@@ -18,7 +18,7 @@ import DialogHost from '@/dialogs/DialogHost.vue'
 import { registerAppActions } from '@/actions/bindings'
 import { restoreWorkspace } from '@/app/workspaces'
 import { handleKeydown } from '@/actions/registry'
-import { handleBeforeClose, listRecovery, startAutosave } from '@/app/documentOps'
+import { handleBeforeClose, listRecovery, openFile, startAutosave } from '@/app/documentOps'
 import { useDocumentsStore } from '@/stores/documents'
 import { t } from '@/i18n'
 import { useUiStore } from '@/stores/ui'
@@ -35,12 +35,16 @@ const showPanels = computed(() => ui.panelsHidden === 'none')
 
 let stopAutosave = (): void => {}
 let offClose = (): void => {}
+let offOpen = (): void => {}
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   void ui.loadSettings().then(restoreWorkspace)
   offClose = window.pixeltor.onBeforeClose(() => void handleBeforeClose())
   stopAutosave = startAutosave()
+  // Documentos pasados por el sistema (doble clic en un .pixeltor).
+  offOpen = window.pixeltor.onOpenPaths((paths) => paths.forEach((p) => void openFile(p)))
+  for (const p of await window.pixeltor.takePendingOpen()) await openFile(p)
   // Tras un cierre inesperado quedan copias en recovery/.
   if ((await listRecovery()).length) ui.dialog = 'recovery'
 })
@@ -48,6 +52,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
   stopAutosave()
   offClose()
+  offOpen()
 })
 </script>
 

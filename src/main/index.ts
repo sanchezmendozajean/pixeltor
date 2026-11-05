@@ -1,24 +1,38 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
+import { existsSync } from 'node:fs'
 import { IPC, type Settings } from '@shared/ipc'
 import { getSettings, loadSettings, updateSettings } from './settings'
 import { guardWindowClose, registerFileHandlers } from './files'
 import { applyTheme, createMainWindow } from './windows'
 import { checkForUpdates } from './updater'
 
+/** Documentos .pixeltor de una línea de comandos (asociación de archivos o doble clic). */
+function documentsIn(argv: string[]): string[] {
+  return argv.slice(1).filter((a) => /.pixeltor$/i.test(a) && existsSync(a))
+}
+let pending = documentsIn(process.argv)
+
 // Instancia única: un segundo arranque enfoca la ventana existente.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_e, argv) => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) {
       if (win.isMinimized()) win.restore()
       win.focus()
+      const paths = documentsIn(argv)
+      if (paths.length) win.webContents.send(IPC.openPaths, paths)
     }
   })
 
   registerFileHandlers()
 
+  ipcMain.handle(IPC.pendingOpen, () => {
+    const out = pending
+    pending = []
+    return out
+  })
   ipcMain.handle(IPC.appVersion, () => app.getVersion())
   ipcMain.handle(IPC.updatesCheck, (event) =>
     checkForUpdates(BrowserWindow.fromWebContents(event.sender) ?? undefined, true)

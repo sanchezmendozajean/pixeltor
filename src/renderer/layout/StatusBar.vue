@@ -10,6 +10,12 @@ import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
 const ui = useUiStore()
+/** Tamaño de la imagen activa; depende de `rev` porque la sesión no es reactiva. */
+const imageSize = computed(() => {
+  void docs.rev
+  const i = docs.session?.image
+  return i ? { w: i.width, h: i.height } : null
+})
 const imageIndex = computed(() => {
   void docs.rev
   const s = docs.session
@@ -61,8 +67,8 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
     <div class="pt-seg" :data-tip="t('status.size')">
       <span class="pt-mono small"
         ><b
-          >{{ docs.session?.image.width ?? t('status.none') }} ×
-          {{ docs.session?.image.height ?? t('status.none') }}</b
+          >{{ imageSize?.w ?? t('status.none') }} ×
+          {{ imageSize?.h ?? t('status.none') }}</b
         >
         px</span
       >

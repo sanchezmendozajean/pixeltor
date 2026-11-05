@@ -36,6 +36,10 @@ export const IPC = {
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
   appVersion: 'app:version',
+  /** renderer → main: documentos pasados por la línea de comandos que aún no se han abierto. */
+  pendingOpen: 'app:pendingOpen',
+  /** main → renderer: se pidió abrir estos documentos (segunda instancia). */
+  openPaths: 'app:openPaths',
   fileOpen: 'file:open',
   fileSave: 'file:save',
   fileExport: 'file:export',
@@ -74,6 +78,10 @@ export type CloseChoice = 'save' | 'discard' | 'cancel'
 export interface PixeltorApi {
   platform: string
   getAppVersion(): Promise<string>
+  /** Documentos .pixeltor pasados al arrancar (doble clic, asociación de archivos); vacía la cola. */
+  takePendingOpen(): Promise<string[]>
+  /** Suscripción a «abrir estos documentos» (con la app ya abierta); devuelve la baja. */
+  onOpenPaths(handler: (paths: string[]) => void): () => void
   /** Escala de la interfaz (zoom de la ventana, no del lienzo). */
   ui: { setScale(factor: number): void }
   settings: {
