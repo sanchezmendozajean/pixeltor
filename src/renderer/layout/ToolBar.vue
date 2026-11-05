@@ -94,8 +94,6 @@ const fillBackground = computed(() => {
       </template>
     </div>
 
-    <div class="pt-spacer" />
-
     <div class="paint">
       <div v-if="!two" class="paint__row">
         <button
@@ -250,6 +248,7 @@ const fillBackground = computed(() => {
       </button>
     </div>
 
+    <div class="pt-spacer" />
     <div class="pt-tooldiv" />
     <button
       type="button"
@@ -271,7 +270,7 @@ const fillBackground = computed(() => {
 .is-two .tools {
   display: grid;
   grid-template-columns: repeat(2, 32px);
-  gap: 0 2px;
+  gap: 0;
   justify-content: center;
 }
 .is-two .tools :deep(.pt-tooldiv) {
