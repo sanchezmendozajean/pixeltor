@@ -75,6 +75,8 @@ import { findGradientAttr, type Attr } from './gradientTarget'
 import type { OverlayState, ShapeOverlay } from '@/viewport/overlay'
 import { edgeForPixel, handlePoint } from './boxHandles'
 
+type RotateCorner = 'tl' | 'tr' | 'bl' | 'br'
+
 const ANCHOR_TOOLS = new Set(['pen', 'addAnchor', 'delAnchor', 'convAnchor'])
 
 export const SHAPE_TOOLS = new Set([
@@ -212,6 +214,10 @@ export class ShapeTools {
   } | null = null
   private keyCandidate: ID | null = null
   /** Límites de píxeles de la selección al empezar a moverla (para ajustar). */
+  /** Ctrl mantenido con Selección: se muestran anclas como en Selección directa. */
+  private ctrlDirect = false
+  /** Esquina cuya zona de rotación se usó por última vez (para el cursor). */
+  private rotCorner: RotateCorner = 'tl'
   private moveBounds: { x: number; y: number; w: number; h: number } | null = null
   /** Líneas de ajuste visibles mientras se arrastra. */
   snapLines: SnapLine[] = []
@@ -449,9 +455,12 @@ export class ShapeTools {
     }
 
     if (tool === 'gradient') return this.downGradient(p)
-    if (tool === 'sel') return this.downSelect(p, mods)
-    // Ctrl con la pluma y compañeras = Selección directa temporal (como en Illustrator)
-    if (tool === 'dsel' || (mods.ctrl && ANCHOR_TOOLS.has(tool) && !this.penActive))
+    // Ctrl con Selección, la pluma y compañeras = Selección directa temporal (como en Illustrator)
+    if (tool === 'sel' && !mods.ctrl) return this.downSelect(p, mods)
+    if (
+      tool === 'dsel' ||
+      (mods.ctrl && (tool === 'sel' || ANCHOR_TOOLS.has(tool)) && !this.penActive)
+    )
       return this.downDirect(p, mods)
     if (tool === 'addAnchor') {
       const id = hitShape(s, p.x, p.y, 2) ?? s.selectedShapes.find((i) => getShape(s, i))
@@ -548,6 +557,11 @@ export class ShapeTools {
 
   /** Zona de rotación: fuera de la caja, cerca de una esquina (6–26 px de pantalla). */
   private hitRotateZone(p: Pointer): Box | null {
+    return this.rotateCorner(p)?.box ?? null
+  }
+
+  /** Esquina de la caja de selección cuya zona de rotación está bajo el cursor. */
+  private rotateCorner(p: Pointer): { box: Box; corner: RotateCorner } | null {
     const ws = this.getWs()
     if (!ws || !ws.session.selectedShapes.length) return null
     const box = shapesBox(ws.session, ws.session.selectedShapes)
@@ -562,7 +576,10 @@ export class ShapeTools {
       const a = ws.viewport.toScreen(pt.x, pt.y)
       const d = Math.hypot(a.x - p.sx, a.y - p.sy)
       const outside = (hx === 0 ? p.sx < a.x : p.sx > a.x) || (hy === 0 ? p.sy < a.y : p.sy > a.y)
-      if (d >= HIT && d <= 26 && outside) return box
+      if (d >= HIT && d <= 26 && outside) {
+        const corner = (['tl', 'tr', 'bl', 'br'] as const)[hy * 2 + hx]!
+        return { box, corner }
+      }
     }
     return null
   }
@@ -805,10 +822,25 @@ export class ShapeTools {
       if (m.started) {
         let dx = p.x - m.x0
         let dy = p.y - m.y0
-        const sn = this.snapMove(dx, dy)
-        dx += sn.dx
-        dy += sn.dy
-        this.snapLines = sn.lines
+        m.mv.setCopy(!!mods.alt)
+        if (mods.shift) {
+          // Mayús: restringe a X, Y o diagonal de 45° (sin ajuste magnético)
+          const ax = Math.abs(dx)
+          const ay = Math.abs(dy)
+          if (ax > ay * 2.414) dy = 0
+          else if (ay > ax * 2.414) dx = 0
+          else {
+            const d = Math.round((ax + ay) / 2)
+            dx = Math.sign(dx) * d
+            dy = Math.sign(dy) * d
+          }
+          this.snapLines = []
+        } else {
+          const sn = this.snapMove(dx, dy)
+          dx += sn.dx
+          dy += sn.dy
+          this.snapLines = sn.lines
+        }
         m.mv.moveBy(dx, dy)
       }
       return
@@ -1067,7 +1099,21 @@ export class ShapeTools {
       const a = vp.toScreen(q.x, q.y)
       return Math.hypot(a.x - p.sx, a.y - p.sy) < HIT
     }
-    const direct = tool === 'dsel' || (!!mods.ctrl && ANCHOR_TOOLS.has(tool) && !this.penActive)
+    const direct =
+      tool === 'dsel' ||
+      (!!mods.ctrl && (tool === 'sel' || ANCHOR_TOOLS.has(tool)) && !this.penActive)
+    this.ctrlDirect = tool === 'sel' && direct
+    // Selección: cursor de rotación en las zonas de rotación de la caja (y mientras se rota)
+    if (tool === 'sel' && !direct) {
+      if (this.rotating) return `rotate-${this.rotCorner}`
+      if (!this.hitBoxHandle(p)) {
+        const rz = this.rotateCorner(p)
+        if (rz) {
+          this.rotCorner = rz.corner
+          return `rotate-${rz.corner}`
+        }
+      }
+    }
     if (direct) {
       const hit = this.hitAnchor(p, near)
       if (!hit) return 'direct'
@@ -1123,8 +1169,13 @@ export class ShapeTools {
       return { shapes: [], selBox: null, radiusWidget: null, gradientBar: null, snapLines: [] }
     const s = ws.session
     const out: ShapeOverlay[] = []
+    const tempDirect = tool === 'sel' && this.ctrlDirect
     const direct =
-      tool === 'dsel' || tool === 'addAnchor' || tool === 'delAnchor' || tool === 'convAnchor'
+      tempDirect ||
+      tool === 'dsel' ||
+      tool === 'addAnchor' ||
+      tool === 'delAnchor' ||
+      tool === 'convAnchor'
     // Recorre también los hijos de los grupos; las formas anidadas se dibujan en coordenadas de imagen.
     const visit = (layerColor: string, list: Shape[]): void => {
       for (const item of list) {
@@ -1172,7 +1223,10 @@ export class ShapeTools {
         handles: []
       })
     }
-    const selBox = tool === 'sel' && s.selectedShapes.length ? shapesBox(s, s.selectedShapes) : null
+    const selBox =
+      tool === 'sel' && !tempDirect && s.selectedShapes.length
+        ? shapesBox(s, s.selectedShapes)
+        : null
     const rw = tool === 'sel' || tool === 'dsel' ? this.radiusWidget() : null
     return {
       shapes: out,

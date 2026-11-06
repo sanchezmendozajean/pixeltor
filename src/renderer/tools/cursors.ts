@@ -1,7 +1,17 @@
 // Cursores propios de las herramientas de trazados: dibujos SVG en línea (sin recursos externos).
 
 export type CursorKind =
-  'pen' | 'pen-plus' | 'pen-minus' | 'pen-convert' | 'direct' | 'direct-anchor' | 'direct-handle'
+  | 'pen'
+  | 'pen-plus'
+  | 'pen-minus'
+  | 'pen-convert'
+  | 'direct'
+  | 'direct-anchor'
+  | 'direct-handle'
+  | 'rotate-tl'
+  | 'rotate-tr'
+  | 'rotate-br'
+  | 'rotate-bl'
 
 /** Flecha de selección directa: contorno negro con relleno blanco (hueca), como en Illustrator. */
 const ARROW = '<path d="M4 2 L4 19 L8.5 15 L11.5 21.5 L14.5 20 L11.5 13.8 L17.5 13.8 Z"'
@@ -19,6 +29,24 @@ const svg = (body: string): string =>
 
 const badge = (inner: string): string =>
   `<g transform="translate(16 15)"><rect x="0" y="0" width="9" height="9" rx="1" fill="#fff" stroke="#000"/>${inner}</g>`
+
+/** Flecha curva de doble punta (rotar); el arco rodea el punto activo y se gira 90° por esquina. */
+const rotate = (deg: number): { svg: string; x: number; y: number } => {
+  const arc = 'M6 13 A7 7 0 0 1 13 6'
+  const heads = 'M2.5 12 L9.5 12 L6 17 Z M12 2.5 L12 9.5 L17 6 Z'
+  return {
+    svg: svg(
+      `<g transform="rotate(${deg} 13 13)">` +
+        `<path d="${arc}" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/>` +
+        `<path d="${heads}" fill="#fff" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>` +
+        `<path d="${arc}" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>` +
+        `<path d="${heads}" fill="#000" stroke="#000" stroke-linejoin="round"/>` +
+        '</g>'
+    ),
+    x: 13,
+    y: 13
+  }
+}
 
 const BODY: Record<CursorKind, { svg: string; x: number; y: number }> = {
   pen: { svg: svg(NIB), x: 4, y: 3 },
@@ -53,6 +81,10 @@ const BODY: Record<CursorKind, { svg: string; x: number; y: number }> = {
     x: 4,
     y: 2
   },
+  'rotate-tl': rotate(0),
+  'rotate-tr': rotate(90),
+  'rotate-br': rotate(180),
+  'rotate-bl': rotate(270),
   'direct-handle': {
     svg: svg(
       `${ARROW} fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>` +
@@ -66,6 +98,10 @@ const BODY: Record<CursorKind, { svg: string; x: number; y: number }> = {
 /** Valor CSS de `cursor` para el tipo indicado. */
 export function cursorCss(kind: CursorKind): string {
   const c = BODY[kind]
-  const fallback = kind.startsWith('pen') ? 'crosshair' : 'default'
+  const fallback = kind.startsWith('pen')
+    ? 'crosshair'
+    : kind.startsWith('rotate')
+      ? 'grab'
+      : 'default'
   return `url("data:image/svg+xml,${encodeURIComponent(c.svg)}") ${c.x} ${c.y}, ${fallback}`
 }

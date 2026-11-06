@@ -424,16 +424,52 @@ export class ShapeMove {
     }
   }
 
+  /** Copias creadas al arrastrar con Alt (vacío = se mueven los originales). */
+  private clones: { id: ID; from: ID }[] = []
+
+  /** Alt: activa o desactiva la duplicación. Con copia, los originales se quedan y se mueven los clones. */
+  setCopy(on: boolean): void {
+    if (on === this.clones.length > 0) return
+    if (on) {
+      for (const id of this.start.keys()) {
+        const f = findShape(this.s, id)
+        if (!f) continue
+        const c = cloneShape(f.shape)
+        reId(c)
+        c.name = `${f.shape.name} copia`
+        f.list.splice(f.index + 1, 0, c)
+        this.clones.push({ id: c.id, from: id })
+      }
+      this.s.selectedShapes = this.clones.map((c) => c.id)
+    } else {
+      for (const c of this.clones) {
+        const f = findShape(this.s, c.id)
+        if (f) f.list.splice(f.index, 1)
+      }
+      this.clones = []
+      this.s.selectedShapes = [...this.start.keys()]
+    }
+  }
+
   moveBy(dx: number, dy: number): void {
+    const copying = this.clones.length > 0
     for (const [id, m] of this.start) {
       const f = findShape(this.s, id)
-      if (f) f.shape.transform = translateMat(m, dx, dy)
+      if (f) f.shape.transform = copying ? m : translateMat(m, dx, dy)
+    }
+    for (const c of this.clones) {
+      const f = findShape(this.s, c.id)
+      const m = this.start.get(c.from)
+      if (f && m) f.shape.transform = translateMat(m, dx, dy)
     }
     this.s.emit({
       imageId: this.s.activeImageId,
       dirty: null,
       structure: true,
-      layerIds: layersOf(this.s, [...this.start.keys()])
+      layerIds: layersOf(this.s, [
+        ...this.start.keys(),
+        ...this.clones.map((c) => c.id)
+      ])
     })
   }
 
