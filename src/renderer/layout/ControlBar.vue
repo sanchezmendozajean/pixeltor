@@ -242,6 +242,7 @@ function onTolerance(e: Event): void {
         <input
           class="pt-input"
           :value="opacityPct"
+          inputmode="numeric"
           :disabled="!layer"
           :aria-label="t('controlbar.opacity')"
           @change="onOpacity"

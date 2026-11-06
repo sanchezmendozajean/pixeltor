@@ -4,5 +4,8 @@ import App from './App.vue'
 import '@/styles/tokens.css'
 import '@/styles/components.css'
 import '@/styles/base.css'
+import { installNumberWheel } from '@/app/numberWheel'
+
+installNumberWheel()
 
 createApp(App).use(createPinia()).mount('#app')
