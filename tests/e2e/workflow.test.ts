@@ -37,6 +37,7 @@ test.beforeAll(async () => {
     })) as typeof dialog.showOpenDialog
   }, work)
   page = await app.firstWindow()
+  await page.getByTestId('welcome-32').click()
   await page.waitForSelector('.pt-stage canvas')
 })
 

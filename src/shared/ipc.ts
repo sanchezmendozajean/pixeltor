@@ -18,7 +18,14 @@ export interface Settings {
   activeWorkspace: string
   /** Buscar actualizaciones al iniciar (sólo instaladores que se actualizan solos). */
   autoUpdate: boolean
+  /** Documentos abiertos o guardados recientemente (el más reciente primero). */
+  recentFiles: string[]
+  /** Carpeta del último archivo abierto con el diálogo Abrir ('' = la del sistema). */
+  lastOpenDir: string
 }
+
+/** Máximo de documentos recientes que se recuerdan. */
+export const MAX_RECENT = 10
 
 export const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.5] as const
 
@@ -29,7 +36,9 @@ export const DEFAULT_SETTINGS: Settings = {
   uiScale: 1,
   workspaces: [],
   activeWorkspace: 'essentials',
-  autoUpdate: true
+  autoUpdate: true,
+  recentFiles: [],
+  lastOpenDir: ''
 }
 
 export const IPC = {

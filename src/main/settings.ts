@@ -1,8 +1,9 @@
 import { app } from 'electron'
 import { readFile, rename, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { BUILTIN_WORKSPACES, sanitizeWorkspaces } from '@shared/workspaces'
-import { DEFAULT_SETTINGS, type Settings, type ThemeId } from '@shared/ipc'
+import { DEFAULT_SETTINGS, MAX_RECENT, type Settings, type ThemeId } from '@shared/ipc'
 
 const THEMES: ThemeId[] = ['oscuro', 'gris', 'claro']
 
@@ -30,6 +31,13 @@ function sanitize(raw: unknown): Settings {
     const scale = (raw as Partial<Settings>).uiScale
     if (typeof scale === 'number' && scale >= 0.75 && scale <= 2) out.uiScale = scale
     if ((raw as Partial<Settings>).autoUpdate === false) out.autoUpdate = false
+    const rf = (raw as Partial<Settings>).recentFiles
+    if (Array.isArray(rf))
+      out.recentFiles = rf
+        .filter((p): p is string => typeof p === 'string' && p.length > 0 && p.length < 1024)
+        .slice(0, MAX_RECENT)
+    const dir = (raw as Partial<Settings>).lastOpenDir
+    if (typeof dir === 'string' && dir.length < 1024) out.lastOpenDir = dir
     const sc = (raw as Partial<Settings>).shortcuts
     out.shortcuts = {}
     if (sc && typeof sc === 'object')
@@ -70,4 +78,27 @@ export function updateSettings(patch: Partial<Settings>): Promise<Settings> {
   const next = writing.then(run, run)
   writing = next.catch(() => undefined)
   return next
+}
+
+/** Pone `path` el primero de los recientes (sin duplicados). */
+export async function addRecent(path: string): Promise<void> {
+  const rest = current.recentFiles.filter((p) => p !== path)
+  await updateSettings({ recentFiles: [path, ...rest].slice(0, MAX_RECENT) })
+}
+
+export async function removeRecent(path: string): Promise<void> {
+  if (current.recentFiles.includes(path))
+    await updateSettings({ recentFiles: current.recentFiles.filter((p) => p !== path) })
+}
+
+/** Recuerda la carpeta de `filePath` para que el diálogo Abrir empiece ahí la próxima vez. */
+export async function rememberOpenDir(filePath: string): Promise<void> {
+  const dir = dirname(filePath)
+  if (dir !== current.lastOpenDir) await updateSettings({ lastOpenDir: dir })
+}
+
+/** `defaultPath` para el diálogo Abrir: la última carpeta si todavía existe. */
+export function openDialogDir(): string | undefined {
+  const dir = current.lastOpenDir
+  return dir && existsSync(dir) ? dir : undefined
 }

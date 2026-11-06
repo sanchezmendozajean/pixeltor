@@ -21,6 +21,7 @@ test.beforeAll(async () => {
   })
   page = await app.firstWindow()
   await page.waitForSelector('.pt-app')
+  await page.getByTestId('welcome-32').click()
   await page.waitForSelector('.pt-stage canvas')
 })
 

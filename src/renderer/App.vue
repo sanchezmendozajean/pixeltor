@@ -19,16 +19,11 @@ import { registerAppActions } from '@/actions/bindings'
 import { restoreWorkspace } from '@/app/workspaces'
 import { handleKeydown } from '@/actions/registry'
 import { handleBeforeClose, listRecovery, openFile, startAutosave } from '@/app/documentOps'
-import { useDocumentsStore } from '@/stores/documents'
 import { t } from '@/i18n'
 import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
-const docs = useDocumentsStore()
 registerAppActions()
-// Documento inicial de ejemplo (32 × 32), como la maqueta de F0.
-docs.newDocument(32, 32)
-
 // Tab oculta todos los paneles; Mayús+Tab todos menos la barra de herramientas.
 const showTools = computed(() => ui.panelsHidden !== 'all')
 const showPanels = computed(() => ui.panelsHidden === 'none')

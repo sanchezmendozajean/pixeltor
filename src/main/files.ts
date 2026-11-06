@@ -4,6 +4,7 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { copyFile, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
+import { addRecent, openDialogDir, rememberOpenDir, removeRecent } from './settings'
 import { IPC, type CloseChoice, type OpenedFile, type RecoveryEntry } from '@shared/ipc'
 
 const PIXELTOR_FILTER = { name: 'Documento de Pixeltor', extensions: ['pixeltor'] }
@@ -52,6 +53,7 @@ export function registerFileHandlers(): void {
     if (!target) {
       const win = parentOf(e)
       const opts: Electron.OpenDialogOptions = {
+        defaultPath: openDialogDir(),
         filters: [PIXELTOR_FILTER, PNG_FILTER, GIF_FILTER],
         properties: ['openFile']
       }
@@ -59,7 +61,15 @@ export function registerFileHandlers(): void {
       if (r.canceled || !r.filePaths[0]) return null
       target = r.filePaths[0]
     }
-    const buf = await readFile(target)
+    let buf: Buffer
+    try {
+      buf = await readFile(target)
+    } catch (err) {
+      if (path) await removeRecent(path)
+      throw err
+    }
+    await addRecent(target)
+    await rememberOpenDir(target)
     return { path: target, bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) }
   })
 
@@ -78,6 +88,7 @@ export function registerFileHandlers(): void {
         target = ensureExt(r.filePath, '.pixeltor')
       }
       await writeAtomic(target, req.bytes, true)
+      await addRecent(target)
       return target
     }
   )
@@ -107,11 +118,13 @@ export function registerFileHandlers(): void {
       const win = parentOf(e)
       const exts = extensions.map((x) => x.replace(/[^A-Za-z0-9]/g, ''))
       const opts: Electron.OpenDialogOptions = {
+        defaultPath: openDialogDir(),
         filters: [{ name: filterName, extensions: exts }],
         properties: ['openFile', 'multiSelections']
       }
       const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
       if (r.canceled) return []
+      if (r.filePaths[0]) await rememberOpenDir(r.filePaths[0])
       return Promise.all(
         r.filePaths.map(async (path) => {
           const buf = await readFile(path)

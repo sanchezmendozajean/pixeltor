@@ -4,8 +4,8 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import { useDocumentsStore } from '@/stores/documents'
 import type { Workspace } from '@/session/workspace'
 import { mirrorViewerFlags } from '@/session/viewer'
-import { t } from '@/i18n'
 import ViewerNode from './ViewerNode.vue'
+import WelcomeScreen from './WelcomeScreen.vue'
 
 const docs = useDocumentsStore()
 // La disposición no es reactiva: cada cambio sube este contador.
@@ -38,19 +38,11 @@ onBeforeUnmount(() => off?.())
     :tick="tick"
     class="root"
   />
-  <section v-else class="pt-viewport empty" :aria-label="t('docs.noDocument')">
-    <p>{{ t('docs.noDocument') }}</p>
-  </section>
+  <WelcomeScreen v-else />
 </template>
 
 <style scoped>
 .root {
   flex: 1;
-}
-.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
 }
 </style>

@@ -290,13 +290,23 @@
     "oneColumn": "Barra de herramientas en una columna",
     "twoColumns": "Barra de herramientas en dos columnas"
   },
+  "welcome": {
+    "title": "Pixeltor",
+    "subtitle": "Crea un documento nuevo o abre uno existente.",
+    "new": "Nuevo documento",
+    "pixels": "píxeles",
+    "custom": "Personalizado",
+    "open": "Abrir…",
+    "recent": "Recientes",
+    "clear": "Vaciar lista",
+    "noRecent": "Aún no has abierto ningún documento."
+  },
   "docs": {
     "tabs": "Documentos",
     "untitled": "Sin título-{n}",
     "close": "Cerrar documento",
     "unsaved": "Cambios sin guardar",
     "canvasLabel": "Lienzo {w} × {h} px al {zoom} %",
-    "noDocument": "Sin documento abierto",
     "empty": "Crea o abre un documento para empezar",
     "menu": {
       "close": "Cerrar",

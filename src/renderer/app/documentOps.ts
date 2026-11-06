@@ -31,7 +31,13 @@ export function newDocument(width: number, height: number): void {
 
 /** Abre un `.pixeltor` o importa un PNG como documento nuevo de una capa. */
 export async function openFile(path?: string): Promise<void> {
-  const file = await window.pixeltor.files.open(path)
+  let file: Awaited<ReturnType<typeof window.pixeltor.files.open>>
+  try {
+    file = await window.pixeltor.files.open(path)
+  } catch {
+    toast(t('errors.openFailed'))
+    return
+  }
   if (!file) return
   try {
     if (file.path.toLowerCase().endsWith('.gif')) {

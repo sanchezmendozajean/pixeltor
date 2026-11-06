@@ -34,6 +34,7 @@ test('Imagen › Tamaño de lienzo cambia las dimensiones de la imagen', async (
   })
   try {
     const page = await app.firstWindow()
+    await page.getByTestId('welcome-32').click()
     await page.waitForSelector('.pt-stage canvas')
     await page.getByRole('button', { name: 'Imagen', exact: true }).click()
     await page.getByRole('menuitem', { name: /Tamaño de lienzo/ }).click()

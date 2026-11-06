@@ -23,6 +23,7 @@ test.beforeAll(async () => {
     args: ['.', `--user-data-dir=${mkdtempSync(join(tmpdir(), 'pixeltor-e2e-'))}`]
   })
   page = await app.firstWindow()
+  await page.getByTestId('welcome-32').click()
   await page.waitForSelector('.pt-stage canvas')
   await page.keyboard.press('Control+n')
   await page.locator('#nw').fill('1000')

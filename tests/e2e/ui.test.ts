@@ -18,6 +18,7 @@ async function launch(): Promise<void> {
   delete env['ELECTRON_RUN_AS_NODE']
   app = await electron.launch({ env, args: ['.', `--user-data-dir=${userData}`] })
   page = await app.firstWindow()
+  await page.getByTestId('welcome-32').click()
   await page.waitForSelector('.pt-stage canvas')
 }
 
