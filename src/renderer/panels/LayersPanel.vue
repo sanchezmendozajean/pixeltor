@@ -95,6 +95,32 @@ function onDrop(rowIndex: number) {
 
 <template>
   <div class="layers">
+    <div v-if="active" class="props">
+      <label class="pt-num">
+        <span class="pt-num__lbl">{{ t('layers.opacity') }}</span>
+        <span class="pt-numbox">
+          <input class="pt-input" :value="opacityPct" inputmode="numeric" @change="onOpacity" />
+          <span class="pt-unit">%</span>
+        </span>
+      </label>
+      <select
+        class="pt-select mode"
+        :value="active.blendMode"
+        :aria-label="t('layers.blend')"
+        @change="
+          setProps(active.id, {
+            blendMode: ($event.target as HTMLSelectElement).value as BlendMode
+          })
+        "
+      >
+        <option v-for="m in BLEND_MODES" :key="m" :value="m">
+          {{ t(`layers.modes.${m}` as I18nKey) }}
+        </option>
+      </select>
+      <ActionButton id="layer.lockAlpha" :on="active.lockAlpha" />
+      <ActionButton id="layer.duplicate" />
+    </div>
+
     <ul class="list pt-scroll" role="list" :aria-label="t('panels.layers')">
       <template v-for="(l, i) in docs.layers" :key="l.id">
         <li
@@ -185,32 +211,6 @@ function onDrop(rowIndex: number) {
         </li>
       </template>
     </ul>
-
-    <div v-if="active" class="props">
-      <label class="pt-num">
-        <span class="pt-num__lbl">{{ t('layers.opacity') }}</span>
-        <span class="pt-numbox">
-          <input class="pt-input" :value="opacityPct" inputmode="numeric" @change="onOpacity" />
-          <span class="pt-unit">%</span>
-        </span>
-      </label>
-      <select
-        class="pt-select mode"
-        :value="active.blendMode"
-        :aria-label="t('layers.blend')"
-        @change="
-          setProps(active.id, {
-            blendMode: ($event.target as HTMLSelectElement).value as BlendMode
-          })
-        "
-      >
-        <option v-for="m in BLEND_MODES" :key="m" :value="m">
-          {{ t(`layers.modes.${m}` as I18nKey) }}
-        </option>
-      </select>
-      <ActionButton id="layer.lockAlpha" :on="active.lockAlpha" />
-      <ActionButton id="layer.duplicate" />
-    </div>
   </div>
 </template>
 
@@ -271,7 +271,7 @@ button.pt-lcol {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--panel-pad-x);
-  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .props .pt-num {
   width: 104px;
