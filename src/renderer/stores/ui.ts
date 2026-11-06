@@ -22,6 +22,10 @@ export const useUiStore = defineStore('ui', {
     showPaths: true,
     /** Mostrar las guías del lienzo (Ctrl+;). */
     showGuides: true,
+    /** Mostrar los ejes de referencia del espejo de la capa activa (Ver › Ver líneas espejo). */
+    showMirrorLines: true,
+    /** Menú de tipos de espejo abierto en esta posición de pantalla. */
+    mirrorMenu: null as null | { x: number; y: number },
     /** Hay efectos calculándose en los workers. */
     fxBusy: false,
     /** Opciones de «Exportar como…» (se recuerdan durante la sesión). */
@@ -50,7 +54,8 @@ export const useUiStore = defineStore('ui', {
     /** Paleta de comandos abierta (Ctrl+K). */
     palette: false,
     /** Diálogo modal abierto. */
-    dialog: null as null | 'new' | 'export' | 'recovery' | 'sheet' | 'canvas' | 'imageSize' | 'prefs' | 'about',
+    dialog: null as
+      null | 'new' | 'export' | 'recovery' | 'sheet' | 'canvas' | 'imageSize' | 'prefs' | 'about',
     /** Configuración del diálogo «Importar hoja de sprites». */
     sheetImport: null as SheetImportState | null,
     /** Mensaje breve no bloqueante (errores y avisos). */

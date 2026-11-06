@@ -8,7 +8,8 @@ import {
   type Rect,
   composeImage,
   isEditingEffect,
-  effectsReach
+  effectsReach,
+  mirrorClosure
 } from '@core/index'
 import {
   AsyncFxProvider,
@@ -397,14 +398,16 @@ export class Workspace {
   private recompose(rect: Rect | null): void {
     const s = this.session
     const f = s.selection.floating
-    // los efectos propagan un cambio más allá de la región tocada
+    const { width: iw, height: ih } = s.image
+    // los espejos reflejan el cambio; los efectos lo propagan más allá de la región tocada
+    if (rect) rect = mirrorClosure(s.image.layers, rect, iw, ih)
     const reach = rect ? effectsReach(s.image) : 0
     if (rect && reach > 0) {
       const x0 = Math.max(0, rect.x - reach)
       const y0 = Math.max(0, rect.y - reach)
       const x1 = Math.min(s.image.width, rect.x + rect.w + reach)
       const y1 = Math.min(s.image.height, rect.y + rect.h + reach)
-      rect = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+      rect = mirrorClosure(s.image.layers, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, iw, ih)
     }
     composeImage(s.image, s.rasters, this.composite, rect ?? undefined, {
       floating: f ? { layerId: s.activeLayerId, pixels: f } : null,

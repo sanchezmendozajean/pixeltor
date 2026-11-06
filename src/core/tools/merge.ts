@@ -39,6 +39,7 @@ function bake(
   target.shapes = []
   target.effects = []
   delete target.clip
+  delete target.mirror
   delete target.groupId
   target.opacity = 1
   target.blendMode = 'normal'

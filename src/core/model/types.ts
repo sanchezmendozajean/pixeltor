@@ -54,6 +54,20 @@ export interface RasterRef {
   height: number
 }
 
+/** Tipos de espejo de capa (specs/13). */
+export type MirrorType = 'v' | 'h' | 'vh' | 'd45' | 'd135' | 'd45-135'
+
+/**
+ * Espejo de capa: refleja los píxeles (no las formas). `x`/`y` son el borde (entre dos píxeles) de los
+ * ejes vertical/horizontal, o el píxel por cuyo centro pasan las diagonales.
+ */
+export interface LayerMirror {
+  type: MirrorType
+  enabled: boolean
+  x: number
+  y: number
+}
+
 export interface Layer {
   id: ID
   name: string
@@ -75,6 +89,8 @@ export interface Layer {
   groupId?: ID
   /** Máscara de recorte: sólo se ve donde la capa base (la de debajo) tiene alfa. */
   clip?: boolean
+  /** Espejo de píxeles de la capa; se conserva aunque esté desactivado. */
+  mirror?: LayerMirror
 }
 
 /** Guía de la imagen: línea horizontal (`h`, posición y) o vertical (`v`, posición x), en px. */

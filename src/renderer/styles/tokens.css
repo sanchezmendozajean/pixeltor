@@ -7,6 +7,7 @@
 
 /* ---------- Tokens independientes del tema ---------- */
 :root {
+  --mirror-line: #ff8a00; /* [NUEVO] ejes de referencia del espejo de capa (también en el overlay) */
   /* Tipografía */
   --font-ui:
     'Inter', 'Segoe UI Variable', 'Segoe UI', 'Cantarell', 'Noto Sans', system-ui, sans-serif;

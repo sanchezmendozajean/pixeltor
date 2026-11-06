@@ -22,6 +22,7 @@
 | [10-formato-de-archivo.md](10-formato-de-archivo.md) | Formato `.pixeltor` |
 | [11-historial-y-persistencia.md](11-historial-y-persistencia.md) | Deshacer/rehacer, autoguardado, preferencias |
 | [12-color-y-paletas.md](12-color-y-paletas.md) | Modelo de color, paletas, degradados con tramado (dithering) |
+| [13-espejo-de-capa.md](13-espejo-de-capa.md) | Modificador Espejo de capa: reflejo de píxeles por ejes vertical, horizontal y diagonales |
 
 ### Diseño visual
 | Archivo | Contenido |

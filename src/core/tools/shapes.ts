@@ -466,10 +466,7 @@ export class ShapeMove {
       imageId: this.s.activeImageId,
       dirty: null,
       structure: true,
-      layerIds: layersOf(this.s, [
-        ...this.start.keys(),
-        ...this.clones.map((c) => c.id)
-      ])
+      layerIds: layersOf(this.s, [...this.start.keys(), ...this.clones.map((c) => c.id)])
     })
   }
 

@@ -248,6 +248,11 @@ function applyCursor(p: ReturnType<typeof info> | null): void {
     el.style.cursor = controller.guideHover === 'v' ? 'ew-resize' : 'ns-resize'
     return
   }
+  if (controller.mirrorHover) {
+    const mh = controller.mirrorHover
+    el.style.cursor = mh === 'x' ? 'ew-resize' : mh === 'y' ? 'ns-resize' : 'move'
+    return
+  }
   const kind = p ? controller.cursorHint(p) : null
   el.style.cursor = kind ? cursorCss(kind) : toolCursor()
 }
@@ -413,7 +418,17 @@ watch(isActive, (on) => {
   if (on) setActiveController(controller)
 })
 // El overlay (selección) y el cursor dependen del modelo; la rejilla y el tema, de la UI.
-watch(() => [docs.rev, tools.active, tools.brushSize, tools.brushShape, ui.pixelGrid], schedule)
+watch(
+  () => [
+    docs.rev,
+    tools.active,
+    tools.brushSize,
+    tools.brushShape,
+    ui.pixelGrid,
+    ui.showMirrorLines
+  ],
+  schedule
+)
 // Al cambiar de herramienta se termina el trazado de la Pluma en curso.
 watch(
   () => tools.active,

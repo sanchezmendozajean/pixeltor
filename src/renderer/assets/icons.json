@@ -840,6 +840,13 @@
     "f": "M2.5 2.5h3v3h-3z M10.5 2.5h3v3h-3z M6.5 6.5h3v3h-3z M2.5 10.5h3v3h-3z M10.5 10.5h3v3h-3z"
   },
   {
+    "name": "mirror",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M8 1.5v2 M8 5v2 M8 8.5v2 M8 12v2.5 M9.5 4.5l4.5 7h-4.5z",
+    "f": "M6.5 4.5l-4.5 7h4.5z"
+  },
+  {
     "name": "lockAlpha",
     "size": 16,
     "group": "interfaz-16",

@@ -69,6 +69,7 @@ export function cloneLayerMeta(l: Layer): Layer {
     ...l,
     raster: { ...l.raster },
     shapes: l.shapes.map(cloneShape),
-    effects: [...l.effects]
+    effects: [...l.effects],
+    ...(l.mirror ? { mirror: { ...l.mirror } } : {})
   }
 }

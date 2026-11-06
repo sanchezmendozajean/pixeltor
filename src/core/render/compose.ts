@@ -4,6 +4,7 @@ import { compositeAt, compositeOver } from '../raster/blend'
 import type { Shape } from '../model/shapes'
 import { renderShape, renderShapeCached, renderShapeRegion } from './shape'
 import { applyEffects, effectsInfluence, hasActiveEffects } from '../effects/registry'
+import { activeMirror, applyMirror, mirrorClosure } from './mirror'
 import { type FxProvider, syncFx } from '../effects/async'
 import { type Region, regionFromBitmap } from '../effects/region'
 import type { Palette } from '../palette/palette'
@@ -110,8 +111,14 @@ export function composeImage(
   rect?: Rect,
   extras: ComposeExtras = {}
 ): void {
-  const r = clipRect(rect ?? { x: 0, y: 0, w: img.width, h: img.height }, img.width, img.height)
-  if (r.w <= 0 || r.h <= 0) return
+  const clipped = clipRect(
+    rect ?? { x: 0, y: 0, w: img.width, h: img.height },
+    img.width,
+    img.height
+  )
+  if (clipped.w <= 0 || clipped.h <= 0) return
+  // los espejos reflejan lo que cambia: se recompone también la región de los reflejos
+  const r = mirrorClosure(img.layers, clipped, img.width, img.height)
   const hot = extras.hotLayerId ? img.layers.findIndex((l) => l.id === extras.hotLayerId) : -1
   const cache = extras.prefix
   const below = img.layers.slice(0, Math.max(0, hot))
@@ -161,6 +168,7 @@ function composeInto(
   let scratch: Bitmap | null = null
   let shapeScratch: Bitmap | null = null
   let layerFx: Bitmap | null = null
+  let mirrorScratch: Bitmap | null = null
   const ctx = {
     width: img.width,
     height: img.height,
@@ -203,6 +211,13 @@ function composeInto(
       scratch.data.set(src.data)
       stampOnto(scratch, f.pixels)
       src = scratch
+    }
+    const mirror = activeMirror(layer)
+    if (mirror) {
+      // Espejo (specs/13): refleja los píxeles de ráster + formas; va antes de los efectos de capa.
+      mirrorScratch ??= new Bitmap(img.width, img.height)
+      applyMirror(src, mirrorScratch, mirror, r)
+      src = mirrorScratch
     }
     if (hasActiveEffects(layer.effects)) {
       // Efectos de capa: se calculan sobre la composición ráster + formas, solo en la región.

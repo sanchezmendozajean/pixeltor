@@ -1,15 +1,25 @@
 <script setup lang="ts">
 // Panel Capas: lista (arriba = capa superior), visibilidad, bloqueo, renombrar, reordenar
 // arrastrando, y opacidad / modo de fusión / bloqueo de transparencia de la capa activa.
-import { computed, nextTick, ref } from 'vue'
-import { BLEND_MODES, type BlendMode, moveShapesToLayer, selectShapes } from '@core/index'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  BLEND_MODES,
+  type BlendMode,
+  MIRROR_TYPES,
+  moveShapesToLayer,
+  selectShapes,
+  setLayerMirrorEnabled
+} from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import LayerThumb from './LayerThumb.vue'
 import { useDocumentsStore } from '@/stores/documents'
+import { useUiStore } from '@/stores/ui'
+import { actionLabel, execute, isChecked, isEnabled } from '@/actions/registry'
 import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
+const ui = useUiStore()
 const editing = ref<string | null>(null)
 const draft = ref('')
 const dragId = ref<string | null>(null)
@@ -91,6 +101,47 @@ function onDrop(rowIndex: number) {
   // Se suelta encima de la fila rowIndex → pasa a ocupar su posición.
   s.moveLayer(id, count - 1 - rowIndex)
 }
+
+const mirrorMenuEl = ref<HTMLElement | null>(null)
+/** Posición final del menú: se desplaza para no salirse de la ventana. */
+const mirrorPos = ref({ left: 0, top: 0 })
+watch(
+  () => ui.mirrorMenu,
+  async (m) => {
+    if (!m) return
+    mirrorPos.value = { left: m.x, top: m.y }
+    await nextTick()
+    const el = mirrorMenuEl.value
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    mirrorPos.value = {
+      left: Math.max(4, Math.min(m.x, window.innerWidth - r.width - 4)),
+      top: Math.max(4, Math.min(m.y, window.innerHeight - r.height - 4))
+    }
+  }
+)
+
+/** Menú de tipos de espejo (se abre desde el botón Espejo de la capa activa). */
+function pickMirror(id: string): void {
+  if (execute(id)) ui.mirrorMenu = null
+}
+function dismissMirrorMenu(e: Event): void {
+  if (!ui.mirrorMenu) return
+  if (e instanceof KeyboardEvent && e.key !== 'Escape') return
+  if (e instanceof PointerEvent) {
+    const el = e.target as HTMLElement
+    if (el.closest('.mirrormenu') || el.closest('[data-action="layer.mirrorMenu"]')) return
+  }
+  ui.mirrorMenu = null
+}
+onMounted(() => {
+  document.addEventListener('pointerdown', dismissMirrorMenu, true)
+  document.addEventListener('keydown', dismissMirrorMenu, true)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', dismissMirrorMenu, true)
+  document.removeEventListener('keydown', dismissMirrorMenu, true)
+})
 </script>
 
 <template>
@@ -118,8 +169,42 @@ function onDrop(rowIndex: number) {
         </option>
       </select>
       <ActionButton id="layer.lockAlpha" :on="active.lockAlpha" />
-      <ActionButton id="layer.duplicate" />
+      <ActionButton id="layer.mirrorMenu" :on="!!active.mirror?.enabled" />
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="ui.mirrorMenu"
+        ref="mirrorMenuEl"
+        class="pt-menu mirrormenu"
+        role="menu"
+        :style="{ left: `${mirrorPos.left}px`, top: `${mirrorPos.top}px` }"
+      >
+        <div
+          v-for="m in MIRROR_TYPES"
+          :key="m"
+          class="pt-mi"
+          role="menuitem"
+          :class="{ 'is-disabled': !isEnabled(`layer.mirror.${m}`) }"
+          @click="pickMirror(`layer.mirror.${m}`)"
+        >
+          <span class="pt-mi__ic"
+            ><PtIcon v-if="isChecked(`layer.mirror.${m}`)" name="check"
+          /></span>
+          {{ actionLabel(`layer.mirror.${m}`) }}
+        </div>
+        <div class="pt-msep" role="separator" />
+        <div
+          class="pt-mi"
+          role="menuitem"
+          :class="{ 'is-disabled': !isEnabled('layer.mirror.off') }"
+          @click="pickMirror('layer.mirror.off')"
+        >
+          <span class="pt-mi__ic" />
+          {{ actionLabel('layer.mirror.off') }}
+        </div>
+      </div>
+    </Teleport>
 
     <ul class="list pt-scroll" role="list" :aria-label="t('panels.layers')">
       <template v-for="(l, i) in docs.layers" :key="l.id">
@@ -185,6 +270,20 @@ function onDrop(rowIndex: number) {
           </span>
           <span v-if="l.fx" class="fx-tag" :title="t('effects.title')">fx</span>
           <button
+            v-if="l.mirror"
+            type="button"
+            class="pt-lcol pt-lcol--mirror"
+            :class="{ 'is-off': !l.mirror.enabled }"
+            :aria-label="t('layers.mirrorToggle')"
+            :data-tip="t('layers.mirrorToggle')"
+            :aria-pressed="l.mirror.enabled"
+            @click.stop="
+              docs.session && setLayerMirrorEnabled(docs.session, l.id, !l.mirror.enabled)
+            "
+          >
+            <PtIcon name="mirror" />
+          </button>
+          <button
             type="button"
             class="pt-lcol pt-lcol--lock"
             :aria-label="t('layers.lock')"
@@ -215,6 +314,25 @@ function onDrop(rowIndex: number) {
 </template>
 
 <style scoped>
+.mirrormenu {
+  position: fixed;
+  z-index: 80;
+  min-width: 220px;
+}
+.mirrormenu .pt-mi:hover:not(.is-disabled) {
+  background: var(--accent-solid);
+  color: var(--on-accent);
+}
+button.pt-lcol--mirror {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--mirror-line);
+}
+button.pt-lcol--mirror.is-off {
+  color: var(--icon);
+  opacity: 0.55;
+}
 .layers {
   display: flex;
   flex-direction: column;

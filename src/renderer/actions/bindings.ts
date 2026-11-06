@@ -21,6 +21,10 @@ import {
   cropToSelection,
   flattenLayers,
   mergeDown,
+  MIRROR_TYPES,
+  canMirror,
+  setLayerMirrorType,
+  removeLayerMirror,
   deleteImages,
   duplicateImages,
   setActiveImage,
@@ -166,6 +170,10 @@ export function registerAppActions(): void {
     checked: () => ui.autoUpdate
   })
   registerHandler('help.commandPalette', { run: () => (ui.palette = !ui.palette) })
+  registerHandler('view.mirrorLines', {
+    run: () => (ui.showMirrorLines = !ui.showMirrorLines),
+    checked: () => ui.showMirrorLines
+  })
   registerHandler('view.guides', {
     run: () => (ui.showGuides = !ui.showGuides),
     checked: () => ui.showGuides
@@ -480,6 +488,28 @@ export function registerAppActions(): void {
     run: () =>
       ses().setLayerProps(ses().activeLayerId, { lockAlpha: !ses().activeLayer.lockAlpha }),
     checked: () => (docs.rev, has() && ses().activeLayer.lockAlpha)
+  })
+
+  // Espejo de capa (specs/13)
+  const canMirrorActive = () => has() && (docs.rev, canMirror(ses(), ses().activeLayerId))
+  registerHandler('layer.mirrorMenu', {
+    enabled: canMirrorActive,
+    run: () => {
+      // el menú sale bajo el botón del panel Capas (si no está a la vista, en el centro)
+      const el = document.querySelector('[data-action="layer.mirrorMenu"]')
+      const r = el?.getBoundingClientRect()
+      ui.mirrorMenu = r ? { x: r.left, y: r.bottom + 2 } : { x: 200, y: 200 }
+    }
+  })
+  for (const type of MIRROR_TYPES)
+    registerHandler(`layer.mirror.${type}`, {
+      enabled: canMirrorActive,
+      run: () => void setLayerMirrorType(ses(), ses().activeLayerId, type),
+      checked: () => (docs.rev, has() && ses().activeLayer.mirror?.type === type)
+    })
+  registerHandler('layer.mirror.off', {
+    enabled: () => has() && (docs.rev, !!ses().activeLayer.mirror),
+    run: () => void removeLayerMirror(ses(), ses().activeLayerId)
   })
 
   // ---------- Ver ----------

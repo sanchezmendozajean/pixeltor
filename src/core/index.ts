@@ -34,6 +34,8 @@ export { saveDocument, loadDocument, exportImagePng, FormatError } from './io/pi
 export { brushOffsets, linePoints } from './raster/draw'
 export * from './model/shapes'
 export * from './tools/shapes'
+export * from './tools/mirror'
+export * from './render/mirror'
 export {
   renderShape,
   renderShapeCached,

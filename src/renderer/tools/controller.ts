@@ -10,6 +10,10 @@ import {
   bucketFill,
   commitFloating,
   GuideDrag,
+  MirrorDrag,
+  type MirrorDragPart,
+  activeMirror,
+  mirrorLines,
   isSymmetric,
   deselect,
   paintBlockReason,
@@ -18,6 +22,7 @@ import {
   selectRect,
   wandMask
 } from '@core/index'
+import type { LayerMirror } from '@core/model/types'
 import type { Workspace } from '@/session/workspace'
 import { useColorsStore } from '@/stores/colors'
 import { hexToRgba, rgbaToHex } from '@/stores/colorUtil'
@@ -64,6 +69,10 @@ export class CanvasController {
   private guideDrag: { gd: GuideDrag; axis: 'h' | 'v' } | null = null
   /** Eje de la guía bajo el cursor (herramienta V), para el cursor del ratón. */
   guideHover: 'h' | 'v' | null = null
+  /** Arrastre de los ejes del espejo de la capa activa (herramienta V). */
+  private mirrorDrag: MirrorDrag | null = null
+  /** Eje del espejo bajo el cursor (herramienta V), para el cursor del ratón. */
+  mirrorHover: MirrorDragPart | null = null
   private lastScreen = { x: 0, y: 0 }
   spaceDown = false
   hover: { x: number; y: number } | null = null
@@ -114,6 +123,7 @@ export class CanvasController {
           : undefined,
       onion: this.onionFrames(ws),
       guides: useUiStore().showGuides ? (s.image.guides ?? []) : [],
+      mirror: this.visibleMirror(ws),
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : this.shapes.anchorMarqueeRect,
       cursor,
@@ -147,6 +157,11 @@ export class CanvasController {
       const g = this.guideAt(ws, p.sx, p.sy)
       if (g) {
         this.guideDrag = { gd: new GuideDrag(s, g.id), axis: g.axis }
+        return
+      }
+      const part = this.mirrorAt(ws, p.sx, p.sy)
+      if (part) {
+        this.mirrorDrag = new MirrorDrag(s, s.activeLayerId, part)
         return
       }
     }
@@ -268,6 +283,11 @@ export class CanvasController {
     this.lastScreen = { x: p.sx, y: p.sy }
     this.guideHover =
       this.tools.active === 'sel' ? (this.guideAt(ws, p.sx, p.sy)?.axis ?? null) : null
+    this.mirrorHover = this.tools.active === 'sel' ? this.mirrorAt(ws, p.sx, p.sy) : null
+    if (this.mirrorDrag) {
+      this.mirrorDrag.moveTo(pt.x, pt.y)
+      return
+    }
     if (this.guideDrag) {
       this.guideDrag.gd.moveTo(this.guideDrag.axis === 'v' ? pt.x : pt.y)
       return
@@ -311,6 +331,11 @@ export class CanvasController {
   up(): void {
     const ws = this.getWs()
     if (!ws) return
+    if (this.mirrorDrag) {
+      this.mirrorDrag.end()
+      this.mirrorDrag = null
+      return
+    }
     if (this.guideDrag) {
       // soltar sobre la regla elimina la guía
       const onRuler = this.lastScreen.x < RULER || this.lastScreen.y < RULER
@@ -382,6 +407,41 @@ export class CanvasController {
       : box
   }
 
+  /** Espejo de la capa activa si sus ejes deben verse (Ver › Ver líneas espejo y no en vista previa). */
+  private visibleMirror(
+    ws: Workspace
+  ): { type: LayerMirror['type']; x: number; y: number } | undefined {
+    const ui = useUiStore()
+    if (!ui.showMirrorLines || ui.preview) return undefined
+    const m = activeMirror(ws.session.activeLayer)
+    return m ? { type: m.type, x: m.x, y: m.y } : undefined
+  }
+
+  /** Eje del espejo a menos de 4 px de pantalla del puntero (incluye las marcas fuera del lienzo). */
+  private mirrorAt(ws: Workspace, sx: number, sy: number): MirrorDragPart | null {
+    if (this.tools.active !== 'sel') return null
+    const m = this.visibleMirror(ws)
+    if (!m) return null
+    const vp = ws.viewport
+    const hit = new Set<string>()
+    for (const l of mirrorLines({ ...m, enabled: true }, vp.imageW, vp.imageH)) {
+      const a = vp.toScreen(l.a.x, l.a.y)
+      const b = vp.toScreen(l.b.x, l.b.y)
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1
+      const ux = (b.x - a.x) / len
+      const uy = (b.y - a.y) / len
+      // se alarga 12 px por cada extremo: ahí están las marcas con zoom bajo
+      const ax = a.x - ux * 12
+      const ay = a.y - uy * 12
+      const t = Math.min(len + 24, Math.max(0, (sx - ax) * ux + (sy - ay) * uy))
+      if (Math.hypot(ax + ux * t - sx, ay + uy * t - sy) < 4) hit.add(l.id)
+    }
+    if (hit.has('v') && hit.has('h')) return 'xy'
+    if (hit.has('v')) return 'x'
+    if (hit.has('h')) return 'y'
+    return hit.size ? 'pivot' : null
+  }
+
   /** Guía a menos de 4 px de pantalla del puntero, si las guías son visibles. */
   private guideAt(ws: Workspace, sx: number, sy: number): { id: string; axis: 'h' | 'v' } | null {
     if (!useUiStore().showGuides) return null
@@ -399,6 +459,8 @@ export class CanvasController {
   cancelInteraction(): void {
     this.guideDrag?.gd.end()
     this.guideDrag = null
+    this.mirrorDrag?.end()
+    this.mirrorDrag = null
     this.shapes.cancel()
     this.shapeActive = null
     this.stroke?.end()

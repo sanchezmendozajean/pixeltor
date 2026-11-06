@@ -3,6 +3,7 @@
 // Formato canónico: modificadores en orden Ctrl+Alt+Shift y luego la tecla (p. ej. "Ctrl+Alt+Shift+S").
 
 import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
+import { MIRROR_TYPES } from '@core/render/mirror'
 
 export interface ActionDef {
   id: string
@@ -80,6 +81,9 @@ export const ACTIONS: ActionDef[] = [
   a('layer.flatten'),
   a('layer.rasterizeEffects', 'Ctrl+Alt+E'),
   a('layer.lockAlpha', '/', 'lockAlpha'),
+  a('layer.mirrorMenu', undefined, 'mirror'),
+  ...MIRROR_TYPES.map((t) => a(`layer.mirror.${t}`)),
+  a('layer.mirror.off'),
   // Efecto (el catálogo llega en F4)
   ...EFFECT_DEFS.map((d) => a(`effect.add.${d.type}`)),
   // Imagen
@@ -103,6 +107,7 @@ export const ACTIONS: ActionDef[] = [
   a('view.zoomFit', 'Ctrl+0'),
   a('view.pixelGrid', "Ctrl+'", 'gridPx'),
   a('view.guides', 'Ctrl+;'),
+  a('view.mirrorLines'),
   a('view.smartGuides', 'Ctrl+U', 'magnet'),
   a('view.snapPixel', "Ctrl+Alt+'"),
   a('view.hidePaths', 'Ctrl+H', 'paths'),

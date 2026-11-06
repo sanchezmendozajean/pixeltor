@@ -15,6 +15,7 @@
     "help": "Ayuda",
     "theme": "Tema",
     "pathfinder": "Buscatrazos",
+    "mirror": "Espejo",
     "uiScale": "Escala de la interfaz",
     "panels": "Paneles",
     "workspace": "Espacio de trabajo",
@@ -79,7 +80,17 @@
       "lockAlpha": "Bloquear transparencia",
       "group": "Agrupar capa",
       "ungroup": "Desagrupar capas",
-      "clip": "Máscara de recorte"
+      "clip": "Máscara de recorte",
+      "mirrorMenu": "Espejo…",
+      "mirror": {
+        "v": "Espejo vertical",
+        "h": "Espejo horizontal",
+        "vh": "Espejo vertical y horizontal",
+        "d45": "Espejo 45°",
+        "d135": "Espejo 135°",
+        "d45-135": "Espejo 45° y 135°",
+        "off": "Sin espejo"
+      }
     },
     "effect": {
       "add": {
@@ -131,6 +142,7 @@
       "zoomFit": "Encajar en la ventana",
       "pixelGrid": "Cuadrícula de píxeles",
       "guides": "Mostrar guías",
+      "mirrorLines": "Ver líneas espejo",
       "smartGuides": "Guías inteligentes",
       "snapPixel": "Ajustar a píxel",
       "hidePaths": "Ocultar trazados",
@@ -530,6 +542,7 @@
     "visible": "Mostrar u ocultar capa",
     "lock": "Bloquear capa",
     "lockAlpha": "Bloquear transparencia",
+    "mirrorToggle": "Activar o desactivar el espejo de la capa",
     "rename": "Renombrar capa",
     "collapse": "Plegar grupo",
     "expand": "Desplegar grupo",

@@ -8,6 +8,7 @@ import type { DocumentSession, Transaction } from '../session'
 import { findShape } from '../tools/shapes'
 import { compositeOver } from '../raster/blend'
 import { renderShapeFx } from '../render/compose'
+import { activeMirror, mirrorBitmap } from '../render/mirror'
 import { regionFromBitmap } from './region'
 import { applyEffects, effectDef, hasActiveEffects, newEffect, resolveParams } from './registry'
 import type { ParamValue } from './types'
@@ -209,6 +210,12 @@ export function rasterizeLayerEffects(s: DocumentSession, layerId: ID, upTo?: ID
     if (bmp) compositeOver(raster, bmp, sh.blendMode, sh.opacity)
   }
   layer.shapes = []
+  const mirror = hasActiveEffects(applied) ? activeMirror(layer) : null
+  if (mirror) {
+    // el espejo va antes de los efectos: se estampa también y el espejo se retira (ya está en el ráster)
+    raster.data.set(mirrorBitmap(raster, mirror).data)
+    delete layer.mirror
+  }
   if (hasActiveEffects(applied)) {
     const fx = applyEffects(
       applied,

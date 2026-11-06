@@ -1,5 +1,6 @@
 // Estructura de los menús. Cada entrada apunta a una acción del registro (definitions.ts).
 import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
+import { MIRROR_TYPES } from '@core/render/mirror'
 import type { I18nKey } from '@/i18n'
 
 export type MenuNode =
@@ -112,7 +113,13 @@ export const MENUS: MenuDef[] = [
       act('layer.flatten'),
       sep,
       act('layer.rasterizeEffects'),
-      act('layer.lockAlpha')
+      act('layer.lockAlpha'),
+      sep,
+      {
+        type: 'submenu',
+        label: 'menus.mirror',
+        items: [...MIRROR_TYPES.map((t) => act(`layer.mirror.${t}`)), sep, act('layer.mirror.off')]
+      }
     ]
   },
   {
@@ -161,6 +168,7 @@ export const MENUS: MenuDef[] = [
       sep,
       act('view.pixelGrid'),
       act('view.guides'),
+      act('view.mirrorLines'),
       act('view.smartGuides'),
       act('view.snapPixel'),
       act('view.hidePaths'),

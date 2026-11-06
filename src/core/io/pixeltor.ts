@@ -4,11 +4,12 @@ import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
 import { sanitizeViewers } from '../viewers/layout'
 import { APP_NAME, clampSize } from '../model/document'
 import { FORMAT_VERSION } from '../model/version'
-import type { ID, Layer, PixeltorDocument } from '../model/types'
+import type { ID, Layer, LayerMirror, PixeltorDocument } from '../model/types'
 import { BLEND_MODES } from '../model/types'
 import type { Palette } from '../palette/palette'
 import { Bitmap } from '../raster/bitmap'
 import { composeImage } from '../render/compose'
+import { isMirrorType } from '../render/mirror'
 import { decodePng, encodePng, scaleNearest } from './png'
 import { migrate } from './migrations'
 import { sha256Hex } from './sha256'
@@ -169,6 +170,10 @@ function sanitizeLayer(l: Layer): void {
   if (!l.collapsed) delete l.collapsed
   if (!l.clip) delete l.clip
   if (typeof l.groupId !== 'string') delete l.groupId
+  const m = l.mirror as Partial<LayerMirror> | undefined
+  if (m && isMirrorType(m.type) && Number.isInteger(m.x) && Number.isInteger(m.y))
+    l.mirror = { type: m.type, enabled: m.enabled !== false, x: m.x!, y: m.y! }
+  else delete l.mirror
 }
 
 /** Quita las referencias a grupos que no existen o que no están justo encima del miembro. */

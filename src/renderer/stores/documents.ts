@@ -62,6 +62,8 @@ export interface LayerRow {
   /** Id de la capa de grupo a la que pertenece. */
   groupId: string | null
   clip: boolean
+  /** Espejo configurado (activo o no); null si la capa no tiene. */
+  mirror: { enabled: boolean } | null
   /** Tiene efectos activos. */
   fx: boolean
   /** De arriba abajo; los hijos de un grupo siguen a su grupo con `depth` mayor. */
@@ -116,6 +118,7 @@ export const useDocumentsStore = defineStore('documents', () => {
       collapsed: !!l.collapsed,
       groupId: l.groupId ?? null,
       clip: !!l.clip,
+      mirror: l.mirror ? { enabled: l.mirror.enabled } : null,
       fx: hasActiveEffects(l.effects),
       shapes: flattenShapes(l.shapes, 0, s.selectedShapes)
     }))

@@ -54,6 +54,7 @@ const color: PanelTab[] = [
         <div class="pt-pfoot">
           <span class="pt-spacer" />
           <ActionButton id="layer.new" />
+          <ActionButton id="layer.duplicate" />
           <ActionButton id="layer.delete" />
         </div>
       </template>

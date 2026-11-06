@@ -1,7 +1,8 @@
 // Overlay 2D de un visor: hormigas en marcha, marco en construcción y cursor de pincel.
 // Es UI (no imagen), así que se dibuja en espacio de pantalla con Canvas2D.
 
-import type { PixelMask, Rect } from '@core/index'
+import { mirrorLines, type PixelMask, type Rect } from '@core/index'
+import type { LayerMirror } from '@core/model/types'
 import { handlePoint } from '@/tools/boxHandles'
 import type { Viewport } from './Viewport'
 
@@ -53,6 +54,53 @@ function maskPath(mask: PixelMask): Path2D {
   return p
 }
 
+/** Color de los ejes del espejo (token --mirror-line). */
+const MIRROR_COLOR = '#ff8a00'
+/** Con menos zoom que esto sólo se dibujan marcas fuera del lienzo. */
+const MIRROR_LINE_MIN_ZOOM = 4
+
+/** Ejes del espejo: línea naranja punteada con zoom suficiente; si no, una marca fuera del lienzo. */
+function drawMirrorLines(
+  ctx: CanvasRenderingContext2D,
+  vp: Viewport,
+  m: NonNullable<OverlayState['mirror']>
+): void {
+  ctx.strokeStyle = MIRROR_COLOR
+  for (const l of mirrorLines({ ...m, enabled: true }, vp.imageW, vp.imageH)) {
+    const a = vp.toScreen(l.a.x, l.a.y)
+    const b = vp.toScreen(l.b.x, l.b.y)
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1
+    const ux = (b.x - a.x) / len
+    const uy = (b.y - a.y) / len
+    // los ejes alineados a la rejilla caen en el centro de un píxel de pantalla
+    const snap = (v: number) => Math.round(v) + 0.5
+    const pt = (x: number, y: number): [number, number] => [
+      l.id === 'v' ? snap(x) : x,
+      l.id === 'h' ? snap(y) : y
+    ]
+    ctx.beginPath()
+    if (vp.zoom >= MIRROR_LINE_MIN_ZOOM) {
+      ctx.lineWidth = 1
+      ctx.setLineDash([5, 4])
+      ctx.moveTo(...pt(a.x, a.y))
+      ctx.lineTo(...pt(b.x, b.y))
+    } else {
+      ctx.lineWidth = 2
+      ctx.setLineDash([])
+      for (const [p, dir] of [
+        [a, -1],
+        [b, 1]
+      ] as const) {
+        ctx.moveTo(...pt(p.x + dir * ux * 3, p.y + dir * uy * 3))
+        ctx.lineTo(...pt(p.x + dir * ux * 11, p.y + dir * uy * 11))
+      }
+    }
+    ctx.stroke()
+  }
+  ctx.lineWidth = 1
+  ctx.setLineDash([])
+}
+
 export interface ShapeOverlay {
   lines: { pts: { x: number; y: number }[]; closed: boolean }[]
   /** Color de la capa (specs/05). */
@@ -72,6 +120,8 @@ export interface OverlayState {
   guides?: { axis: 'h' | 'v'; pos: number }[]
   /** Papel cebolla: imágenes vecinas teñidas, de la más lejana a la más cercana. */
   onion?: { canvas: HTMLCanvasElement; alpha: number }[]
+  /** Ejes de referencia del espejo de la capa activa. */
+  mirror?: { type: LayerMirror['type']; x: number; y: number }
   /** Ejes de simetría activos (respecto al centro del lienzo). */
   symmetry?: { x: boolean; y: boolean; rot: 1 | 2 | 4 }
   /** Líneas de ajuste temporales (guías inteligentes) en coordenadas de imagen. */
@@ -138,6 +188,8 @@ export function drawOverlay(
     ctx.stroke()
     ctx.setLineDash([])
   }
+
+  if (st.mirror) drawMirrorLines(ctx, vp, st.mirror)
 
   for (const g of st.guides ?? []) {
     ctx.setLineDash([])
