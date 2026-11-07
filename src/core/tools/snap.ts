@@ -154,6 +154,7 @@ export function removeGuide(s: DocumentSession, id: ID): boolean {
 /** Arrastre de una guía: se ve en vivo y el paso de historial se crea al soltar. */
 export class GuideDrag {
   private readonly tx
+  private changed = false
 
   constructor(
     private readonly s: DocumentSession,
@@ -166,6 +167,7 @@ export class GuideDrag {
   /** Crea una guía nueva y la deja en arrastre: el paso «Crear guía» se registra al soltar. */
   static create(s: DocumentSession, axis: 'h' | 'v', pos: number): GuideDrag {
     const drag = new GuideDrag(s, newId(), 'Crear guía')
+    drag.changed = true
     ;(s.image.guides ??= []).push({ id: drag.id, axis, pos: Math.round(pos) })
     s.emit({ imageId: s.activeImageId, dirty: null, structure: true, layerIds: [] })
     return drag
@@ -174,6 +176,7 @@ export class GuideDrag {
   moveTo(pos: number): void {
     const g = this.s.image.guides?.find((x) => x.id === this.id)
     if (!g) return
+    if (g.pos !== Math.round(pos)) this.changed = true
     g.pos = Math.round(pos)
     this.s.emit({ imageId: this.s.activeImageId, dirty: null, structure: true, layerIds: [] })
   }
@@ -181,6 +184,92 @@ export class GuideDrag {
   /** Confirma; si `remove`, la guía se elimina (se arrastró de vuelta a la regla). */
   end(remove = false): boolean {
     if (remove) this.s.image.guides = (this.s.image.guides ?? []).filter((g) => g.id !== this.id)
-    return this.tx.commit({ model: true })
+    // un clic sin mover no deja un paso de historial vacío
+    return this.tx.commit({ model: remove || this.changed })
   }
+}
+
+// ---------- Posición de una guía por expresión ----------
+
+/**
+ * Evalúa una posición de guía: números, `%` (porcentaje del tamaño de la imagen en ese eje), `px`
+ * opcional, + - * / y paréntesis. «100% - 10» = el borde menos 10 px. El resultado se redondea a
+ * entero. Devuelve null si la expresión no es válida.
+ */
+export function evalGuideExpr(text: string, size: number): number | null {
+  const src = text.trim().toLowerCase().replace(/,/g, '.')
+  if (!src) return null
+  let i = 0
+  const ws = (): void => {
+    while (src[i] === ' ') i++
+  }
+  const number = (): number | null => {
+    const m = /^\d*\.?\d+|^\d+\.?/.exec(src.slice(i))
+    if (!m) return null
+    i += m[0].length
+    let v = Number.parseFloat(m[0])
+    ws()
+    if (src[i] === '%') {
+      i++
+      v = (v * size) / 100
+    } else if (src.startsWith('px', i)) i += 2
+    return v
+  }
+  const primary = (): number | null => {
+    ws()
+    if (src[i] === '(') {
+      i++
+      const v = sum()
+      ws()
+      if (v === null || src[i] !== ')') return null
+      i++
+      return v
+    }
+    if (src[i] === '-' || src[i] === '+') {
+      const neg = src[i] === '-'
+      i++
+      const v = primary()
+      return v === null ? null : neg ? -v : v
+    }
+    return number()
+  }
+  const product = (): number | null => {
+    let v = primary()
+    for (;;) {
+      ws()
+      const op = src[i]
+      if (v === null || (op !== '*' && op !== '/')) return v
+      i++
+      const r = primary()
+      if (r === null) return null
+      v = op === '*' ? v * r : v / r
+    }
+  }
+  function sum(): number | null {
+    let v = product()
+    for (;;) {
+      ws()
+      const op = src[i]
+      if (v === null || (op !== '+' && op !== '-')) return v
+      i++
+      const r = product()
+      if (r === null) return null
+      v = op === '+' ? v + r : v - r
+    }
+  }
+  const v = sum()
+  ws()
+  if (v === null || i !== src.length || !Number.isFinite(v)) return null
+  return Math.round(v)
+}
+
+/** Coloca la guía en `pos` (entero) como un único paso de historial. */
+export function setGuidePos(s: DocumentSession, id: ID, pos: number): boolean {
+  const g = s.image.guides?.find((x) => x.id === id)
+  const p = Math.round(pos)
+  if (!g || g.pos === p) return false
+  const tx = s.begin('Mover guía')
+  g.pos = p
+  s.emit({ imageId: s.activeImageId, dirty: null, structure: true, layerIds: [] })
+  return tx.commit({ model: true })
 }

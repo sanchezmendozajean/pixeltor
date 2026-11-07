@@ -60,7 +60,7 @@ onBeforeUnmount(() => clearTimeout(timer))
         class="pt-mi"
         role="menuitem"
         aria-haspopup="menu"
-        :class="{ 'is-hover': hovered === i && openSub !== i, 'is-open': openSub === i }"
+        :class="{ 'is-open': hovered === i }"
         @pointerenter="enter(i, true)"
       >
         {{ t(node.label) }}

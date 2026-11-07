@@ -8,7 +8,8 @@ import {
   MIRROR_TYPES,
   moveShapesToLayer,
   selectShapes,
-  setLayerMirrorEnabled
+  setLayerMirrorEnabled,
+  updateShape
 } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import ActionButton from '@/components/ActionButton.vue'
@@ -40,10 +41,25 @@ function onShapeClick(layerId: string, id: string, e: MouseEvent): void {
   const s = docs.session
   if (!s) return
   s.setActiveLayer(layerId)
+  // Una capa bloqueada no permite seleccionar sus formas (igual que en el lienzo).
+  if (docs.layers.find((l) => l.id === layerId)?.locked) return
   const cur = s.selectedShapes
   selectShapes(
     s,
     e.shiftKey ? (cur.includes(id) ? cur.filter((i) => i !== id) : [...cur, id]) : [id]
+  )
+}
+
+function toggleShape(id: string): void {
+  const s = docs.session
+  if (!s) return
+  updateShape(
+    s,
+    id,
+    (sh) => {
+      sh.visible = !sh.visible
+    },
+    t('layers.shapeVisible')
   )
 }
 
@@ -241,7 +257,7 @@ onBeforeUnmount(() => {
           </button>
           <span class="pt-lbar" :style="{ background: l.color }" />
           <button
-            v-if="l.isGroup"
+            v-if="l.isGroup || l.shapes.length"
             type="button"
             class="pt-lcol fold"
             :aria-label="t(l.collapsed ? 'layers.expand' : 'layers.collapse')"
@@ -250,6 +266,7 @@ onBeforeUnmount(() => {
           >
             <PtIcon :name="l.collapsed ? 'chevRight' : 'chevDown'" />
           </button>
+          <span v-else class="fold" />
           <PtIcon v-if="l.isGroup" name="folder" class="gicon" />
           <LayerThumb v-else :layer-id="l.id" />
           <PtIcon v-if="l.clip" name="chevRight" class="clip" :title="t('layers.clipped')" />
@@ -268,7 +285,13 @@ onBeforeUnmount(() => {
             {{ l.name }}
             <em v-if="l.lockAlpha"> · α</em>
           </span>
-          <span v-if="l.fx" class="fx-tag" :title="t('effects.title')">fx</span>
+          <span
+            v-if="l.fx"
+            class="fx-tag"
+            :title="t('effects.title')"
+            @dblclick.stop="ui.requestTab = 'effects'"
+            >fx</span
+          >
           <button
             v-if="l.mirror"
             type="button"
@@ -294,7 +317,7 @@ onBeforeUnmount(() => {
           </button>
         </li>
         <li
-          v-for="sh in hidden(l) ? [] : l.shapes"
+          v-for="sh in hidden(l) || l.collapsed ? [] : l.shapes"
           :key="sh.id"
           class="pt-lrow pt-srow"
           :class="{ 'is-selected': sh.selected, 'is-hidden': !sh.visible }"
@@ -303,10 +326,25 @@ onBeforeUnmount(() => {
           @dragend="((dragShape = null), (dropIndex = null))"
           @click="onShapeClick(l.id, sh.id, $event)"
         >
-          <span class="indent" :style="{ width: `${38 + sh.depth * 14}px` }" />
-          <span class="pt-lbar" :style="{ background: l.color }" />
+          <button
+            type="button"
+            class="pt-lcol pt-lcol--shape"
+            :aria-label="t('layers.shapeVisible')"
+            :aria-pressed="sh.visible"
+            @click.stop="toggleShape(sh.id)"
+          >
+            <PtIcon :name="sh.visible ? 'eye' : 'eyeOff'" />
+          </button>
+          <span class="indent" :style="{ width: `${16 + sh.depth * 14}px` }" />
+          <span class="pt-lbar pt-lbar--shape" :style="{ background: l.color }" />
           <span class="pt-lname">{{ sh.name }}</span>
-          <span v-if="sh.fx" class="fx-tag" :title="t('effects.title')">fx</span>
+          <span
+            v-if="sh.fx"
+            class="fx-tag"
+            :title="t('effects.title')"
+            @dblclick.stop="ui.requestTab = 'effects'"
+            >fx</span
+          >
         </li>
       </template>
     </ul>

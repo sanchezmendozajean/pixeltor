@@ -88,7 +88,7 @@ function frame(): void {
   ;[vp.tileX, vp.tileY] = TILES[view.tiled]
   if (!view.fitted) {
     view.fitted = true
-    vp.fit()
+    view.applyInitialView()
   }
   // una composición propia (fijada o en reproducción) se sube entera; la compartida, por regiones
   if (bmp !== lastBmp || own) {
@@ -244,11 +244,12 @@ function applyCursor(p: ReturnType<typeof info> | null): void {
   const el = stage.value
   if (!el) return
   enter()
-  if (controller.guideHover) {
+  // con Ctrl (Selección directa temporal) no valen los cursores de guías ni de espejo
+  if (controller.guideHover && !p?.ctrl) {
     el.style.cursor = controller.guideHover === 'v' ? 'ew-resize' : 'ns-resize'
     return
   }
-  if (controller.mirrorHover) {
+  if (controller.mirrorHover && !p?.ctrl) {
     const mh = controller.mirrorHover
     el.style.cursor = mh === 'x' ? 'ew-resize' : mh === 'y' ? 'ns-resize' : 'move'
     return

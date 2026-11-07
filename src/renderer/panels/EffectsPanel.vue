@@ -24,6 +24,7 @@ import {
 } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import { useDocumentsStore } from '@/stores/documents'
+import ColorButton from '@/components/ColorButton.vue'
 import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
@@ -266,12 +267,11 @@ function setPalette(fx: Effect, e: Event): void {
             @change="commit(fx, d.key)"
           />
         </template>
-        <input
+        <ColorButton
           v-else-if="d.kind === 'color'"
-          type="color"
-          :value="fx.params[d.key]"
-          @input="live(fx, d.key, ($event.target as HTMLInputElement).value)"
-          @change="commit(fx, d.key)"
+          :color="String(fx.params[d.key])"
+          @pick="(h) => live(fx, d.key, h.slice(0, 7).toLowerCase())"
+          @end="commit(fx, d.key)"
         />
         <input
           v-else-if="d.kind === 'bool'"

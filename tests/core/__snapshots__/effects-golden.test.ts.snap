@@ -42,6 +42,8 @@ exports[`golden de efectos > posterize 1`] = `"58ba3564"`;
 
 exports[`golden de efectos > ripple 1`] = `"3ba87c38"`;
 
+exports[`golden de efectos > smooth-edges 1`] = `"70655004"`;
+
 exports[`golden de efectos > twirl 1`] = `"c9c4516d"`;
 
 exports[`golden de efectos > wave 1`] = `"2d604d53"`;

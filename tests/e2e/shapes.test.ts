@@ -49,6 +49,18 @@ test('crear rectángulo y elipse, seleccionar, mover y estampar', async () => {
   await expect(rows.first()).toContainText('Elipse')
   await page.screenshot({ path: 'test-results/f2-formas.png' })
 
+  // Visibilidad por forma y plegado de la capa desde el panel Capas
+  const eye = rows.first().getByRole('button', { name: 'Mostrar u ocultar forma' })
+  await eye.click()
+  await expect(rows.first()).toHaveClass(/is-hidden/)
+  await eye.click()
+  await expect(rows.first()).not.toHaveClass(/is-hidden/)
+  const layerRow = page.locator('.layers li.pt-lrow:not(.pt-srow)').first()
+  await layerRow.getByRole('button', { name: 'Plegar' }).click()
+  await expect(rows).toHaveCount(0)
+  await layerRow.getByRole('button', { name: 'Desplegar' }).click()
+  await expect(rows).toHaveCount(2)
+
   // Seleccionar la elipse con V y comprobar que Propiedades muestra su apariencia.
   await page.keyboard.press('v')
   await drag(70, 60, 70, 60)
@@ -166,4 +178,165 @@ test('agrupar, aislar con doble clic y desagrupar', async () => {
   await page.keyboard.press('Control+Shift+g')
   await expect(page.locator('.layers .pt-srow', { hasText: 'Grupo' })).toHaveCount(0)
   await page.screenshot({ path: 'test-results/f2-grupos.png' })
+})
+
+test('V sobre el fondo dibuja un marco que selecciona las formas que toca', async () => {
+  await page.keyboard.press('Control+n')
+  await page.getByRole('button', { name: 'Crear', exact: true }).click()
+  await page.locator('.pt-ptab', { hasText: 'Capas' }).click()
+  await page.keyboard.press('m')
+  await drag(-100, -100, -20, -20)
+  await page.keyboard.press('v')
+  const selected = page.locator('.layers .pt-srow.is-selected')
+  // un clic en el vacío deselecciona
+  await drag(100, 100, 100, 100)
+  await expect(selected).toHaveCount(0)
+  // un marco que sólo roza la esquina de la forma la selecciona
+  await drag(-130, -130, -60, -60)
+  await expect(selected).toHaveCount(1)
+  // un marco en el vacío deselecciona
+  await drag(60, -140, 100, -120)
+  await expect(selected).toHaveCount(0)
+})
+
+test('Ctrl+Z con la pluma en curso quita la última ancla sin tocar el documento', async () => {
+  await page.keyboard.press('m')
+  await drag(-120, -120, -80, -80)
+  const rows = page.locator('.layers .pt-srow')
+  const n0 = await rows.count()
+  await page.keyboard.press('p')
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  for (const [dx, dy] of [
+    [20, 20],
+    [80, 30],
+    [120, 90]
+  ] as const) {
+    await page.mouse.click(cx + dx, cy + dy)
+  }
+  await page.keyboard.press('Control+z')
+  await page.keyboard.press('Enter')
+  // el rectángulo sigue ahí y se creó el trazado de 2 anclas
+  await expect(rows).toHaveCount(n0 + 1)
+})
+
+test('Esc con la pluma termina el trazado abierto sin descartarlo', async () => {
+  const rows = page.locator('.layers .pt-srow')
+  const n0 = await rows.count()
+  await page.keyboard.press('p')
+  const box = (await page.locator('.pt-stage').boundingBox())!
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  await page.mouse.click(cx - 100, cy + 100)
+  await page.mouse.click(cx - 40, cy + 120)
+  await page.mouse.click(cx + 20, cy + 90)
+  await page.keyboard.press('Escape')
+  await expect(rows).toHaveCount(n0 + 1)
+})
+
+test('doble clic en el cuadro de color de Apariencia abre el selector y cambia el color', async () => {
+  await page.keyboard.press('m')
+  await drag(-130, 40, -90, 80)
+  await page.locator('.pt-ptab', { hasText: 'Apariencia' }).click()
+  const sw = page.locator('.app .row .sw').first()
+  const before = await sw.getAttribute('style')
+  await sw.dblclick()
+  const dlg = page.getByRole('dialog', { name: 'Selector de color' })
+  await expect(dlg).toBeVisible()
+  const hexInput = dlg.getByLabel('Valor hexadecimal')
+  await hexInput.fill('#12AB34')
+  await hexInput.press('Tab')
+  await dlg.getByRole('button', { name: 'Aceptar' }).click()
+  await expect(dlg).toBeHidden()
+  await expect.poll(() => sw.getAttribute('style')).not.toBe(before)
+})
+
+test('el selector de color es siempre el mismo y aparece junto al cuadro que lo abre', async () => {
+  await page.locator('.pt-ptab', { hasText: 'Propiedades' }).click()
+  const btn = page.locator('.pt-dock .cbtn').first()
+  await btn.click()
+  const dlg = page.getByRole('dialog', { name: 'Selector de color' })
+  await expect(dlg).toBeVisible()
+  const b = (await btn.boundingBox())!
+  const d = (await dlg.boundingBox())!
+  // pegado al cuadro: su borde queda a menos de 40 px del cuadro (debajo o encima)
+  const gap = Math.min(Math.abs(d.y - (b.y + b.height)), Math.abs(b.y - (d.y + d.height)))
+  expect(gap).toBeLessThan(40)
+  await dlg.getByRole('button', { name: 'Cancelar' }).click()
+  await expect(dlg).toBeHidden()
+  await expect(page.locator('input[type="color"]')).toHaveCount(0)
+})
+
+test('el selector de color aplica en vivo, Aceptar confirma y Cancelar deshace', async () => {
+  await page.keyboard.press('m')
+  await drag(-60, 100, -20, 140)
+  await page.locator('.pt-ptab', { hasText: 'Apariencia' }).click()
+  const sw = page.locator('.app .row .sw').first()
+  const before = await sw.getAttribute('style')
+  await sw.dblclick()
+  const dlg = page.getByRole('dialog', { name: 'Selector de color' })
+  const hexInput = dlg.getByLabel('Valor hexadecimal')
+  await hexInput.fill('#00FF00')
+  await hexInput.press('Tab')
+  // sin pulsar Aceptar el cuadro de la forma ya cambió
+  await expect.poll(() => sw.getAttribute('style')).not.toBe(before)
+  await dlg.getByRole('button', { name: 'Cancelar' }).click()
+  await expect(dlg).toBeHidden()
+  await expect.poll(() => sw.getAttribute('style')).toBe(before)
+
+  await sw.dblclick()
+  await hexInput.fill('#00FF00')
+  await hexInput.press('Tab')
+  await dlg.getByRole('button', { name: 'Aceptar' }).click()
+  await expect.poll(() => sw.getAttribute('style')).not.toBe(before)
+})
+
+test('Apariencia: parámetros bajo el elemento elegido, arrastrar para ordenar y pie con iconos', async () => {
+  await page.keyboard.press('m')
+  await drag(60, 100, 100, 140)
+  await page.locator('.pt-ptab', { hasText: 'Apariencia' }).click()
+  // los botones de capa sólo se ven en la pestaña Capas
+  await expect(page.locator('[data-action="layer.duplicate"]')).toBeHidden()
+  const rows = page.locator('.app li.row')
+  await expect(rows).toHaveCount(2)
+  await rows.nth(1).click()
+  // el editor queda justo debajo de la fila elegida (la segunda), no al final de otra
+  const editor = page.locator('.app li.editor')
+  await expect(editor).toHaveCount(1)
+  const rb = (await rows.nth(1).boundingBox())!
+  const eb = (await editor.boundingBox())!
+  expect(Math.abs(eb.y - (rb.y + rb.height))).toBeLessThan(4)
+  // sin botones arriba/abajo
+  await expect(page.getByRole('button', { name: 'Subir (dibujar más arriba)' })).toHaveCount(0)
+  // arrastrar la segunda fila sobre la primera cambia el orden
+  const first = await rows.nth(0).innerText()
+  await rows.nth(1).dragTo(rows.nth(0))
+  await expect.poll(async () => rows.nth(0).innerText()).not.toBe(first)
+  // duplicar y eliminar el elemento elegido
+  await page.getByRole('button', { name: 'Duplicar', exact: false }).last().click()
+  await expect(rows).toHaveCount(3)
+  await page
+    .locator('.app .foot')
+    .getByRole('button', { name: /Eliminar/ })
+    .click()
+  await expect(rows).toHaveCount(2)
+  await page.locator('.pt-ptab', { hasText: 'Capas' }).click()
+  await expect(page.locator('[data-action="layer.duplicate"]')).toBeVisible()
+})
+
+test('clic fuera del selector de color conserva el color elegido', async () => {
+  await page.keyboard.press('m')
+  await drag(-140, -140, -100, -100)
+  await page.locator('.pt-ptab', { hasText: 'Apariencia' }).click()
+  const sw = page.locator('.app .row .sw').first()
+  const before = await sw.getAttribute('style')
+  await sw.dblclick()
+  const dlg = page.getByRole('dialog', { name: 'Selector de color' })
+  const hexInput = dlg.getByLabel('Valor hexadecimal')
+  await hexInput.fill('#FF00FF')
+  await hexInput.press('Tab')
+  await page.mouse.click(200, 700)
+  await expect(dlg).toBeHidden()
+  await expect.poll(() => sw.getAttribute('style')).not.toBe(before)
 })

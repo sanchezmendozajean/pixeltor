@@ -95,4 +95,38 @@ describe('persistencia de la disposición', () => {
     expect(r.viewers[0]!.tiled).toBeUndefined()
     expect(r.active).toBeUndefined()
   })
+
+  it('conserva zoom y centro, acota el zoom y descarta vistas incompletas', () => {
+    const r = sanitizeViewers({
+      layout: { kind: 'split', dir: 'v', ratio: 0.3, a: leaf('a'), b: leaf('b') },
+      viewers: [
+        { id: 'a', zoom: 24, centerX: 10.5, centerY: 4 },
+        { id: 'b', zoom: 9999, centerX: 1 }
+      ]
+    })!
+    expect(r.viewers[0]).toMatchObject({ zoom: 24, centerX: 10.5, centerY: 4 })
+    expect(r.viewers[1]!.zoom).toBeUndefined()
+  })
+
+  it('conserva las vistas por imagen y descarta las inválidas', () => {
+    const r = sanitizeViewers({
+      layout: leaf('a'),
+      viewers: [
+        {
+          id: 'a',
+          views: {
+            img1: { zoom: 4, centerX: 1, centerY: 2 },
+            img2: { zoom: 1000, centerX: 0, centerY: 0 },
+            img3: { zoom: 'x', centerX: 0, centerY: 0 },
+            img4: null
+          }
+        }
+      ]
+    })!
+    const v = r.viewers[0]!.views!
+    expect(v['img1']).toEqual({ zoom: 4, centerX: 1, centerY: 2 })
+    expect(v['img2']!.zoom).toBe(64)
+    expect(v['img3']).toBeUndefined()
+    expect(v['img4']).toBeUndefined()
+  })
 })

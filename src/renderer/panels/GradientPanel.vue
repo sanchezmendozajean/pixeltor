@@ -22,6 +22,7 @@ import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
 import { findGradientAttr, type Attr } from '@/tools/gradientTarget'
 import { hexToRgba } from '@/stores/colorUtil'
+import ColorButton from '@/components/ColorButton.vue'
 import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
@@ -169,10 +170,10 @@ function onOpacity(e: Event): void {
   if (Number.isFinite(v) && c)
     setStopField({ color: { ...c, a: Math.round((Math.min(100, Math.max(0, v)) / 100) * 255) } })
 }
-function onColor(e: Event): void {
+function onColor(h: string): void {
   const c = current.value?.color
   // @input llega mientras se elige el color: se aplica en vivo y se registra al cerrar el selector
-  if (c) setStopField({ color: rgb((e.target as HTMLInputElement).value, c.a) }, 'stop-color')
+  if (c) setStopField({ color: rgb(h, c.a) }, 'stop-color')
 }
 function removeStop(): void {
   if (sorted.value.length <= 2) return
@@ -477,12 +478,11 @@ const TYPES: { id: GradientPaint['type']; icon: string }[] = [
         <div class="col">
           <div class="row">
             <label>{{ t('gradient.color') }}</label>
-            <input
-              type="color"
-              :value="hex(current.color)"
+            <ColorButton
+              :color="hex(current.color)"
               :aria-label="t('gradient.color')"
-              @input="onColor"
-              @change="endLive('stop-color')"
+              @pick="onColor"
+              @end="endLive('stop-color')"
             />
           </div>
           <div class="row">
@@ -710,13 +710,6 @@ const TYPES: { id: GradientPaint['type']; icon: string }[] = [
 }
 .w {
   width: 52px;
-}
-input[type='color'] {
-  width: 28px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--border);
-  background: none;
 }
 .none {
   display: flex;

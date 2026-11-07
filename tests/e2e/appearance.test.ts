@@ -43,7 +43,7 @@ test('apariencia: varios rellenos, degradado con tramado y reordenar', async () 
   const rows = page.locator('.app .row')
   await expect(rows).toHaveCount(2)
 
-  await page.getByRole('button', { name: '+ Relleno' }).click()
+  await page.getByRole('button', { name: 'Añadir relleno' }).click()
   await expect(rows).toHaveCount(3)
 
   // el relleno nuevo queda abierto: pasa a degradado lineal con tramado
@@ -52,8 +52,8 @@ test('apariencia: varios rellenos, degradado con tramado y reordenar', async () 
   await expect(page.locator('.app .editor')).toContainText('Ajedrez')
   await page.screenshot({ path: 'test-results/f3-degradado.png' })
 
-  // reordenar: bajar el relleno nuevo (primera fila) un puesto
-  await rows.first().getByRole('button', { name: /Bajar/ }).click()
+  // reordenar: arrastrar el relleno nuevo (primera fila) sobre la segunda
+  await rows.first().dragTo(rows.nth(1))
   await expect(rows).toHaveCount(3)
   await page.locator('.pt-ptab', { hasText: 'Historial' }).click()
   await expect(page.getByRole('button', { name: 'Reordenar apariencia' })).toBeVisible()

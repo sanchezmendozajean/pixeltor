@@ -32,8 +32,10 @@ import {
 } from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import { useColorsStore } from '@/stores/colors'
+import { setWorkingColor } from '@/app/colorOps'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
+import ColorButton from '@/components/ColorButton.vue'
 import { t } from '@/i18n'
 
 const colors = useColorsStore()
@@ -67,9 +69,7 @@ function apply(id: string): void {
   const sw = palette.value?.swatches.find((s) => s.id === id)
   if (!sw) return
   sel.value = id
-  const h = hex(sw.color).toUpperCase()
-  if (colors.target === 'fill') colors.fill = h
-  else colors.stroke = h
+  setWorkingColor(colors.target, hex(sw.color).toUpperCase())
 }
 function add(): void {
   const c = hexToColor(current.value.slice(0, 7))
@@ -81,8 +81,8 @@ function remove(id: string): void {
   removeSwatch(docs.session, id)
   if (sel.value === id) sel.value = null
 }
-function editColor(e: Event): void {
-  const c = hexToColor((e.target as HTMLInputElement).value)
+function editColor(h: string): void {
+  const c = hexToColor(h)
   if (c && selected.value && docs.session) setSwatchColor(docs.session, selected.value.id, c)
 }
 
@@ -229,12 +229,10 @@ function extract(): void {
     </div>
 
     <div v-if="selected" class="row edit">
-      <input
-        type="color"
-        class="clr"
-        :value="hex(selected.color)"
+      <ColorButton
+        :color="hex(selected.color)"
         :aria-label="t('swatches.edit')"
-        @input="editColor"
+        @pick="editColor"
       />
       <span class="info"
         >{{ hex(selected.color).toUpperCase() }} · {{ t('swatches.usage', { n: usage }) }}</span
@@ -313,13 +311,6 @@ function extract(): void {
 }
 .lib {
   width: 90px;
-}
-.clr {
-  width: 28px;
-  height: 22px;
-  padding: 0;
-  border: 0;
-  background: none;
 }
 .info {
   font-size: var(--fs-sm);

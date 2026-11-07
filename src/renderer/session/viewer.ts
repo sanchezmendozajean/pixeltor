@@ -24,6 +24,35 @@ export class ViewerState {
   ownStamp = ''
   /** Se ajustó al tamaño la primera vez que se mostró. */
   fitted = false
+  /** Zoom y centro guardados en el archivo; se aplican al conocer el tamaño del visor. */
+  restoreView: { zoom: number; cx: number; cy: number } | null = null
+  /** Zoom y centro recordados de cada imagen que ha mostrado este visor. */
+  views = new Map<string, { zoom: number; cx: number; cy: number }>()
+  /** Última imagen mostrada (para guardar su vista y recuperar la de la siguiente al cambiar). */
+  shownImageId: string | null = null
+
+  /** Zoom y punto de la imagen en el centro del visor (null si aún no se ha mostrado). */
+  captureView(): { zoom: number; cx: number; cy: number } | null {
+    if (!this.fitted) return null
+    const vp = this.viewport
+    return {
+      zoom: vp.zoom,
+      cx: (vp.width / 2 - vp.panX) / vp.zoom,
+      cy: (vp.height / 2 - vp.panY) / vp.zoom
+    }
+  }
+
+  /** Aplica la vista guardada (si la hay) o encaja la imagen. */
+  applyInitialView(): void {
+    const r = this.restoreView
+    this.restoreView = null
+    const vp = this.viewport
+    if (!r) return vp.fit()
+    vp.zoom = r.zoom
+    vp.panX = vp.width / 2 - r.cx * r.zoom
+    vp.panY = vp.height / 2 - r.cy * r.zoom
+    vp.panBy(0, 0)
+  }
 
   constructor(
     readonly id: string,
@@ -48,6 +77,9 @@ export class ViewerState {
     v.width = f.width
     v.height = f.height
     this.fitted = from.fitted
+    this.views = new Map(from.views)
+    this.shownImageId = from.shownImageId
+    this.restoreView = from.restoreView
   }
 }
 

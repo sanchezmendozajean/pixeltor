@@ -1,6 +1,7 @@
-// Posición de los tiradores de la caja de selección. Cada tirador se coloca en el centro del píxel
-// del borde que le corresponde (no en la arista entre dos píxeles), para que quede siempre encima
-// de un píxel de la forma.
+// Posición de los tiradores de la caja de selección. Los de las esquinas y los bordes se colocan en
+// el centro del píxel del borde (no en la arista entre dos píxeles), para que queden encima de un
+// píxel de la forma; los tiradores intermedios van en el centro exacto de la caja (con un número
+// par de píxeles caen sobre la arista central).
 
 export interface HandleBox {
   x: number
@@ -9,12 +10,12 @@ export interface HandleBox {
   h: number
 }
 
-/** Centro del píxel de la caja en esa fracción (0 = primero, 0,5 = el del medio, 1 = último). */
+/** Posición en esa fracción: 0 = centro del primer píxel, 1 = del último, 0,5 = centro de la caja. */
 function along(start: number, size: number, f: number): number {
   if (size < 1) return start + size * f // caja degenerada: no hay píxel al que ceñirse
   if (f <= 0) return start + 0.5
   if (f >= 1) return start + size - 0.5
-  return Math.min(start + size - 0.5, start + Math.floor(size / 2) + 0.5)
+  return start + size / 2
 }
 
 /** Posición en imagen del tirador (hx, hy ∈ {0, 0.5, 1}). */

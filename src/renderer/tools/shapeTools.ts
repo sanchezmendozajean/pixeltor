@@ -32,6 +32,7 @@ import {
   resolveShape,
   computeSnap,
   shapeBounds,
+  shapeTouchesRect,
   type SnapLine,
   commitLiveEdit,
   defaultGradient,
@@ -232,7 +233,9 @@ export class ShapeTools {
     pt0: Vec2 | null
     shapeId: ID
   } | null = null
-  private pen: { anchors: Anchor[]; dragging: boolean } | null = null
+  private pen: { anchors: Anchor[]; dragging: boolean; base: number } | null = null
+  /** Punto bajo el cursor: la pluma dibuja un segmento provisional hasta él (como Illustrator). */
+  private penHover: Vec2 | null = null
   /** La pluma continúa un trazado abierto existente (se sustituye al terminar). */
   private penCont: { shapeId: ID; subpath: number } | null = null
   /** Arrastre de un segmento para curvarlo (Selección directa). */
@@ -259,6 +262,9 @@ export class ShapeTools {
     useUiStore().anchorCount = v.length
   }
   /** Marco de selección de anclas (Selección directa en vacío). */
+  /** Marco de selección de formas (herramienta V sobre el fondo), en px de imagen con decimales. */
+  private shapeMarquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null =
+    null
   private anchorMarquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null =
     null
   hoverId: string | null = null
@@ -282,6 +288,14 @@ export class ShapeTools {
 
   /** Rectángulo (px de imagen) del marco de anclas en curso, para dibujarlo. */
   get anchorMarqueeRect(): { x: number; y: number; w: number; h: number } | null {
+    const sm = this.shapeMarquee
+    if (sm)
+      return {
+        x: Math.min(sm.x0, sm.x1),
+        y: Math.min(sm.y0, sm.y1),
+        w: Math.abs(sm.x1 - sm.x0),
+        h: Math.abs(sm.y1 - sm.y0)
+      }
     const m = this.anchorMarquee
     if (!m) return null
     const x = Math.min(m.x0, m.x1)
@@ -337,7 +351,7 @@ export class ShapeTools {
     const last = sp.anchors.length - 1
     if (ref.index !== 0 && ref.index !== last) return false
     const list = ref.index === last ? sp.anchors : reverseAnchors(sp.anchors)
-    this.pen = { anchors: list.map((a) => ({ ...a })), dragging: false }
+    this.pen = { anchors: list.map((a) => ({ ...a })), dragging: false, base: list.length }
     this.penCont = { shapeId: ref.shapeId, subpath: ref.subpath }
     return true
   }
@@ -438,8 +452,33 @@ export class ShapeTools {
   }
 
   private penShape(): Shape | null {
-    if (!this.pen || this.pen.anchors.length < 2) return null
-    return makePath([{ closed: false, anchors: this.pen.anchors }], currentAppearance(false))
+    if (!this.pen) return null
+    const anchors = [...this.pen.anchors]
+    if (this.penHover && !this.pen.dragging && anchors.length)
+      anchors.push({ p: this.penHover, in: null, out: null, type: 'corner' })
+    if (anchors.length < 2) return null
+    return makePath([{ closed: false, anchors }], currentAppearance(false))
+  }
+
+  /**
+   * Deshacer con la pluma en curso: quita la última ancla puesta (y, si no queda ninguna nueva,
+   * abandona el trazado). Devuelve false si no hay trazado en curso.
+   */
+  undoPen(): boolean {
+    const p = this.pen
+    if (!p) return false
+    if (p.anchors.length > p.base && p.anchors.length > 1) {
+      p.anchors.pop()
+      const last = p.anchors[p.anchors.length - 1]!
+      // el tirador de salida pertenecía al segmento que se quita
+      if (p.anchors.length > p.base) {
+        last.out = null
+        if (!last.in) last.type = 'corner'
+      }
+      const ws = this.getWs()
+      if (ws) this.setPreview(ws, this.penShape())
+    } else this.cancelPen()
+    return true
   }
 
   // ---------- puntero ----------
@@ -493,7 +532,7 @@ export class ShapeTools {
           if (addAnchorAt(s, id, p.fx, p.fy, 6 / vp.zoom + 1)) return
       }
       const pt = { x: p.x + 0.5, y: p.y + 0.5 }
-      this.pen ??= { anchors: [], dragging: false }
+      this.pen ??= { anchors: [], dragging: false, base: 0 }
       const first = this.pen.anchors[0]
       if (first && this.pen.anchors.length >= 3 && near(first.p)) {
         this.finishPen(true)
@@ -507,6 +546,15 @@ export class ShapeTools {
     const q0 = this.snapPt(p.x, p.y, [])
     this.drag = { x0: q0.x, y0: q0.y, x1: q0.x, y1: q0.y, mods }
     this.setPreview(ws, this.build(tool, this.drag))
+  }
+
+  /** ¿El puntero está sobre un tirador de la caja de selección (o su zona de rotación)? Manda sobre guías y ejes. */
+  overSelectionControl(sx: number, sy: number): boolean {
+    const ws = this.getWs()
+    if (!ws) return false
+    const pt = ws.viewport.toImage(sx, sy)
+    const p: Pointer = { x: Math.floor(pt.x), y: Math.floor(pt.y), fx: pt.x, fy: pt.y, sx, sy }
+    return !!this.hitBoxHandle(p) || !!this.rotateCorner(p)
   }
 
   /** Tiradores de la caja de selección bajo el cursor. */
@@ -674,7 +722,54 @@ export class ShapeTools {
       if (layer && layer.id !== s.activeLayerId) s.setActiveLayer(layer.id)
       this.moving = { mv: new ShapeMove(s, s.selectedShapes), x0: p.x, y0: p.y, started: false }
       this.moveBounds = this.selectionBounds()
-    } else if (!mods.shift && s.selectedShapes.length) selectShapes(s, [])
+    } else {
+      // fondo: marco de selección (Mayús suma al conjunto actual)
+      if (!mods.shift && s.selectedShapes.length) selectShapes(s, [])
+      this.shapeMarquee = { x0: p.fx, y0: p.fy, x1: p.fx, y1: p.fy, add: mods.shift }
+    }
+  }
+
+  /** Selecciona las formas visibles cuyos píxeles tocan el marco (con Mayús, suma a la selección). */
+  private selectInMarquee(m: {
+    x0: number
+    y0: number
+    x1: number
+    y1: number
+    add: boolean
+  }): void {
+    const ws = this.getWs()
+    if (!ws) return
+    const s = ws.session
+    const x0 = Math.min(m.x0, m.x1)
+    const x1 = Math.max(m.x0, m.x1)
+    const y0 = Math.min(m.y0, m.y1)
+    const y1 = Math.max(m.y0, m.y1)
+    // un clic sin arrastrar sólo deselecciona (ya hecho al pulsar)
+    if (x1 - x0 < 0.01 && y1 - y0 < 0.01) return
+    const hit: ID[] = []
+    for (const layer of s.image.layers) {
+      if (!layer.visible || layer.locked) continue
+      for (const sh of layer.shapes) {
+        if (!sh.visible || sh.locked) continue
+        const b = shapeBounds(s, sh.id)
+        // primero la caja (barato) y luego los píxeles realmente pintados
+        if (
+          b &&
+          b.x < x1 &&
+          b.x + b.w > x0 &&
+          b.y < y1 &&
+          b.y + b.h > y0 &&
+          shapeTouchesRect(s, sh.id, { x0, y0, x1, y1 })
+        )
+          hit.push(sh.id)
+      }
+    }
+    if (!hit.length) return
+    selectShapes(s, m.add ? [...new Set([...s.selectedShapes, ...hit])] : hit)
+    // si ninguna está en la capa activa, pasa a serlo la de la última
+    const onActive = s.activeLayer.shapes.some((x) => hit.includes(x.id))
+    const owner = s.image.layers.find((l) => l.shapes.some((x) => x.id === hit[hit.length - 1]))
+    if (!onActive && owner) s.setActiveLayer(owner.id)
   }
 
   /** Posición de lienzo de un ancla. */
@@ -706,7 +801,10 @@ export class ShapeTools {
         for (let i = 0; i < anchors.length; i++) {
           for (const part of ['in', 'out'] as const) {
             const hp = anchors[i]![part]
-            if (hp && near(apply(path.transform, hp)) && this.isAnchorSelected(id, si, i))
+            // mismos tiradores que se dibujan: los de las anclas seleccionadas y los de sus vecinas
+            const visible =
+              this.isAnchorSelected(id, si, i) || this.neighbourSelected(id, si, i, anchors.length)
+            if (hp && visible && near(apply(path.transform, hp)))
               return { shapeId: id, subpath: si, index: i, part }
           }
         }
@@ -859,6 +957,11 @@ export class ShapeTools {
       pl.pu?.pullTo(p.fx, p.fy)
       return
     }
+    if (this.shapeMarquee) {
+      this.shapeMarquee.x1 = p.fx
+      this.shapeMarquee.y1 = p.fy
+      return
+    }
     if (this.anchorMarquee) {
       this.anchorMarquee.x1 = p.x
       this.anchorMarquee.y1 = p.y
@@ -870,7 +973,19 @@ export class ShapeTools {
       if (a.started) {
         let dx = p.x - a.x0
         let dy = p.y - a.y0
-        if (a.pt0) {
+        if (mods.shift) {
+          // Mayús: restringe el desplazamiento a X, Y o diagonal de 45° (sin ajuste magnético)
+          const ax = Math.abs(dx)
+          const ay = Math.abs(dy)
+          if (ax > ay * 2.414) dy = 0
+          else if (ay > ax * 2.414) dx = 0
+          else {
+            const d = Math.round((ax + ay) / 2)
+            dx = Math.sign(dx) * d
+            dy = Math.sign(dy) * d
+          }
+          this.snapLines = []
+        } else if (a.pt0) {
           // el ancla acaba en el centro de un píxel (lo garantiza AnchorDrag); el ajuste a guías y objetos parte de ahí
           const q = this.snapPt(Math.floor(a.pt0.x + dx) + 0.5, Math.floor(a.pt0.y + dy) + 0.5, [
             a.shapeId
@@ -993,9 +1108,16 @@ export class ShapeTools {
       }
       return
     }
+    if (this.shapeMarquee) {
+      const m = this.shapeMarquee
+      this.shapeMarquee = null
+      this.selectInMarquee(m)
+      return
+    }
     if (this.anchorMarquee) {
       const m = this.anchorMarquee
       this.anchorMarquee = null
+      this.shapeMarquee = null
       const x0 = Math.min(m.x0, m.x1)
       const x1 = Math.max(m.x0, m.x1) + 1
       const y0 = Math.min(m.y0, m.y1)
@@ -1042,6 +1164,7 @@ export class ShapeTools {
     const ws = this.getWs()
     const p = this.pen
     this.pen = null
+    this.penHover = null
     if (ws) this.setPreview(ws, null)
     const cont = this.penCont
     this.penCont = null
@@ -1058,6 +1181,7 @@ export class ShapeTools {
 
   cancelPen(): void {
     this.pen = null
+    this.penHover = null
     this.penCont = null
     const w = this.getWs()
     if (w) this.setPreview(w, null)
@@ -1136,6 +1260,10 @@ export class ShapeTools {
 
   hover(x: number, y: number, tool: string): void {
     const ws = this.getWs()
+    if (ws && tool === 'pen' && this.pen?.anchors.length && !this.pen.dragging) {
+      this.penHover = { x: x + 0.5, y: y + 0.5 }
+      this.setPreview(ws, this.penShape())
+    }
     this.hoverId =
       ws && ['sel', 'dsel', 'pen', 'addAnchor'].includes(tool) ? hitShape(ws.session, x, y) : null
   }

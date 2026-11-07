@@ -285,3 +285,30 @@ export const corner = (x: number, y: number): Anchor => ({
 export function cloneShape<T extends Shape>(s: T): T {
   return JSON.parse(JSON.stringify(s)) as T
 }
+
+/** Da identificadores nuevos a la forma, a sus hijos y a sus efectos (copias independientes). */
+export function reIdShape(sh: Shape): void {
+  sh.id = newId()
+  sh.effects?.forEach((e) => {
+    e.id = newId()
+  })
+  if (sh.kind === 'group') sh.children.forEach(reIdShape)
+}
+
+/** Recorre las formas (y los hijos de los grupos). */
+function walkShapes(list: Shape[], fn: (sh: Shape) => void): void {
+  for (const sh of list) {
+    fn(sh)
+    if (sh.kind === 'group') walkShapes(sh.children, fn)
+  }
+}
+
+/** Repara identificadores de forma repetidos dentro de una imagen (archivos guardados con copias de capa). */
+export function dedupeShapeIds(layers: { shapes: Shape[] }[]): void {
+  const seen = new Set<string>()
+  for (const l of layers)
+    walkShapes(l.shapes, (sh) => {
+      if (seen.has(sh.id)) sh.id = newId()
+      seen.add(sh.id)
+    })
+}

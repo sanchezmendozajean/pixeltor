@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import TitleBar from '@/layout/TitleBar.vue'
 import ControlBar from '@/layout/ControlBar.vue'
 import ToolBar from '@/layout/ToolBar.vue'
@@ -13,16 +13,25 @@ import TooltipHost from '@/components/TooltipHost.vue'
 import ColorPickerDialog from '@/dialogs/ColorPickerDialog.vue'
 import ShortcutsDialog from '@/dialogs/ShortcutsDialog.vue'
 import WorkspaceDialog from '@/dialogs/WorkspaceDialog.vue'
+import GuideDialog from '@/dialogs/GuideDialog.vue'
 import CommandPalette from '@/dialogs/CommandPalette.vue'
 import DialogHost from '@/dialogs/DialogHost.vue'
 import { registerAppActions } from '@/actions/bindings'
 import { restoreWorkspace } from '@/app/workspaces'
 import { handleKeydown } from '@/actions/registry'
 import { handleBeforeClose, listRecovery, openFile, startAutosave } from '@/app/documentOps'
+import { syncColorsFromSelection } from '@/app/colorOps'
 import { t } from '@/i18n'
+import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
+const docs = useDocumentsStore()
+// Al seleccionar otra forma, el panel Color muestra su relleno y contorno.
+watch(
+  () => (docs.rev, docs.session?.selectedShapes[0] ?? ''),
+  () => syncColorsFromSelection()
+)
 registerAppActions()
 // Tab oculta todos los paneles; Mayús+Tab todos menos la barra de herramientas.
 const showTools = computed(() => ui.panelsHidden !== 'all')
@@ -75,5 +84,6 @@ onBeforeUnmount(() => {
     <ColorPickerDialog />
     <ShortcutsDialog />
     <WorkspaceDialog />
+    <GuideDialog />
   </div>
 </template>

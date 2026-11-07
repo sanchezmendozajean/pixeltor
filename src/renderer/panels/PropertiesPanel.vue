@@ -12,6 +12,7 @@ import {
 } from '@core/index'
 import { useDocumentsStore } from '@/stores/documents'
 import { hexToRgba, rgbaToHex } from '@/stores/colorUtil'
+import ColorButton from '@/components/ColorButton.vue'
 import { t } from '@/i18n'
 
 const docs = useDocumentsStore()
@@ -43,8 +44,8 @@ function endLive(live: string): void {
   if (docs.session) commitLiveEdit(docs.session, live)
 }
 
-function setColor(which: 'fill' | 'stroke', e: Event): void {
-  const v = hexToRgba((e.target as HTMLInputElement).value)
+function setColor(which: 'fill' | 'stroke', h: string): void {
+  const v = hexToRgba(h)
   const c = { r: (v >>> 24) & 255, g: (v >>> 16) & 255, b: (v >>> 8) & 255, a: 255 }
   edit(
     which === 'fill' ? t('properties.fill') : t('properties.stroke'),
@@ -122,13 +123,12 @@ function setOpacity(e: Event): void {
           <input type="checkbox" :checked="!!fill" @change="toggle('fill')" />
           {{ t('properties.fill') }}
         </label>
-        <input
+        <ColorButton
           v-if="fill && fill.paint.type === 'solid'"
-          type="color"
-          :value="hex(fill.paint.color)"
+          :color="hex(fill.paint.color)"
           :aria-label="t('properties.fill')"
-          @input="setColor('fill', $event)"
-          @change="endLive('prop-fill')"
+          @pick="(h) => setColor('fill', h)"
+          @end="endLive('prop-fill')"
         />
       </div>
       <div class="row">
@@ -137,12 +137,11 @@ function setOpacity(e: Event): void {
           {{ t('properties.stroke') }}
         </label>
         <template v-if="stroke && stroke.paint.type === 'solid'">
-          <input
-            type="color"
-            :value="hex(stroke.paint.color)"
+          <ColorButton
+            :color="hex(stroke.paint.color)"
             :aria-label="t('properties.stroke')"
-            @input="setColor('stroke', $event)"
-            @change="endLive('prop-stroke')"
+            @pick="(h) => setColor('stroke', h)"
+            @end="endLive('prop-stroke')"
           />
           <input
             class="pt-input w"
@@ -217,13 +216,6 @@ function setOpacity(e: Event): void {
 }
 .w {
   width: 52px;
-}
-input[type='color'] {
-  width: 28px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--border);
-  background: none;
 }
 .empty {
   text-align: center;

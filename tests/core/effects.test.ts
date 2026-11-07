@@ -16,6 +16,9 @@ import {
   applyEffectPreset,
   rasterizeLayerEffects,
   stampShapes,
+  loadDocument,
+  saveDocument,
+  cloneShape,
   type Effect
 } from '@core/index'
 
@@ -274,5 +277,31 @@ describe('borrador de desenfoque (arrastrar un parámetro)', () => {
     for (let i = 3; i < exact.data.length; i += 4) diff += Math.abs(exact.data[i]! - draft.data[i]!)
     expect(diff / (exact.width * exact.height)).toBeLessThan(4) // sobre 255
     expect(draft.data).not.toEqual(exact.data)
+  })
+})
+
+describe('duplicar capa', () => {
+  it('la copia tiene formas y efectos con identificadores propios', () => {
+    const { s, r } = squareDoc()
+    addEffect(s, { kind: 'layer', id: s.activeLayerId }, 'gaussian-blur')
+    const src = s.activeLayerId
+    const copy = s.duplicateLayer(src)!
+    const orig = s.image.layers.find((l) => l.id === src)!
+    expect(copy.shapes[0]!.id).not.toBe(r.id)
+    expect(copy.shapes[0]!.id).not.toBe(orig.shapes[0]!.id)
+    expect(copy.effects[0]!.id).not.toBe(orig.effects[0]!.id)
+    expect(copy.effects[0]!.params).not.toBe(orig.effects[0]!.params)
+  })
+})
+
+describe('archivos con ids de forma repetidos', () => {
+  it('al abrir se reparan los identificadores duplicados entre capas', () => {
+    const { s, r } = squareDoc()
+    const second = s.duplicateLayer(s.activeLayerId)!
+    second.shapes = [cloneShape(r)] // mismo id que la forma original (como guardaban las versiones antiguas)
+    const loaded = loadDocument(saveDocument(s.doc, s.rasters)).doc
+    const ids = loaded.images[0]!.layers.flatMap((l) => l.shapes.map((sh) => sh.id))
+    expect(ids.length).toBe(2)
+    expect(new Set(ids).size).toBe(2)
   })
 })

@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue'
 import { useColorsStore } from '@/stores/colors'
 import { hexToHsv, hexToRgba, hsvToHex, rgbaToHex } from '@/stores/colorUtil'
 import { arrowStep, clamp01 } from '@/app/colorKeys'
+import { setWorkingColor } from '@/app/colorOps'
 import { t } from '@/i18n'
 
 const colors = useColorsStore()
@@ -20,9 +21,7 @@ watch(current, (hex) => {
 })
 
 function commit(): void {
-  const hex = hsvToHex(hsv.value.h, hsv.value.s, hsv.value.v)
-  if (colors.target === 'fill') colors.fill = hex
-  else colors.stroke = hex
+  setWorkingColor(colors.target, hsvToHex(hsv.value.h, hsv.value.s, hsv.value.v))
 }
 
 function drag(e: PointerEvent, apply: (x: number, y: number) => void): void {
@@ -54,9 +53,7 @@ const hueDown = (e: PointerEvent) => drag(e, (x) => (hsv.value.h = x * 360))
 function onHex(e: Event): void {
   const raw = (e.target as HTMLInputElement).value.trim().replace('#', '')
   if (!/^[0-9a-fA-F]{6}$/.test(raw) && !/^[0-9a-fA-F]{3}$/.test(raw)) return
-  const hex = rgbaToHex(hexToRgba(raw)).slice(0, 7)
-  if (colors.target === 'fill') colors.fill = hex
-  else colors.stroke = hex
+  setWorkingColor(colors.target, rgbaToHex(hexToRgba(raw)).slice(0, 7))
 }
 
 function svKey(e: KeyboardEvent): void {

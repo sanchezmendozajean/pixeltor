@@ -42,9 +42,9 @@ test('agrupar una capa, plegar el grupo, recortar y desagrupar', async () => {
   await expect(rows.nth(1)).toHaveClass(/is-member/)
 
   // plegar oculta al miembro; desplegar lo devuelve
-  await rows.first().getByRole('button', { name: 'Plegar grupo' }).click()
+  await rows.first().getByRole('button', { name: 'Plegar' }).click()
   await expect(rows).toHaveCount(2)
-  await rows.first().getByRole('button', { name: 'Desplegar grupo' }).click()
+  await rows.first().getByRole('button', { name: 'Desplegar' }).click()
   await expect(rows).toHaveCount(3)
 
   // máscara de recorte sobre la capa de abajo (la capa suelta es la base)

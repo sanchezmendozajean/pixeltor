@@ -21,6 +21,9 @@ import {
   cropToSelection,
   flattenLayers,
   mergeDown,
+  copyShapes,
+  pasteShapes,
+  type Shape,
   MIRROR_TYPES,
   canMirror,
   setLayerMirrorType,
@@ -75,6 +78,8 @@ import { type ThemeId, UI_SCALES } from '@shared/ipc'
 
 /** Portapapeles interno de píxeles (el del sistema llega con la importación de imágenes). */
 let clipboard: { bitmap: Bitmap; x: number; y: number } | null = null
+/** Formas copiadas (vectores); alternativa al portapapeles de píxeles. */
+let shapeClipboard: Shape[] | null = null
 
 export function registerAppActions(): void {
   const tools = useToolsStore()
@@ -200,28 +205,53 @@ export function registerAppActions(): void {
 
   // ---------- Editar ----------
   registerHandler('edit.undo', {
-    enabled: () => has() && (docs.rev, ses().history.canUndo),
-    run: () => ses().undo()
+    enabled: () =>
+      has() && (!!activeController?.shapes.penActive || (docs.rev, ses().history.canUndo)),
+    // con la pluma en curso, deshacer quita la última ancla en vez de tocar el documento
+    run: () => {
+      if (!activeController?.shapes.undoPen()) ses().undo()
+    }
   })
   registerHandler('edit.redo', {
     enabled: () => has() && (docs.rev, ses().history.canRedo),
-    run: () => ses().redo()
+    run: () => {
+      activeController?.shapes.cancelPen()
+      ses().redo()
+    }
   })
+  // Con formas seleccionadas, copiar/cortar/pegar trabaja con formas (vectores); si no, con píxeles.
+  // El último copiado manda: el otro portapapeles se vacía.
   registerHandler('edit.copy', {
     enabled: has,
-    run: () => (clipboard = copyPixels(ses()))
+    run: () => {
+      if (ses().selectedShapes.length) {
+        shapeClipboard = copyShapes(ses(), ses().selectedShapes)
+        clipboard = null
+      } else {
+        clipboard = copyPixels(ses())
+        shapeClipboard = null
+      }
+    }
   })
   registerHandler('edit.cut', {
     enabled: has,
     run: () => {
-      clipboard = copyPixels(ses())
-      deletePixels(ses())
+      if (ses().selectedShapes.length) {
+        shapeClipboard = copyShapes(ses(), ses().selectedShapes)
+        clipboard = null
+        removeShapes(ses(), ses().selectedShapes)
+      } else {
+        clipboard = copyPixels(ses())
+        shapeClipboard = null
+        deletePixels(ses())
+      }
     }
   })
   registerHandler('edit.paste', {
-    enabled: () => has() && !!clipboard,
+    enabled: () => has() && (!!clipboard || !!shapeClipboard),
     run: () => {
-      if (clipboard) pasteFloating(ses(), clipboard.bitmap, clipboard.x, clipboard.y)
+      if (shapeClipboard) pasteShapes(ses(), shapeClipboard)
+      else if (clipboard) pasteFloating(ses(), clipboard.bitmap, clipboard.x, clipboard.y)
     }
   })
   registerHandler('edit.delete', {
@@ -258,7 +288,8 @@ export function registerAppActions(): void {
         !!ses().selection.mask ||
         ses().selectedShapes.length > 0),
     run: () => {
-      if (activeController?.shapes.penActive) activeController.shapes.cancelPen()
+      // Esc con la pluma termina el trazado abierto (no lo descarta; para quitar anclas está Ctrl+Z)
+      if (activeController?.shapes.penActive) activeController.shapes.finishPen(false)
       else if (ses().isolatedGroup) isolateGroup(ses(), null)
       else if (ses().selection.floating) cancelFloating(ses())
       else if (ses().selection.mask) deselect(ses())

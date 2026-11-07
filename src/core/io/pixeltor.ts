@@ -10,6 +10,7 @@ import type { Palette } from '../palette/palette'
 import { Bitmap } from '../raster/bitmap'
 import { composeImage } from '../render/compose'
 import { isMirrorType } from '../render/mirror'
+import { dedupeShapeIds } from '../model/shapes'
 import { decodePng, encodePng, scaleNearest } from './png'
 import { migrate } from './migrations'
 import { sha256Hex } from './sha256'
@@ -119,6 +120,7 @@ export function loadDocument(bytes: Uint8Array): LoadedDocument {
     img.height = clampSize(img.height)
     img.layers.forEach((layer: Layer) => sanitizeLayer(layer))
     sanitizeGroups(img.layers)
+    dedupeShapeIds(img.layers)
     for (const layer of img.layers) {
       const empty = (layer.raster as { empty?: boolean }).empty
       delete (layer.raster as { empty?: boolean }).empty

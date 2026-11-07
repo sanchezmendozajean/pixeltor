@@ -1,10 +1,9 @@
 // Operaciones sobre formas vectoriales y estampado (specs/05, 07). Todo pasa por Transactions.
 
 import { multiply } from '../geometry/geometry'
-import type { GroupShape, Mat2D, Shape } from '../model/shapes'
-import { cloneShape, makeGroup } from '../model/shapes'
-import { newId } from '../model/ids'
-import type { ID, Layer } from '../model/types'
+import type { Fill, GroupShape, Mat2D, Shape, Stroke } from '../model/shapes'
+import { cloneShape, makeGroup, reIdShape, solidFill, solidStroke } from '../model/shapes'
+import type { ID, Layer, RGBA } from '../model/types'
 import { compositeOver } from '../raster/blend'
 import { pixelBounds, renderShapeCached, renderShapeRegion, shapeAlphaAt } from '../render/shape'
 import { renderShapeFx } from '../render/compose'
@@ -215,10 +214,7 @@ export function moveShapesToLayer(s: DocumentSession, ids: ID[], layerId: ID): b
   return moved.length > 0
 }
 
-function reId(sh: Shape): void {
-  sh.id = newId()
-  if (sh.kind === 'group') sh.children.forEach(reId)
-}
+const reId = reIdShape
 
 export function duplicateShapes(s: DocumentSession, ids: ID[], dx = 0, dy = 0): ID[] {
   const tx = s.begin('Duplicar forma')
@@ -231,6 +227,160 @@ export function duplicateShapes(s: DocumentSession, ids: ID[], dx = 0, dy = 0): 
     c.name = `${f.shape.name} copia`
     c.transform = translateMat(c.transform, dx, dy)
     f.list.splice(f.index + 1, 0, c)
+    created.push(c.id)
+  }
+  s.selectedShapes = created
+  tx.commit({ model: true })
+  return created
+}
+
+// ---------- Color de las formas seleccionadas ----------
+
+/** Rellenos/contornos que reciben el color: el primero activo de cada forma (los grupos, en sus hijos). */
+function paintTargets(shape: Shape, target: 'fill' | 'stroke'): (Fill | Stroke)[] {
+  if (shape.kind === 'group') return shape.children.flatMap((c) => paintTargets(c, target))
+  const list: (Fill | Stroke)[] =
+    target === 'fill' ? shape.appearance.fills : shape.appearance.strokes
+  const first = list.find((a) => a.enabled)
+  return first ? [first] : []
+}
+
+/** Color liso del primer relleno o contorno de la primera forma que lo tenga; null si ninguna. */
+export function shapesColor(s: DocumentSession, ids: ID[], target: 'fill' | 'stroke'): RGBA | null {
+  for (const id of ids) {
+    const sh = getShape(s, id)
+    const p = sh ? paintTargets(sh, target)[0] : undefined
+    if (p?.paint.type === 'solid') return { ...p.paint.color }
+  }
+  return null
+}
+
+/**
+ * Pinta con `c` el relleno o el contorno de las formas (como el panel Color con formas
+ * seleccionadas). Conserva la transparencia de un color liso previo; un degradado pasa a color liso.
+ * Los cambios seguidos del mismo destino forman un único paso (arrastres del selector).
+ */
+export function setShapesColor(
+  s: DocumentSession,
+  ids: ID[],
+  target: 'fill' | 'stroke',
+  c: RGBA
+): boolean {
+  const paints = ids.flatMap((id) => {
+    const f = findShape(s, id)
+    return f && !f.layer.locked ? paintTargets(f.shape, target) : []
+  })
+  if (!paints.length) return false
+  const tx = s.begin(
+    target === 'fill' ? 'Color de relleno' : 'Color de contorno',
+    `color:${target}`
+  )
+  for (const p of paints)
+    p.paint = {
+      type: 'solid',
+      color: { r: c.r, g: c.g, b: c.b, a: p.paint.type === 'solid' ? p.paint.color.a : c.a }
+    }
+  return tx.commit({ model: true })
+}
+
+/** ¿La forma (o alguno de sus hijos) pinta relleno/contorno? Null si no hay forma editable. */
+export function shapePaintsTarget(
+  s: DocumentSession,
+  id: ID,
+  target: 'fill' | 'stroke'
+): boolean | null {
+  const sh = getShape(s, id)
+  return sh ? paintTargets(sh, target).length > 0 : null
+}
+
+/**
+ * Activa o desactiva el relleno/contorno de las formas (el indicador «ninguno» de la barra de
+ * herramientas). Desactivar conserva los datos (se puede reactivar en Apariencia); activar
+ * reactiva el primero que haya o crea uno liso con `color`.
+ */
+export function setShapesPaint(
+  s: DocumentSession,
+  ids: ID[],
+  target: 'fill' | 'stroke',
+  on: boolean,
+  color: RGBA
+): boolean {
+  const apply = (sh: Shape): boolean => {
+    if (sh.kind === 'group') return sh.children.map(apply).some(Boolean)
+    const list: (Fill | Stroke)[] = target === 'fill' ? sh.appearance.fills : sh.appearance.strokes
+    if (!on) {
+      const active = list.filter((a) => a.enabled)
+      for (const a of active) a.enabled = false
+      return active.length > 0
+    }
+    if (list.some((a) => a.enabled)) return false
+    if (list.length) {
+      list[0]!.enabled = true
+      return true
+    }
+    const ap = sh.appearance
+    if (target === 'fill') {
+      const f = solidFill(color)
+      ap.fills = [f]
+      ap.stack = [f.id, ...ap.stack]
+    } else {
+      const st = solidStroke(color, 1)
+      if (sh.kind !== 'line' && sh.kind !== 'path') st.align = 'inside'
+      ap.strokes = [st]
+      ap.stack = [...ap.stack, st.id]
+    }
+    return true
+  }
+  const tx = s.begin(
+    target === 'fill' ? 'Relleno' : 'Contorno',
+    `paint:${target}:${on ? 'on' : 'off'}`
+  )
+  let changed = false
+  for (const id of ids) {
+    const f = findShape(s, id)
+    if (f && !f.layer.locked && apply(f.shape)) changed = true
+  }
+  return tx.commit({ model: changed })
+}
+
+// ---------- Portapapeles de formas ----------
+
+/**
+ * Copias independientes de las formas (con la transformación de sus grupos ya aplicada) para el
+ * portapapeles. Si se elige un grupo y alguno de sus hijos, sólo se copia el grupo.
+ */
+export function copyShapes(s: DocumentSession, ids: ID[]): Shape[] {
+  const set = new Set(ids)
+  const out: Shape[] = []
+  for (const id of ids) {
+    let p = findShape(s, id)?.parent ?? null
+    let covered = false
+    while (p) {
+      if (set.has(p.id)) covered = true
+      p = findShape(s, p.id)?.parent ?? null
+    }
+    const sh = covered ? null : resolveShape(s, id)
+    if (sh) out.push(sh)
+  }
+  return out
+}
+
+/** Pega copias de formas en la capa activa (en su sitio, o desplazadas) y las selecciona. */
+export function pasteShapes(s: DocumentSession, shapes: Shape[], dx = 0, dy = 0): ID[] {
+  let layer = s.activeLayer
+  if (layer.isGroup) {
+    const members = s.image.layers.filter((l) => l.groupId === layer.id)
+    layer = members[members.length - 1] ?? layer
+    if (layer.isGroup) return []
+  }
+  if (layer.locked || !layer.visible || !shapes.length) return []
+  const tx = s.begin(shapes.length === 1 ? 'Pegar forma' : `Pegar ${shapes.length} formas`)
+  const created: ID[] = []
+  for (const sh of shapes) {
+    const c = cloneShape(sh)
+    reId(c)
+    c.transform = translateMat(c.transform, dx, dy)
+    layer.shapes.push(c)
     created.push(c.id)
   }
   s.selectedShapes = created
@@ -473,6 +623,30 @@ export class ShapeMove {
   end(): boolean {
     return this.tx.commit({ model: true })
   }
+}
+
+/**
+ * ¿Algún píxel pintado de la forma cae dentro del rectángulo (coordenadas de imagen)? Es más fino
+ * que la caja delimitadora: un marco en el hueco de un trazado no lo toca.
+ */
+export function shapeTouchesRect(
+  s: DocumentSession,
+  id: ID,
+  r: { x0: number; y0: number; x1: number; y1: number }
+): boolean {
+  const sh = resolveShape(s, id)
+  if (!sh) return false
+  const sb = renderShapeCached(sh, s.image.width, s.image.height)
+  if (!sb) return false
+  const { width, height, data } = sb.bitmap
+  // píxeles [px, px+1) que cruza el rectángulo (un marco de ancho 0 sigue tocando el píxel que cubre)
+  const px0 = Math.max(0, Math.floor(r.x0) - sb.x)
+  const py0 = Math.max(0, Math.floor(r.y0) - sb.y)
+  const px1 = Math.min(width - 1, Math.ceil(r.x1) - 1 - sb.x)
+  const py1 = Math.min(height - 1, Math.ceil(r.y1) - 1 - sb.y)
+  for (let y = py0; y <= py1; y++)
+    for (let x = px0; x <= px1; x++) if (data[(y * width + x) * 4 + 3]) return true
+  return false
 }
 
 /** Tamaño en píxeles (ancho × alto) de lo que pintan las formas dadas, o null si no pintan nada. */

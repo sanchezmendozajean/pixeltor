@@ -36,15 +36,44 @@ export const syncFx: FxProvider = {
   apply: (_slot, effects, input, out, ctx) => applyEffects(effects, input, out, ctx)
 }
 
-function fnv(d: Uint8ClampedArray, h = 0x811c9dc5): number {
+/**
+ * Firma de 64 bits (dos hashes de 32 con semillas distintas, estilo murmur3) del contenido.
+ * Debe mezclar bien todos los bits: con FNV por palabras, píxeles que sólo difieren en el byte
+ * alto (negro opaco vs. transparente) casi no cambiaban el hash y estados distintos colisionaban,
+ * mostrando el resultado en caché de otra forma.
+ */
+function contentHash(d: Uint8ClampedArray): string {
+  const rotl = (x: number, r: number): number => (x << r) | (x >>> (32 - r))
+  let h1 = 0x9747b28c
+  let h2 = 0x85ebca6b
+  const mix = (h: number, w: number): number => {
+    let k = Math.imul(w, 0xcc9e2d51)
+    k = Math.imul(rotl(k, 15), 0x1b873593)
+    h ^= k
+    return (Math.imul(rotl(h, 13), 5) + 0xe6546b64) | 0
+  }
   // de 4 en 4 bytes (4× menos vueltas) cuando el búfer está alineado
   if (d.byteOffset % 4 === 0 && d.length % 4 === 0) {
     const w = new Uint32Array(d.buffer, d.byteOffset, d.length >> 2)
-    for (let i = 0; i < w.length; i++) h = Math.imul(h ^ w[i]!, 0x01000193) >>> 0
-    return h
+    for (let i = 0; i < w.length; i++) {
+      h1 = mix(h1, w[i]!)
+      h2 = mix(h2, (w[i]! ^ i) >>> 0)
+    }
+  } else {
+    for (let i = 0; i < d.length; i++) {
+      h1 = mix(h1, d[i]!)
+      h2 = mix(h2, d[i]! ^ i)
+    }
   }
-  for (let i = 0; i < d.length; i++) h = Math.imul(h ^ d[i]!, 0x01000193) >>> 0
-  return h
+  const fin = (h: number): number => {
+    h ^= d.length
+    h ^= h >>> 16
+    h = Math.imul(h, 0x85ebca6b)
+    h ^= h >>> 13
+    h = Math.imul(h, 0xc2b2ae35)
+    return (h ^ (h >>> 16)) >>> 0
+  }
+  return `${fin(h1).toString(36)}${fin(h2).toString(36)}`
 }
 
 /** Áreas pequeñas se calculan en línea: más barato que ir y volver de un worker. */
@@ -82,7 +111,7 @@ export class AsyncFxProvider implements FxProvider {
 
     // sólo viajan (y se firman) los píxeles que el cálculo puede leer
     const sub = cropRegion(input, need)
-    const key = `${slot}|${JSON.stringify(effects)}|${out.x},${out.y},${out.w},${out.h}|${ctx.width}x${ctx.height}${ctx.draft ? '|draft' : ''}|${fnv(sub.data)}`
+    const key = `${slot}|${JSON.stringify(effects)}|${out.x},${out.y},${out.w},${out.h}|${ctx.width}x${ctx.height}${ctx.draft ? '|draft' : ''}|${sub.rect.x},${sub.rect.y},${sub.rect.w}x${sub.rect.h}|${contentHash(sub.data)}`
     const hit = this.cache.get(key)
     if (hit) {
       this.cache.delete(key)

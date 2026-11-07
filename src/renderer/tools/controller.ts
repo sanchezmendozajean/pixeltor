@@ -153,7 +153,7 @@ export class CanvasController {
     }
 
     // V sobre una guía la arrastra (tiene prioridad sobre las formas)
-    if (tool === 'sel') {
+    if (tool === 'sel' && !p.ctrl && !this.shapes.overSelectionControl(p.sx, p.sy)) {
       const g = this.guideAt(ws, p.sx, p.sy)
       if (g) {
         this.guideDrag = { gd: new GuideDrag(s, g.id), axis: g.axis }
@@ -268,6 +268,14 @@ export class CanvasController {
   doubleClick(p: PointerInfo): void {
     const ws = this.getWs()
     if (!ws || this.tools.active !== 'sel') return
+    // doble clic sobre una guía: diálogo para indicar su posición
+    if (!p.ctrl && !this.shapes.overSelectionControl(p.sx, p.sy)) {
+      const g = this.guideAt(ws, p.sx, p.sy)
+      if (g) {
+        useUiStore().guideDialog = { id: g.id, axis: g.axis }
+        return
+      }
+    }
     const pt = ws.viewport.toImage(p.sx, p.sy)
     this.shapes.doubleClick(Math.floor(pt.x), Math.floor(pt.y))
   }
@@ -281,9 +289,12 @@ export class CanvasController {
     const y = Math.floor(pt.y)
     this.hover = { x, y }
     this.lastScreen = { x: p.sx, y: p.sy }
-    this.guideHover =
-      this.tools.active === 'sel' ? (this.guideAt(ws, p.sx, p.sy)?.axis ?? null) : null
-    this.mirrorHover = this.tools.active === 'sel' ? this.mirrorAt(ws, p.sx, p.sy) : null
+    // Ctrl = Selección directa temporal: las guías y los ejes del espejo no se agarran (las anclas mandan)
+    // y los tiradores de la caja de selección mandan sobre las guías y los ejes
+    const grab =
+      this.tools.active === 'sel' && !p.ctrl && !this.shapes.overSelectionControl(p.sx, p.sy)
+    this.guideHover = grab ? (this.guideAt(ws, p.sx, p.sy)?.axis ?? null) : null
+    this.mirrorHover = grab ? this.mirrorAt(ws, p.sx, p.sy) : null
     if (this.mirrorDrag) {
       this.mirrorDrag.moveTo(pt.x, pt.y)
       return

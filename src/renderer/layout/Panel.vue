@@ -86,7 +86,7 @@ watch(
           </p>
         </template>
       </div>
-      <slot name="foot" />
+      <slot name="foot" :active="active" />
     </template>
   </section>
 </template>

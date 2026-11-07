@@ -6,6 +6,7 @@ import { deflateSync, inflateSync } from 'fflate'
 import { History, type HistoryCommand } from './history/history'
 import { cloneLayerMeta, createDocument, createLayer, findLayer } from './model/document'
 import { newId } from './model/ids'
+import { reIdShape } from './model/shapes'
 import type { Guide, ID, Layer, PixeltorDocument, PxImage } from './model/types'
 import { MAX_LAYERS } from './model/types'
 import { type Palette, clonePalette } from './palette/palette'
@@ -331,6 +332,14 @@ export class DocumentSession {
       raster: { ...src.raster, id: newId() }
     }
     this.rasters.set(copy.raster.id, this.rasters.get(src.raster.id)!.clone())
+    // la copia es independiente: formas y efectos con identificadores propios y parámetros no compartidos
+    copy.shapes.forEach(reIdShape)
+    copy.effects = src.effects.map((e) => ({
+      ...e,
+      id: newId(),
+      params: { ...e.params },
+      ...(e.output ? { output: { ...e.output } } : {})
+    }))
     // la copia va tras las capas recortadas sobre el original, para no quitárselas
     let at = i + 1
     while (at < img.layers.length && img.layers[at]!.clip && !img.layers[at]!.isGroup) at++

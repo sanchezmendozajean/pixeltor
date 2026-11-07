@@ -6,7 +6,8 @@ function onWheel(e: WheelEvent): void {
   const el = document.activeElement
   if (!(el instanceof HTMLInputElement) || el.disabled || el.readOnly) return
   // type=number o texto con inputmode numérico (varios campos de los paneles son así)
-  const numeric = el.type === 'number' || (el.type === 'text' && /^(numeric|decimal)$/.test(el.inputMode))
+  const numeric =
+    el.type === 'number' || (el.type === 'text' && /^(numeric|decimal)$/.test(el.inputMode))
   if (!numeric) return
   if (e.target !== el) return
   // Con Mayús algunos sistemas convierten la rueda vertical en horizontal

@@ -74,10 +74,10 @@ export const useUiStore = defineStore('ui', {
     autoUpdate: true,
     /** Número de anclas seleccionadas con la Selección directa (para habilitar botones). */
     anchorCount: 0,
-    /** Selector de color abierto para este destino. */
-    colorPicker: null as null | 'fill' | 'stroke',
     /** Diálogo de atajos de teclado abierto. */
     shortcutsDialog: false,
+    /** Diálogo de posición de una guía (doble clic sobre ella). */
+    guideDialog: null as null | { id: string; axis: 'h' | 'v' },
     /** Modo vista previa (sin overlays): guarda qué estaba visible para restaurarlo. */
     preview: null as null | { paths: boolean; grid: boolean; guides: boolean },
     snap: { grid: true, anchor: true, paths: false, guides: true, canvas: false, smart: true }

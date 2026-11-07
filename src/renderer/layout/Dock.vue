@@ -50,8 +50,9 @@ const color: PanelTab[] = [
       <template #appearance><AppearancePanel /></template>
       <template #align><AlignPanel /></template>
       <template #effects><EffectsPanel /></template>
-      <template #foot>
-        <div class="pt-pfoot">
+      <template #foot="{ active }">
+        <!-- los botones de capa sólo acompañan a la pestaña Capas -->
+        <div v-if="active === 'layers'" class="pt-pfoot">
           <span class="pt-spacer" />
           <ActionButton id="layer.new" />
           <ActionButton id="layer.duplicate" />

@@ -7,11 +7,24 @@ import { TOOLBAR } from '@/tools/catalog'
 import { useColorsStore } from '@/stores/colors'
 import { useToolsStore } from '@/stores/tools'
 import { useUiStore } from '@/stores/ui'
+import { openColorDialog } from '@/app/colorDialog'
+import { setSelectionPaint, setWorkingColor } from '@/app/colorOps'
 import { t } from '@/i18n'
 
 const colors = useColorsStore()
 const tools = useToolsStore()
 const ui = useUiStore()
+
+/** Doble clic en relleno/contorno: selector de color junto al cuadro. */
+function pickWorking(which: 'fill' | 'stroke', e: MouseEvent): void {
+  const before = colors[which]
+  openColorDialog(e.currentTarget as Element, before, {
+    onChange: (hex) => setWorkingColor(which, hex),
+    onRevert: () => {
+      colors[which] = before
+    }
+  })
+}
 
 // Relleno y contorno como en Illustrator: la disposición cambia con una o dos columnas.
 const two = computed(() => ui.toolbarColumns === 2)
@@ -59,6 +72,8 @@ function setMode(m: PaintMode): void {
     tools.useStroke = on
     colors.strokeGradient = m === 'gradient'
   }
+  // con formas seleccionadas, «ninguno» / «color» también las afecta (como en Illustrator)
+  if (m !== 'gradient') setSelectionPaint(colors.target, on)
 }
 
 /** Fondo del cuadro de relleno según su modo. */
@@ -167,7 +182,7 @@ const fillBackground = computed(() => {
           :aria-label="`${t('controlbar.stroke')} ${colors.stroke}`"
           :aria-pressed="colors.target === 'stroke'"
           @click="colors.target = 'stroke'"
-          @dblclick="ui.colorPicker = 'stroke'"
+          @dblclick="pickWorking('stroke', $event)"
         />
         <button
           type="button"
@@ -177,7 +192,7 @@ const fillBackground = computed(() => {
           :aria-label="`${t('controlbar.fill')} ${colors.fill}`"
           :aria-pressed="colors.target === 'fill'"
           @click="colors.target = 'fill'"
-          @dblclick="ui.colorPicker = 'fill'"
+          @dblclick="pickWorking('fill', $event)"
         />
         <template v-if="two">
           <button

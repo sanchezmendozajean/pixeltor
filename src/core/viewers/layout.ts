@@ -110,6 +110,38 @@ export interface SavedViewer {
   onion?: boolean
   tiled?: 'none' | 'both' | 'h' | 'v'
   sync?: boolean
+  /** Zoom (px de pantalla por px de imagen). */
+  zoom?: number
+  /** Punto de la imagen que estaba en el centro del visor (independiente del tamaño del visor). */
+  centerX?: number
+  centerY?: number
+  /** Zoom y centro recordados de cada imagen del archivo (clave = id de imagen). */
+  views?: Record<string, SavedView>
+}
+
+export interface SavedView {
+  zoom: number
+  centerX: number
+  centerY: number
+}
+
+const MAX_SAVED_VIEWS = 256
+
+/** Valida una vista guardada (zoom acotado, números finitos) o devuelve undefined. */
+function sanitizeView(raw: unknown): SavedView | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const v = raw as Record<string, unknown>
+  const { zoom, centerX, centerY } = v
+  if (
+    typeof zoom !== 'number' ||
+    typeof centerX !== 'number' ||
+    typeof centerY !== 'number' ||
+    !Number.isFinite(zoom) ||
+    !Number.isFinite(centerX) ||
+    !Number.isFinite(centerY)
+  )
+    return undefined
+  return { zoom: Math.min(64, Math.max(0.25, zoom)), centerX, centerY }
 }
 
 export interface SavedViewers {
@@ -150,6 +182,28 @@ export function sanitizeViewers(raw: unknown): SavedViewers | undefined {
       if (typeof v['imageId'] === 'string') out.imageId = v['imageId']
       for (const k of ['pixelGrid', 'showPaths', 'onion', 'sync'] as const)
         if (typeof v[k] === 'boolean') out[k] = v[k]
+      const num = (k: string): number | undefined =>
+        typeof v[k] === 'number' && Number.isFinite(v[k]) ? (v[k] as number) : undefined
+      const zoom = num('zoom')
+      const cx = num('centerX')
+      const cy = num('centerY')
+      if (zoom !== undefined && cx !== undefined && cy !== undefined) {
+        out.zoom = Math.min(64, Math.max(0.25, zoom))
+        out.centerX = cx
+        out.centerY = cy
+      }
+      const rawViews = v['views']
+      if (rawViews && typeof rawViews === 'object') {
+        const views: Record<string, SavedView> = {}
+        for (const [id, rv] of Object.entries(rawViews as Record<string, unknown>).slice(
+          0,
+          MAX_SAVED_VIEWS
+        )) {
+          const sv = id.length <= 64 ? sanitizeView(rv) : undefined
+          if (sv) views[id] = sv
+        }
+        if (Object.keys(views).length) out.views = views
+      }
       if (typeof v['tiled'] === 'string' && TILE_MODES.includes(v['tiled']))
         out.tiled = v['tiled'] as SavedViewer['tiled']
       byId.set(out.id, out)

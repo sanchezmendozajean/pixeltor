@@ -25,6 +25,9 @@ import PtIcon from '@/components/PtIcon.vue'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
 import { hexToRgba } from '@/stores/colorUtil'
+import ColorButton from '@/components/ColorButton.vue'
+import { openColorDialog } from '@/app/colorDialog'
+import { attrColor, setAttrColor } from '@/app/colorOps'
 import { t, type I18nKey } from '@/i18n'
 
 const docs = useDocumentsStore()
@@ -144,14 +147,22 @@ function duplicate(id: string): void {
   })
   openId.value = nid
 }
-/** dir = +1 sube (se dibuja más arriba), −1 baja. */
-function move(id: string, dir: 1 | -1): void {
-  edit(t('appearance.reorder'), `mv-${id}`, (s) => {
-    const st = s.appearance.stack
-    const i = st.indexOf(id)
-    const j = i + dir
-    if (i < 0 || j < 0 || j >= st.length) return
-    ;[st[i], st[j]] = [st[j]!, st[i]!]
+// ---------- reordenar arrastrando ----------
+const dragId = ref<string | null>(null)
+const dropIndex = ref<number | null>(null)
+/** Arrastrando hacia abajo el elemento queda tras la fila destino: la línea va debajo. */
+const dropAfter = (i: number): boolean => rows.value.findIndex((r) => r.id === dragId.value) < i
+function onDrop(to: number): void {
+  const id = dragId.value
+  dragId.value = null
+  dropIndex.value = null
+  if (!id) return
+  const order = rows.value.map((r) => r.id).filter((x) => x !== id)
+  order.splice(to, 0, id)
+  // la lista se muestra de arriba abajo; la pila se guarda de abajo arriba
+  const stack = [...order].reverse()
+  edit(t('appearance.reorder'), `mv-${id}`, (sh) => {
+    sh.appearance.stack = stack
   })
 }
 
@@ -175,8 +186,13 @@ function setPaintType(row: Row, type: 'solid' | 'linear' | 'radial' | 'angular')
 const isStroke = (a: Fill | Stroke): a is Stroke => 'width' in a
 const grad = (a: Fill | Stroke): GradientPaint | null => (a.paint.type === 'solid' ? null : a.paint)
 
-function setSolid(row: Row, e: Event): void {
-  const h = (e.target as HTMLInputElement).value
+/** Doble clic en el cuadro de color de la lista: selector junto al cuadro (sólo colores lisos). */
+function pickAttr(row: Row, e: MouseEvent): void {
+  const c = attrColor(row.id)
+  if (c)
+    openColorDialog(e.currentTarget as Element, c, { onChange: (hex) => setAttrColor(row.id, hex) })
+}
+function setSolid(row: Row, h: string): void {
   mutate(
     row.id,
     'color',
@@ -291,12 +307,14 @@ function setOpacity(row: Row, e: Event): void {
   if (Number.isFinite(v))
     mutate(row.id, 'opacity', (a) => (a.opacity = Math.min(100, Math.max(0, v)) / 100))
 }
-function setStrokeNum(row: Row, key: 'width' | 'offset', e: Event): void {
-  const v = Math.round(num(e))
+function setStrokeNum(row: Row, key: 'width' | 'offset' | 'miterLimit', e: Event): void {
+  const v = key === 'miterLimit' ? num(e) : Math.round(num(e))
   if (Number.isFinite(v))
     mutate(row.id, key, (a) => {
-      if ('width' in a)
-        a[key] = key === 'width' ? Math.min(64, Math.max(1, v)) : Math.min(64, Math.max(0, v))
+      if (!('width' in a)) return
+      if (key === 'width') a.width = Math.min(64, Math.max(1, v))
+      else if (key === 'offset') a.offset = Math.min(64, Math.max(0, v))
+      else a.miterLimit = Math.min(20, Math.max(1, v))
     })
 }
 function setStrokeEnum(row: Row, key: 'align' | 'cap' | 'join', e: Event): void {
@@ -317,247 +335,305 @@ const modeOf = (g: GradientPaint): ModeId =>
 <template>
   <div v-if="shape" class="app">
     <ul class="list pt-scroll" :aria-label="t('panels.appearance')">
-      <li
-        v-for="r in rows"
-        :key="r.id"
-        class="row"
-        :class="{ 'is-current': r.id === openId, off: !r.attr.enabled }"
-        @click="openId = r.id"
-      >
-        <button
-          type="button"
-          class="pt-lcol"
-          :aria-pressed="r.attr.enabled"
-          :aria-label="t('layers.visible')"
-          @click.stop="toggle(r)"
+      <template v-for="(r, ri) in rows" :key="r.id">
+        <li
+          class="row"
+          :class="{
+            'is-current': r.id === openId,
+            off: !r.attr.enabled,
+            'is-drop': dropIndex === ri && dragId !== null && dragId !== r.id && !dropAfter(ri),
+            'is-drop-after': dropIndex === ri && dragId !== null && dragId !== r.id && dropAfter(ri)
+          }"
+          draggable="true"
+          @click="openId = r.id"
+          @dragstart="dragId = r.id"
+          @dragover.prevent="dropIndex = ri"
+          @dragleave="dropIndex = null"
+          @drop.prevent="onDrop(ri)"
+          @dragend="((dragId = null), (dropIndex = null))"
         >
-          <PtIcon :name="r.attr.enabled ? 'eye' : 'eyeOff'" />
-        </button>
-        <span class="sw" :style="{ background: cssPaint(r.attr.paint) }" />
-        <span class="name">
-          {{ r.kind === 'fill' ? t('properties.fill') : t('properties.stroke') }}
-          <em v-if="isStroke(r.attr)">{{ r.attr.width }} px</em>
-          <em v-if="r.attr.paint.type !== 'solid'">{{
-            t(`appearance.type.${r.attr.paint.type}` as I18nKey)
-          }}</em>
-        </span>
-        <button
-          type="button"
-          class="pt-iconbtn pt-iconbtn--20"
-          :aria-label="t('appearance.up')"
-          @click.stop="move(r.id, 1)"
-        >
-          <PtIcon name="chevUp" />
-        </button>
-        <button
-          type="button"
-          class="pt-iconbtn pt-iconbtn--20"
-          :aria-label="t('appearance.down')"
-          @click.stop="move(r.id, -1)"
-        >
-          <PtIcon name="chevDown" />
-        </button>
-      </li>
+          <button
+            type="button"
+            class="pt-lcol"
+            :aria-pressed="r.attr.enabled"
+            :aria-label="t('layers.visible')"
+            @click.stop="toggle(r)"
+          >
+            <PtIcon :name="r.attr.enabled ? 'eye' : 'eyeOff'" />
+          </button>
+          <span
+            class="sw"
+            :style="{ background: cssPaint(r.attr.paint) }"
+            @dblclick.stop="pickAttr(r, $event)"
+          />
+          <span class="name">
+            {{ r.kind === 'fill' ? t('properties.fill') : t('properties.stroke') }}
+            <em v-if="isStroke(r.attr)">{{ r.attr.width }} px</em>
+            <em v-if="r.attr.paint.type !== 'solid'">{{
+              t(`appearance.type.${r.attr.paint.type}` as I18nKey)
+            }}</em>
+          </span>
+        </li>
+
+        <!-- los parámetros del elemento elegido van justo debajo de su fila -->
+        <li v-if="open && open.id === r.id" class="editor">
+          <div class="line">
+            <label>{{ t('appearance.paint') }}</label>
+            <select
+              class="pt-select"
+              :value="open.attr.paint.type"
+              :aria-label="t('appearance.paint')"
+              @change="
+                setPaintType(
+                  open,
+                  ($event.target as HTMLSelectElement).value as
+                    'solid' | 'linear' | 'radial' | 'angular'
+                )
+              "
+            >
+              <option v-for="k in ['solid', 'linear', 'radial', 'angular']" :key="k" :value="k">
+                {{ t(`appearance.type.${k}` as I18nKey) }}
+              </option>
+            </select>
+          </div>
+
+          <div v-if="open.attr.paint.type === 'solid'" class="line">
+            <label>{{ t('appearance.color') }}</label>
+            <ColorButton
+              :color="hex(open.attr.paint.color)"
+              :aria-label="t('appearance.color')"
+              @pick="(h) => setSolid(open!, h)"
+              @end="endLive('app-color')"
+            />
+            <input
+              class="pt-input w"
+              type="number"
+              min="0"
+              max="100"
+              :value="Math.round((open.attr.paint.color.a / 255) * 100)"
+              :aria-label="t('appearance.alpha')"
+              @change="setSolidAlpha(open, $event)"
+            />
+            <span class="pt-unit">%</span>
+          </div>
+
+          <template v-else>
+            <div v-for="(s, i) in open.attr.paint.stops" :key="i" class="line">
+              <label>{{ t('appearance.stop') }} {{ i + 1 }}</label>
+              <ColorButton
+                :color="hex(s.color)"
+                :aria-label="t('appearance.color')"
+                @pick="(h) => setStop(open!, i, { color: rgb(h, s.color.a) }, 'app-stop-color')"
+                @end="endLive('app-stop-color')"
+              />
+              <input
+                class="pt-input w"
+                type="number"
+                min="0"
+                max="100"
+                :value="Math.round(s.offset * 100)"
+                :aria-label="t('appearance.position')"
+                @change="
+                  setStop(open, i, { offset: Math.min(100, Math.max(0, num($event))) / 100 })
+                "
+              />
+              <span class="pt-unit">%</span>
+              <button
+                type="button"
+                class="pt-iconbtn pt-iconbtn--20"
+                :aria-label="t('appearance.remove')"
+                :disabled="open.attr.paint.stops.length <= 2"
+                @click="removeStop(open, i)"
+              >
+                <PtIcon name="close" />
+              </button>
+            </div>
+            <div class="line">
+              <button type="button" class="pt-btn pt-btn--secondary" @click="addStop(open)">
+                {{ t('appearance.addStop') }}
+              </button>
+              <button type="button" class="pt-btn pt-btn--secondary" @click="reverseStops(open)">
+                {{ t('appearance.reverse') }}
+              </button>
+            </div>
+            <div class="line">
+              <label>{{ t('appearance.pixelMode') }}</label>
+              <select
+                class="pt-select"
+                :value="modeOf(open.attr.paint)"
+                :aria-label="t('appearance.pixelMode')"
+                @change="setMode(open, ($event.target as HTMLSelectElement).value as ModeId)"
+              >
+                <option value="smooth">{{ t('appearance.mode.smooth') }}</option>
+                <option value="bands">{{ t('appearance.mode.bands') }}</option>
+                <option value="dither">{{ t('appearance.mode.dither') }}</option>
+              </select>
+            </div>
+            <div v-if="'steps' in open.attr.paint.pixelMode" class="line">
+              <label>{{ t('appearance.steps') }}</label>
+              <input
+                class="pt-input w"
+                type="number"
+                min="2"
+                max="32"
+                :value="open.attr.paint.pixelMode.steps"
+                :aria-label="t('appearance.steps')"
+                @change="setSteps(open, $event)"
+              />
+              <select
+                v-if="open.attr.paint.pixelMode.mode === 'dither'"
+                class="pt-select"
+                :value="open.attr.paint.pixelMode.matrix"
+                :aria-label="t('appearance.matrix')"
+                @change="setMatrix(open, $event)"
+              >
+                <option v-for="m in ['bayer2', 'bayer4', 'bayer8', 'checker']" :key="m" :value="m">
+                  {{ t(`appearance.matrices.${m}` as I18nKey) }}
+                </option>
+              </select>
+            </div>
+          </template>
+
+          <template v-if="isStroke(open.attr)">
+            <div class="line">
+              <label>{{ t('properties.width') }}</label>
+              <input
+                class="pt-input w"
+                type="number"
+                min="1"
+                max="64"
+                :value="open.attr.width"
+                @change="setStrokeNum(open, 'width', $event)"
+              />
+              <select
+                class="pt-select"
+                :value="open.attr.align"
+                :aria-label="t('properties.align')"
+                @change="setStrokeEnum(open, 'align', $event)"
+              >
+                <option value="center">{{ t('properties.alignCenter') }}</option>
+                <option value="inside">{{ t('properties.alignInside') }}</option>
+                <option value="outside">{{ t('properties.alignOutside') }}</option>
+              </select>
+            </div>
+            <div class="line">
+              <label>{{ t('appearance.join') }}</label>
+              <select
+                class="pt-select"
+                :value="open.attr.join"
+                :aria-label="t('appearance.join')"
+                @change="setStrokeEnum(open, 'join', $event)"
+              >
+                <option value="miter">{{ t('appearance.joinMiter') }}</option>
+                <option value="round">{{ t('appearance.joinRound') }}</option>
+                <option value="bevel">{{ t('appearance.joinBevel') }}</option>
+              </select>
+            </div>
+            <div v-if="open.attr.join === 'miter'" class="line">
+              <label>{{ t('appearance.miterLimit') }}</label>
+              <input
+                class="pt-input w"
+                type="number"
+                min="1"
+                max="20"
+                step="0.5"
+                :value="open.attr.miterLimit"
+                @change="setStrokeNum(open, 'miterLimit', $event)"
+              />
+            </div>
+            <div class="line">
+              <label>{{ t('appearance.cap') }}</label>
+              <select
+                class="pt-select"
+                :value="open.attr.cap"
+                :aria-label="t('appearance.cap')"
+                @change="setStrokeEnum(open, 'cap', $event)"
+              >
+                <option value="butt">{{ t('appearance.capButt') }}</option>
+                <option value="round">{{ t('appearance.capRound') }}</option>
+                <option value="square">{{ t('appearance.capSquare') }}</option>
+              </select>
+            </div>
+            <div v-if="open.attr.align !== 'center'" class="line">
+              <label>{{ t('appearance.offset') }}</label>
+              <input
+                class="pt-input w"
+                type="number"
+                min="0"
+                max="64"
+                :value="open.attr.offset"
+                @change="setStrokeNum(open, 'offset', $event)"
+              />
+            </div>
+          </template>
+
+          <div class="line">
+            <label>{{ t('properties.opacity') }}</label>
+            <input
+              class="pt-input w"
+              type="number"
+              min="0"
+              max="100"
+              :value="Math.round(open.attr.opacity * 100)"
+              @change="setOpacity(open, $event)"
+            />
+            <select
+              class="pt-select"
+              :value="open.attr.blendMode"
+              :aria-label="t('layers.blend')"
+              @change="setBlend(open, $event)"
+            >
+              <option v-for="m in BLEND_MODES" :key="m" :value="m">
+                {{ t(`layers.modes.${m}` as I18nKey) }}
+              </option>
+            </select>
+          </div>
+        </li>
+      </template>
       <li v-if="!rows.length" class="pt-sec2 empty">{{ t('appearance.none') }}</li>
     </ul>
 
-    <div v-if="open" class="editor pt-scroll">
-      <div class="line">
-        <label>{{ t('appearance.paint') }}</label>
-        <select
-          class="pt-select"
-          :value="open.attr.paint.type"
-          :aria-label="t('appearance.paint')"
-          @change="
-            setPaintType(
-              open,
-              ($event.target as HTMLSelectElement).value as
-                'solid' | 'linear' | 'radial' | 'angular'
-            )
-          "
-        >
-          <option v-for="k in ['solid', 'linear', 'radial', 'angular']" :key="k" :value="k">
-            {{ t(`appearance.type.${k}` as I18nKey) }}
-          </option>
-        </select>
-      </div>
-
-      <div v-if="open.attr.paint.type === 'solid'" class="line">
-        <label>{{ t('appearance.color') }}</label>
-        <input
-          type="color"
-          :value="hex(open.attr.paint.color)"
-          :aria-label="t('appearance.color')"
-          @input="setSolid(open, $event)"
-          @change="endLive('app-color')"
-        />
-        <input
-          class="pt-input w"
-          type="number"
-          min="0"
-          max="100"
-          :value="Math.round((open.attr.paint.color.a / 255) * 100)"
-          :aria-label="t('appearance.alpha')"
-          @change="setSolidAlpha(open, $event)"
-        />
-        <span class="pt-unit">%</span>
-      </div>
-
-      <template v-else>
-        <div v-for="(s, i) in open.attr.paint.stops" :key="i" class="line">
-          <label>{{ t('appearance.stop') }} {{ i + 1 }}</label>
-          <input
-            type="color"
-            :value="hex(s.color)"
-            :aria-label="t('appearance.color')"
-            @input="
-              setStop(
-                open,
-                i,
-                { color: rgb(($event.target as HTMLInputElement).value, s.color.a) },
-                'app-stop-color'
-              )
-            "
-            @change="endLive('app-stop-color')"
-          />
-          <input
-            class="pt-input w"
-            type="number"
-            min="0"
-            max="100"
-            :value="Math.round(s.offset * 100)"
-            :aria-label="t('appearance.position')"
-            @change="setStop(open, i, { offset: Math.min(100, Math.max(0, num($event))) / 100 })"
-          />
-          <span class="pt-unit">%</span>
-          <button
-            type="button"
-            class="pt-iconbtn pt-iconbtn--20"
-            :aria-label="t('appearance.remove')"
-            :disabled="open.attr.paint.stops.length <= 2"
-            @click="removeStop(open, i)"
-          >
-            <PtIcon name="close" />
-          </button>
-        </div>
-        <div class="line">
-          <button type="button" class="pt-btn pt-btn--secondary" @click="addStop(open)">
-            {{ t('appearance.addStop') }}
-          </button>
-          <button type="button" class="pt-btn pt-btn--secondary" @click="reverseStops(open)">
-            {{ t('appearance.reverse') }}
-          </button>
-        </div>
-        <div class="line">
-          <label>{{ t('appearance.pixelMode') }}</label>
-          <select
-            class="pt-select"
-            :value="modeOf(open.attr.paint)"
-            :aria-label="t('appearance.pixelMode')"
-            @change="setMode(open, ($event.target as HTMLSelectElement).value as ModeId)"
-          >
-            <option value="smooth">{{ t('appearance.mode.smooth') }}</option>
-            <option value="bands">{{ t('appearance.mode.bands') }}</option>
-            <option value="dither">{{ t('appearance.mode.dither') }}</option>
-          </select>
-        </div>
-        <div v-if="'steps' in open.attr.paint.pixelMode" class="line">
-          <label>{{ t('appearance.steps') }}</label>
-          <input
-            class="pt-input w"
-            type="number"
-            min="2"
-            max="32"
-            :value="open.attr.paint.pixelMode.steps"
-            :aria-label="t('appearance.steps')"
-            @change="setSteps(open, $event)"
-          />
-          <select
-            v-if="open.attr.paint.pixelMode.mode === 'dither'"
-            class="pt-select"
-            :value="open.attr.paint.pixelMode.matrix"
-            :aria-label="t('appearance.matrix')"
-            @change="setMatrix(open, $event)"
-          >
-            <option v-for="m in ['bayer2', 'bayer4', 'bayer8', 'checker']" :key="m" :value="m">
-              {{ t(`appearance.matrices.${m}` as I18nKey) }}
-            </option>
-          </select>
-        </div>
-      </template>
-
-      <template v-if="isStroke(open.attr)">
-        <div class="line">
-          <label>{{ t('properties.width') }}</label>
-          <input
-            class="pt-input w"
-            type="number"
-            min="1"
-            max="64"
-            :value="open.attr.width"
-            @change="setStrokeNum(open, 'width', $event)"
-          />
-          <select
-            class="pt-select"
-            :value="open.attr.align"
-            :aria-label="t('properties.align')"
-            @change="setStrokeEnum(open, 'align', $event)"
-          >
-            <option value="center">{{ t('properties.alignCenter') }}</option>
-            <option value="inside">{{ t('properties.alignInside') }}</option>
-            <option value="outside">{{ t('properties.alignOutside') }}</option>
-          </select>
-        </div>
-        <div v-if="open.attr.align !== 'center'" class="line">
-          <label>{{ t('appearance.offset') }}</label>
-          <input
-            class="pt-input w"
-            type="number"
-            min="0"
-            max="64"
-            :value="open.attr.offset"
-            @change="setStrokeNum(open, 'offset', $event)"
-          />
-        </div>
-      </template>
-
-      <div class="line">
-        <label>{{ t('properties.opacity') }}</label>
-        <input
-          class="pt-input w"
-          type="number"
-          min="0"
-          max="100"
-          :value="Math.round(open.attr.opacity * 100)"
-          @change="setOpacity(open, $event)"
-        />
-        <select
-          class="pt-select"
-          :value="open.attr.blendMode"
-          :aria-label="t('layers.blend')"
-          @change="setBlend(open, $event)"
-        >
-          <option v-for="m in BLEND_MODES" :key="m" :value="m">
-            {{ t(`layers.modes.${m}` as I18nKey) }}
-          </option>
-        </select>
-      </div>
-      <div class="line">
-        <button type="button" class="pt-btn pt-btn--secondary" @click="duplicate(open.id)">
-          {{ t('appearance.duplicate') }}
-        </button>
-        <button type="button" class="pt-btn pt-btn--secondary" @click="remove(open.id)">
-          {{ t('appearance.remove') }}
-        </button>
-      </div>
-    </div>
-
     <div class="foot">
-      <button type="button" class="pt-btn pt-btn--secondary" @click="add('fill')">
-        + {{ t('properties.fill') }}
+      <button
+        type="button"
+        class="pt-iconbtn"
+        :data-tip="t('appearance.addFill')"
+        :aria-label="t('appearance.addFill')"
+        @click="add('fill')"
+      >
+        <PtIcon name="addFill" />
       </button>
-      <button type="button" class="pt-btn pt-btn--secondary" @click="add('stroke')">
-        + {{ t('properties.stroke') }}
+      <button
+        type="button"
+        class="pt-iconbtn"
+        :data-tip="t('appearance.addStroke')"
+        :aria-label="t('appearance.addStroke')"
+        @click="add('stroke')"
+      >
+        <PtIcon name="addStroke" />
+      </button>
+      <span class="pt-spacer" />
+      <button
+        type="button"
+        class="pt-iconbtn"
+        :class="{ 'is-dim': !open }"
+        :disabled="!open"
+        :data-tip="t('appearance.duplicate')"
+        :aria-label="t('appearance.duplicate')"
+        @click="open && duplicate(open.id)"
+      >
+        <PtIcon name="duplicate" />
+      </button>
+      <button
+        type="button"
+        class="pt-iconbtn"
+        :class="{ 'is-dim': !open }"
+        :disabled="!open"
+        :data-tip="t('appearance.remove')"
+        :aria-label="t('appearance.remove')"
+        @click="open && remove(open.id)"
+      >
+        <PtIcon name="trash" />
       </button>
     </div>
   </div>
@@ -575,9 +651,9 @@ const modeOf = (g: GradientPaint): ModeId =>
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 40%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  flex: none;
 }
 .row {
   display: flex;
@@ -619,23 +695,27 @@ button.pt-lcol {
   padding: 0;
 }
 .editor {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 4px;
-  padding: 4px;
-  border-top: 1px solid var(--border-subtle);
+  padding: 6px var(--panel-pad-x) 8px;
+  background: var(--bg-panel-raised);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .line {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  width: 100%;
 }
+/* etiquetas en una columna fija: los controles quedan alineados a la izquierda */
 .line > label {
-  min-width: 72px;
+  flex: 0 0 112px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
   color: var(--text-secondary);
 }
 .line .pt-select {
@@ -645,18 +725,20 @@ button.pt-lcol {
 .w {
   width: 52px;
 }
-input[type='color'] {
-  width: 28px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--border);
-  background: none;
-}
 .foot {
+  min-height: 28px;
+  flex: none;
   display: flex;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--panel-pad-x);
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
   border-top: 1px solid var(--border-subtle);
+}
+.row.is-drop {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.row.is-drop-after {
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 .empty,
 .none {

@@ -5,15 +5,12 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { hslToRgb, rgbToHsl } from '@core/index'
 import { hexToHsv, hexToRgba, hsvToHex, rgbaToHex } from '@/stores/colorUtil'
-import { useColorsStore } from '@/stores/colors'
-import { useUiStore } from '@/stores/ui'
 import { arrowStep, clamp01 } from '@/app/colorKeys'
+import { closeColorDialog, colorDialog } from '@/app/colorDialog'
+import { useDocumentsStore } from '@/stores/documents'
 import { t } from '@/i18n'
 
 type Mode = 'RGB' | 'HSB' | 'HSL'
-
-const ui = useUiStore()
-const colors = useColorsStore()
 
 const mode = ref<Mode>('RGB')
 const webOnly = ref(false)
@@ -22,18 +19,45 @@ const hsv = ref({ h: 0, s: 0, v: 0 })
 let alphaSuffix = ''
 const root = ref<HTMLElement>()
 
-watch(
-  () => ui.colorPicker,
-  async (target) => {
-    if (!target) return
-    const cur = target === 'fill' ? colors.fill : colors.stroke
-    const hex = rgbaToHex(hexToRgba(cur))
-    alphaSuffix = hex.slice(7)
-    hsv.value = hexToHsv(hex.slice(0, 7))
-    await nextTick()
-    root.value?.focus()
+/** Posición junto al elemento que lo abrió (dentro de la ventana). */
+const pos = ref({ left: 0, top: 0, ready: false })
+/** Último valor enviado a quien abrió el selector y posición del historial al abrir (para cancelar). */
+let applied = ''
+let startPos = 0
+let changed = false
+
+watch(colorDialog, async (req) => {
+  pos.value = { left: 0, top: 0, ready: false }
+  if (!req) return
+  const full = rgbaToHex(hexToRgba(req.color))
+  alphaSuffix = full.slice(7)
+  changed = false
+  startPos = useDocumentsStore().session?.history.position ?? 0
+  hsv.value = hexToHsv(full.slice(0, 7))
+  // el redondeo HSV puede variar el hexadecimal: eso no cuenta como cambio del usuario
+  applied = hex.value + alphaSuffix
+  await nextTick()
+  root.value?.focus()
+  place(req.anchor)
+})
+
+function place(anchor: { left: number; top: number; right: number; bottom: number } | null): void {
+  const el = root.value
+  if (!el) return
+  const { width: w, height: h } = el.getBoundingClientRect()
+  const M = 8
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  let left = anchor ? anchor.left : 56
+  let top = anchor ? anchor.bottom + 6 : 56
+  if (anchor && top + h > vh - M) top = anchor.top - h - 6
+  if (left + w > vw - M) left = (anchor ? anchor.right : vw) - w
+  pos.value = {
+    left: Math.max(M, Math.min(left, vw - w - M)),
+    top: Math.max(M, Math.min(top, vh - h - M)),
+    ready: true
   }
-)
+}
 
 const hex = computed(() => hsvToHex(hsv.value.h, hsv.value.s, hsv.value.v))
 const rgb = computed(() => {
@@ -232,16 +256,32 @@ const svText = computed(() =>
 
 const hueColor = computed(() => hsvToHex(hsv.value.h, 1, 1))
 
-function close(): void {
-  ui.colorPicker = null
-}
+// cada cambio se aplica al momento
+watch(hex, (h) => {
+  const req = colorDialog.value
+  const out = h + alphaSuffix
+  if (!req || out === applied) return
+  applied = out
+  changed = true
+  req.onChange(out)
+})
+
 function accept(): void {
-  const target = ui.colorPicker
-  if (!target) return
-  const out = hex.value + alphaSuffix
-  if (target === 'fill') colors.fill = out
-  else colors.stroke = out
-  close()
+  const req = colorDialog.value
+  if (!req) return
+  if (changed) req.onEnd?.()
+  closeColorDialog()
+}
+/** Cancelar o Esc: se cierra la edición en vivo y se vuelve al estado de antes de abrir. */
+function close(): void {
+  const req = colorDialog.value
+  if (!req) return
+  if (changed) {
+    req.onEnd?.()
+    useDocumentsStore().session?.history.goTo(startPos)
+    req.onRevert?.()
+  }
+  closeColorDialog()
 }
 function onKey(e: KeyboardEvent): void {
   if (e.key === 'Escape') close()
@@ -256,15 +296,15 @@ function onKey(e: KeyboardEvent): void {
 </script>
 
 <template>
-  <div
-    v-if="ui.colorPicker"
-    class="pt-scrim host"
-    :style="{ paddingLeft: ui.toolbarColumns === 2 ? '80px' : '44px' }"
-    @pointerdown.self="close"
-  >
+  <div v-if="colorDialog" class="pt-scrim host" @pointerdown.self="accept">
     <div
       ref="root"
       class="pt-dialog cp"
+      :style="{
+        left: `${pos.left}px`,
+        top: `${pos.top}px`,
+        visibility: pos.ready ? 'visible' : 'hidden'
+      }"
       role="dialog"
       aria-modal="true"
       :aria-label="t('picker.title')"
@@ -379,11 +419,9 @@ function onKey(e: KeyboardEvent): void {
 <style scoped>
 .host {
   background: transparent;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 56px 0 0 44px;
 }
 .cp {
+  position: fixed;
   width: 400px;
   padding: var(--space-4);
   gap: var(--space-3);

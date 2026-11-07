@@ -108,23 +108,35 @@ export class Workspace {
 
   /** Ajustes de visores y disposición para guardarlos en el documento. */
   snapshotViewers(): SavedViewers | undefined {
-    const single = this.viewers.length === 1
-    const v = this.viewers[0]!
-    // un único visor con los ajustes por defecto no se guarda
-    if (single && !v.imageId && v.pixelGrid && v.showPaths && !v.onion && v.tiled === 'none')
-      return undefined
     return {
       layout: cloneLayout(this.layout),
       active: this.activeViewerId,
-      viewers: this.viewers.map((x) => ({
-        id: x.id,
-        ...(x.imageId ? { imageId: x.imageId } : {}),
-        pixelGrid: x.pixelGrid,
-        showPaths: x.showPaths,
-        onion: x.onion,
-        tiled: x.tiled,
-        sync: x.sync
-      }))
+      viewers: this.viewers.map((x) => {
+        // la vista de la imagen que se está viendo + la recordada de cada una de las demás
+        const cur = x.captureView()
+        const views: Record<string, { zoom: number; centerX: number; centerY: number }> = {}
+        const known = new Set(this.session.doc.images.map((i) => i.id))
+        for (const [id, v] of x.views)
+          if (known.has(id)) views[id] = { zoom: v.zoom, centerX: v.cx, centerY: v.cy }
+        if (cur && x.shownImageId && known.has(x.shownImageId))
+          views[x.shownImageId] = { zoom: cur.zoom, centerX: cur.cx, centerY: cur.cy }
+        // un visor aún sin mostrar conserva la vista que traía del archivo
+        const r = cur ?? x.restoreView
+        const view = {
+          ...(r ? { zoom: r.zoom, centerX: r.cx, centerY: r.cy } : {}),
+          ...(Object.keys(views).length ? { views } : {})
+        }
+        return {
+          id: x.id,
+          ...(x.imageId ? { imageId: x.imageId } : {}),
+          pixelGrid: x.pixelGrid,
+          showPaths: x.showPaths,
+          onion: x.onion,
+          tiled: x.tiled,
+          sync: x.sync,
+          ...view
+        }
+      })
     }
   }
 
@@ -147,6 +159,14 @@ export class Workspace {
       v.onion = s.onion ?? false
       v.tiled = s.tiled ?? 'none'
       v.sync = s.sync ?? false
+      for (const [id, sv] of Object.entries(s.views ?? {}))
+        v.views.set(id, { zoom: sv.zoom, cx: sv.centerX, cy: sv.centerY })
+      // la vista inicial es la de la imagen que enseña el visor (o la guardada sin más, en archivos antiguos)
+      v.restoreView =
+        v.views.get(this.imageIdOf(v)) ??
+        (s.zoom !== undefined && s.centerX !== undefined && s.centerY !== undefined
+          ? { zoom: s.zoom, cx: s.centerX, cy: s.centerY }
+          : null)
     }
     const remap = (n: LayoutNode): LayoutNode =>
       n.kind === 'leaf' ? leaf(map.get(n.viewer)!) : { ...n, a: remap(n.a), b: remap(n.b) }
@@ -280,6 +300,21 @@ export class Workspace {
     }
   }
 
+  /**
+   * Al cambiar la imagen que enseña un visor se guarda su zoom y posición y se recuperan los de la
+   * nueva (o se encaja si nunca se mostró).
+   */
+  private trackImage(v: ViewerState, id: string): void {
+    if (v.shownImageId === id) return
+    const prev = v.shownImageId
+    v.shownImageId = id
+    if (prev === null) return
+    const cur = v.captureView()
+    if (cur) v.views.set(prev, cur)
+    v.restoreView = v.views.get(id) ?? null
+    v.fitted = false
+  }
+
   /** Qué imagen enseña el visor (la fijada o la activa). */
   imageIdOf(v: ViewerState): string {
     const s = this.session
@@ -301,6 +336,7 @@ export class Workspace {
   displayFor(v: ViewerState): { bmp: Bitmap; own: boolean } {
     const s = this.session
     const id = this.imageIdOf(v)
+    if (!v.playImageId) this.trackImage(v, id)
     if (!v.playImageId && id === s.activeImageId) {
       v.viewport.imageW = this.composite.width
       v.viewport.imageH = this.composite.height

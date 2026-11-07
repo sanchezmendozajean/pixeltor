@@ -96,3 +96,34 @@ describe('efectos asíncronos', () => {
     expect(jobs).toHaveLength(1)
   })
 })
+
+describe('caché de efectos', () => {
+  it('formas negras opacas de distinto tamaño no comparten resultado', async () => {
+    // Regresión: con un hash débil (FNV por palabras) los estados que sólo difieren en el byte
+    // alto (0xFF000000 vs 0) colisionaban y se mostraba el resultado de otro tamaño.
+    const { prov } = setup()
+    const fx = newEffect('smooth-edges')!
+    const out = { x: 0, y: 0, w: 200, h: 200 }
+    const black = (w: number, h: number) => {
+      const b = new Bitmap(200, 200)
+      for (let y = 10; y < 10 + h; y++) for (let x = 10; x < 10 + w; x++) b.set(x, y, 0x000000ff)
+      return regionFromBitmap(b, 0, 0)
+    }
+    const sizes: [number, number][] = []
+    for (let w = 100; w <= 160; w += 4) sizes.push([w, w - 7], [w + 1, w])
+    for (const [w, h] of sizes) {
+      prov.apply('s', [fx], black(w, h), out, ctx)
+      await flush()
+      await flush()
+    }
+    for (const [w, h] of sizes) {
+      const r = prov.apply('s', [fx], black(w, h), out, ctx)
+      // el resultado cacheado corresponde a ESTE tamaño: su extremo derecho/inferior coincide
+      const at = (x: number, y: number) => r.data[(y * 200 + x) * 4 + 3]!
+      expect(at(10 + w - 1, 10 + Math.floor(h / 2))).toBeGreaterThan(0)
+      expect(at(10 + w + 1, 10 + Math.floor(h / 2))).toBe(0)
+      expect(at(10 + Math.floor(w / 2), 10 + h - 1)).toBeGreaterThan(0)
+      expect(at(10 + Math.floor(w / 2), 10 + h + 1)).toBe(0)
+    }
+  })
+})

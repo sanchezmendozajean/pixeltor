@@ -116,7 +116,8 @@
         "ripple": "Ondulación",
         "twirl": "Torsión",
         "gradient-map": "Mapa de degradado",
-        "color-replace": "Reemplazar colores"
+        "color-replace": "Reemplazar colores",
+        "smooth-edges": "Suavizar bordes"
       }
     },
     "image": {
@@ -268,6 +269,17 @@
     "workspace": "Espacio de trabajo",
     "search": "Buscar comandos",
     "searchSoon": "La paleta de comandos llega en F3"
+  },
+  "guideDialog": {
+    "title": "Posición de la guía",
+    "titleV": "Guía vertical",
+    "titleH": "Guía horizontal",
+    "position": "Posición (px)",
+    "result": "Posición resultante: {n} px (de {size})",
+    "invalid": "Expresión no válida",
+    "hint": "Admite porcentajes y operaciones: 50 %, 100% - 10, 25% + 4.",
+    "cancel": "Cancelar",
+    "apply": "Aplicar"
   },
   "workspaces": {
     "essentials": "Esenciales",
@@ -544,8 +556,9 @@
     "lockAlpha": "Bloquear transparencia",
     "mirrorToggle": "Activar o desactivar el espejo de la capa",
     "rename": "Renombrar capa",
-    "collapse": "Plegar grupo",
-    "expand": "Desplegar grupo",
+    "collapse": "Plegar",
+    "expand": "Desplegar",
+    "shapeVisible": "Mostrar u ocultar forma",
     "clipped": "Recortada sobre la capa de debajo",
     "moveUp": "Subir capa",
     "moveDown": "Bajar capa",
@@ -648,6 +661,15 @@
     "reorder": "Reordenar apariencia",
     "up": "Subir (dibujar más arriba)",
     "down": "Bajar (dibujar más abajo)",
+    "join": "Esquinas",
+    "joinMiter": "Inglete (punta)",
+    "joinRound": "Redondas",
+    "joinBevel": "Biseladas",
+    "miterLimit": "Límite de inglete",
+    "cap": "Extremos",
+    "capButt": "Planos",
+    "capRound": "Redondos",
+    "capSquare": "Cuadrados",
     "none": "Esta forma no tiene relleno ni contorno",
     "paint": "Pintura",
     "color": "Color",
@@ -753,7 +775,8 @@
       "ripple": "Ondulación",
       "twirl": "Torsión",
       "gradient-map": "Mapa de degradado",
-      "color-replace": "Reemplazar colores"
+      "color-replace": "Reemplazar colores",
+      "smooth-edges": "Suavizar bordes"
     },
     "params": {
       "dx": "Desplazamiento X",
@@ -804,7 +827,11 @@
       "mid": "Medios",
       "from": "Origen",
       "to": "Destino",
-      "tolerance": "Tolerancia"
+      "tolerance": "Tolerancia",
+      "passes": "Pasadas",
+      "softness": "Suavidad extra",
+      "keepOriginal": "Conservar trazo original",
+      "scope": "Ámbito"
     },
     "options": {
       "4": "4 conexiones",
@@ -818,7 +845,9 @@
       "v": "Vertical",
       "center": "Centro",
       "average": "Promedio",
-      "mode": "Moda"
+      "mode": "Moda",
+      "silhouette": "Solo silueta",
+      "everything": "Silueta y colores"
     },
     "targetLayer": "Capa: {name}",
     "targetShape": "Forma: {name}",

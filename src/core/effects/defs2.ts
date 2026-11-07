@@ -6,6 +6,7 @@ import { blurReach, channelPlane, clampByte, gaussianBlur, parseColor } from './
 import { type Region, cropRegion, expandRect, makeRegion, regionIndex } from './region'
 import type { EffectDef, ParamDef, ParamValue } from './types'
 import { EFFECT_DEFS } from './defs'
+import { smoothEdges } from './smooth'
 
 type P = Record<string, ParamValue>
 type Px = [number, number, number, number]
@@ -301,5 +302,6 @@ EFFECT_DEFS.push(
   ripple,
   twirl,
   gradientMap,
-  colorReplace
+  colorReplace,
+  smoothEdges
 )

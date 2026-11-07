@@ -4,6 +4,14 @@ import {
   Bitmap,
   DocumentSession,
   addShape,
+  copyShapes,
+  setShapesColor,
+  setShapesPaint,
+  shapePaintsTarget,
+  shapeTouchesRect,
+  shapesColor,
+  pasteShapes,
+  removeShapes,
   color,
   composeImage,
   corner,
@@ -234,5 +242,87 @@ describe('tamaño en píxeles de las formas', () => {
     addShape(s, e)
     expect(shapesPixelSize(s, [e.id])).toEqual({ w: 8, h: 6 })
     expect(shapesPixelSize(s, [r.id, e.id])).toEqual({ w: 20, h: 19 })
+  })
+})
+
+describe('portapapeles de formas', () => {
+  it('cortar y pegar mueve la forma a otra capa como copia independiente y se deshace', () => {
+    const s = DocumentSession.create(16, 16)
+    addShape(s, makeRect(2, 2, 4, 4, makeAppearance(RED, null)))
+    const first = s.activeLayer.id
+    const id = s.selectedShapes[0]!
+    const clip = copyShapes(s, [id])
+    expect(clip).toHaveLength(1)
+    removeShapes(s, [id])
+    expect(s.image.layers.find((l) => l.id === first)!.shapes).toHaveLength(0)
+    s.addLayer()
+    const ids = pasteShapes(s, clip, 3, 0)
+    expect(ids).toHaveLength(1)
+    expect(ids[0]).not.toBe(id)
+    expect(s.activeLayer.shapes).toHaveLength(1)
+    expect(s.selectedShapes).toEqual(ids)
+    // pegar dos veces no comparte objetos
+    pasteShapes(s, clip)
+    expect(s.activeLayer.shapes[0]).not.toBe(s.activeLayer.shapes[1])
+    s.undo()
+    expect(s.activeLayer.shapes).toHaveLength(1)
+  })
+})
+
+describe('color de las formas seleccionadas', () => {
+  it('pinta el relleno o el contorno, conserva el alfa y los arrastres son un solo paso', () => {
+    const s = DocumentSession.create(16, 16)
+    addShape(s, makeRect(2, 2, 6, 6, makeAppearance(color(255, 0, 0, 128), BLUE)))
+    const ids = s.selectedShapes
+    expect(shapesColor(s, ids, 'fill')).toEqual({ r: 255, g: 0, b: 0, a: 128 })
+    const steps = s.history.entries.length
+    setShapesColor(s, ids, 'fill', color(0, 255, 0))
+    setShapesColor(s, ids, 'fill', color(0, 0, 255))
+    expect(s.history.entries.length).toBe(steps + 1)
+    expect(shapesColor(s, ids, 'fill')).toEqual({ r: 0, g: 0, b: 255, a: 128 })
+    setShapesColor(s, ids, 'stroke', color(9, 9, 9))
+    expect(shapesColor(s, ids, 'stroke')).toEqual({ r: 9, g: 9, b: 9, a: 255 })
+    s.undo()
+    expect(shapesColor(s, ids, 'stroke')).toEqual({ r: 0, g: 0, b: 255, a: 255 })
+    s.undo()
+    expect(shapesColor(s, ids, 'fill')).toEqual({ r: 255, g: 0, b: 0, a: 128 })
+  })
+})
+
+describe('relleno y contorno «ninguno»', () => {
+  it('desactiva y reactiva el relleno de la forma seleccionada, con deshacer', () => {
+    const s = DocumentSession.create(16, 16)
+    addShape(s, makeRect(2, 2, 6, 6, makeAppearance(RED, null)))
+    const id = s.selectedShapes[0]!
+    expect(shapePaintsTarget(s, id, 'fill')).toBe(true)
+    expect(setShapesPaint(s, [id], 'fill', false, RED)).toBe(true)
+    expect(shapePaintsTarget(s, id, 'fill')).toBe(false)
+    expect(render(s).get(4, 4)).toBe(0)
+    // repetir no cambia nada ni crea un paso de historial
+    expect(setShapesPaint(s, [id], 'fill', false, RED)).toBe(false)
+    expect(setShapesPaint(s, [id], 'fill', true, BLUE)).toBe(true)
+    expect(render(s).get(4, 4)).toBe(0xff0000ff)
+    s.undo()
+    expect(shapePaintsTarget(s, id, 'fill')).toBe(false)
+  })
+
+  it('al activar un contorno que no existe crea uno liso', () => {
+    const s = DocumentSession.create(16, 16)
+    addShape(s, makeRect(2, 2, 8, 8, makeAppearance(RED, null)))
+    const id = s.selectedShapes[0]!
+    expect(shapePaintsTarget(s, id, 'stroke')).toBe(false)
+    setShapesPaint(s, [id], 'stroke', true, BLUE)
+    expect(shapePaintsTarget(s, id, 'stroke')).toBe(true)
+  })
+})
+
+describe('selección por marco', () => {
+  it('un marco en el hueco de un trazado no lo toca; uno que cruza el trazo sí', () => {
+    const s = DocumentSession.create(32, 32)
+    addShape(s, makeRect(2, 2, 24, 24, makeAppearance(null, RED, 1)))
+    const id = s.selectedShapes[0]!
+    expect(shapeTouchesRect(s, id, { x0: 8, y0: 8, x1: 18, y1: 14 })).toBe(false)
+    expect(shapeTouchesRect(s, id, { x0: 0, y0: 10, x1: 5, y1: 14 })).toBe(true)
+    expect(shapeTouchesRect(s, id, { x0: 28, y0: 28, x1: 31, y1: 31 })).toBe(false)
   })
 })
