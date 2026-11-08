@@ -1,4 +1,5 @@
 // Conecta las acciones del registro con los stores y el core.
+import { swapFillStroke } from '@/app/colorOps'
 import {
   type Bitmap,
   commitFloating,
@@ -115,7 +116,7 @@ export function registerAppActions(): void {
   }
 
   const colors = useColorsStore()
-  registerHandler('colors.swap', { run: () => colors.swap() })
+  registerHandler('colors.swap', { run: () => swapFillStroke() })
   registerHandler('colors.default', { run: () => colors.reset() })
   registerHandler('colors.toggleActive', { run: () => colors.toggleTarget() })
   registerHandler('brush.sizeDown', { run: () => tools.setBrushSize(tools.brushSize - 1) })

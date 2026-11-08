@@ -94,6 +94,11 @@ function dropAfter(i: number): boolean {
   return docs.layers.findIndex((x) => x.id === dragId.value) < i
 }
 
+/** ¿La capa muestra filas de formas bajo ella? (la línea de destino va tras la última) */
+function hasKids(l: { groupId: string | null; collapsed: boolean; shapes: unknown[] }): boolean {
+  return !hidden(l) && !l.collapsed && l.shapes.length > 0
+}
+
 // Reordenar: la lista está invertida (la fila 0 es la capa de más arriba).
 function onDrop(rowIndex: number) {
   if (dragShape.value) {
@@ -234,7 +239,12 @@ onBeforeUnmount(() => {
             'is-current': l.active,
             'is-hidden': !l.visible,
             'is-drop': dropIndex === i && dragId !== null && dragId !== l.id && !dropAfter(i),
-            'is-drop-after': dropIndex === i && dragId !== null && dragId !== l.id && dropAfter(i),
+            'is-drop-after':
+              dropIndex === i &&
+              dragId !== null &&
+              dragId !== l.id &&
+              dropAfter(i) &&
+              !hasKids(l),
             'is-drop-into': dropIndex === i && dragShape !== null
           }"
           :aria-current="l.active || undefined"
@@ -317,12 +327,24 @@ onBeforeUnmount(() => {
           </button>
         </li>
         <li
-          v-for="sh in hidden(l) || l.collapsed ? [] : l.shapes"
+          v-for="(sh, si) in hidden(l) || l.collapsed ? [] : l.shapes"
           :key="sh.id"
           class="pt-lrow pt-srow"
-          :class="{ 'is-selected': sh.selected, 'is-hidden': !sh.visible }"
+          :class="{
+            'is-selected': sh.selected,
+            'is-hidden': !sh.visible,
+            'is-drop-after':
+              si === l.shapes.length - 1 &&
+              dropIndex === i &&
+              dragId !== null &&
+              dragId !== l.id &&
+              dropAfter(i)
+          }"
           draggable="true"
           @dragstart.stop="dragShape = sh.id"
+          @dragover.prevent="dragId && (dropIndex = i)"
+          @dragleave="dragId && (dropIndex = null)"
+          @drop.prevent="dragId && onDrop(i)"
           @dragend="((dragShape = null), (dropIndex = null))"
           @click="onShapeClick(l.id, sh.id, $event)"
         >

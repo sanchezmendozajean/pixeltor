@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MenuBar from './MenuBar.vue'
 import PtIcon from '@/components/PtIcon.vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { actionLabel, actionShortcut, execute, isEnabled } from '@/actions/registry'
 import { switchWorkspace, workspaceEntries, workspaceName } from '@/app/workspaces'
 import { useUiStore } from '@/stores/ui'
@@ -10,6 +10,20 @@ import icon16 from '@/assets/icon-16.png'
 import icon32 from '@/assets/icon-32.png'
 
 const ui = useUiStore()
+
+// El icono es pixel art: se muestra siempre 1:1 en píxeles de dispositivo (16 o 32 px), ajustando
+// su tamaño CSS a la escala de pantalla, para que nunca se reescale con escalas como 125 % o 150 %.
+const dpr = ref(window.devicePixelRatio || 1)
+const useBig = computed(() => dpr.value >= 1.5)
+const logoSrc = computed(() => (useBig.value ? icon32 : icon16))
+const logoSize = computed(() => (useBig.value ? 32 : 16) / dpr.value)
+let mq: MediaQueryList | null = null
+function watchDpr(): void {
+  mq?.removeEventListener('change', watchDpr)
+  dpr.value = window.devicePixelRatio || 1
+  mq = window.matchMedia(`(resolution: ${dpr.value}dppx)`)
+  mq.addEventListener('change', watchDpr)
+}
 const menu = ref<{ x: number; y: number } | null>(null)
 function open(e: MouseEvent): void {
   const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -37,10 +51,12 @@ const ACTIONS = [
   'window.workspace.reset'
 ]
 onMounted(() => {
+  watchDpr()
   document.addEventListener('pointerdown', dismiss, true)
   document.addEventListener('keydown', dismiss, true)
 })
 onBeforeUnmount(() => {
+  mq?.removeEventListener('change', watchDpr)
   document.removeEventListener('pointerdown', dismiss, true)
   document.removeEventListener('keydown', dismiss, true)
 })
@@ -51,10 +67,9 @@ onBeforeUnmount(() => {
     <div class="pt-logo">
       <img
         class="logo"
-        :src="icon16"
-        :srcset="`${icon32} 2x`"
-        width="16"
-        height="16"
+        :src="logoSrc"
+        :width="logoSize"
+        :height="logoSize"
         :alt="t('app.name')"
       />
     </div>

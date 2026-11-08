@@ -48,6 +48,33 @@ export function setSelectionPaint(target: ColorTarget, on: boolean): void {
   })
 }
 
+/**
+ * Intercambia relleno y contorno: colores, indicador «ninguno» y degradados, y lo aplica a las
+ * formas seleccionadas (un relleno «ninguno» pasa al contorno y viceversa).
+ */
+export function swapFillStroke(): void {
+  const colors = useColorsStore()
+  const tools = useToolsStore()
+  ;[colors.fill, colors.stroke] = [colors.stroke, colors.fill]
+  ;[colors.fillGradient, colors.strokeGradient] = [colors.strokeGradient, colors.fillGradient]
+  ;[tools.useFill, tools.useStroke] = [tools.useStroke, tools.useFill]
+  const s = useDocumentsStore().session
+  if (!s || !s.selectedShapes.length) return
+  const rgba = (hex: string) => {
+    const v = hexToRgba(hex)
+    return { r: (v >>> 24) & 255, g: (v >>> 16) & 255, b: (v >>> 8) & 255, a: v & 255 }
+  }
+  const ids = s.selectedShapes
+  const state = { fill: tools.useFill, stroke: tools.useStroke }
+  // primero se activan, luego se colorean los activos y al final se desactivan
+  for (const t2 of ['fill', 'stroke'] as const)
+    if (state[t2]) setShapesPaint(s, ids, t2, true, rgba(colors[t2]))
+  for (const t2 of ['fill', 'stroke'] as const)
+    if (state[t2]) setShapesColor(s, ids, t2, rgba(colors[t2]))
+  for (const t2 of ['fill', 'stroke'] as const)
+    if (!state[t2]) setShapesPaint(s, ids, t2, false, rgba(colors[t2]))
+}
+
 /** Muestra en relleno y contorno los colores de la primera forma seleccionada (si son lisos). */
 export function syncColorsFromSelection(): void {
   const s = useDocumentsStore().session
