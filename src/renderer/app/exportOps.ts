@@ -17,11 +17,13 @@ import {
 import type { Workspace } from '@/session/workspace'
 
 export type ExportFormat = 'png' | 'sequence' | 'sheet' | 'gif' | 'apng' | 'ico'
-export type ExportScope = 'current' | 'animation' | 'all'
+export type ExportScope = 'current' | 'selected'
 
 export interface ExportOptions {
   format: ExportFormat
   scope: ExportScope
+  /** Ids de las imágenes a exportar cuando el alcance es «selected». */
+  selected: string[]
   scale: number
   layout: SheetLayout
   columns: number
@@ -31,23 +33,26 @@ export interface ExportOptions {
 export const DEFAULT_EXPORT: ExportOptions = {
   format: 'png',
   scope: 'current',
+  selected: [],
   scale: 1,
   layout: 'horizontal',
   columns: 4,
   padding: 0
 }
 
+/** Tamaño máximo (por lado) de una entrada ICO. */
+export const ICO_MAX_SIZE = 256
+
 /** Formatos que necesitan varias imágenes por naturaleza. */
 export const MULTI_FORMATS: ExportFormat[] = ['sequence', 'sheet', 'gif', 'apng', 'ico']
 
-function pickImages(ws: Workspace, scope: ExportScope): PxImage[] {
+function pickImages(ws: Workspace, o: ExportOptions): PxImage[] {
   const s = ws.session
-  if (scope === 'current') return [s.image]
-  if (scope === 'animation') {
-    const list = s.doc.images.filter((i) => i.includeInAnimation)
-    return list.length ? list : [s.image]
-  }
-  return s.doc.images
+  if (o.scope === 'current') return [s.image]
+  // Se respeta el orden del documento; si ninguna id sigue existiendo, se cae a la imagen actual.
+  const set = new Set(o.selected)
+  const list = s.doc.images.filter((i) => set.has(i.id))
+  return list.length ? list : [s.image]
 }
 
 function render(ws: Workspace, img: PxImage): Bitmap {
@@ -64,7 +69,7 @@ export function buildExport(
   ws: Workspace,
   o: ExportOptions
 ): { ext: string; filterName: string; files: { suffix: string; bytes: Uint8Array }[] } {
-  const images = pickImages(ws, o.scope)
+  const images = pickImages(ws, o)
   const frames: (Frame & { name: string })[] = images.map((img) => ({
     bitmap: render(ws, img),
     delayMs: img.durationMs,
@@ -72,7 +77,9 @@ export function buildExport(
   }))
   const scaled = scaleFrames(frames, o.scale) as (Frame & { name: string })[]
   const named = scaled.map((f, i) => ({ ...f, name: frames[i]!.name }))
-  switch (o.format) {
+  // PNG con varias imágenes seleccionadas equivale a una secuencia de PNG.
+  const format = o.format === 'png' && named.length > 1 ? 'sequence' : o.format
+  switch (format) {
     case 'png':
       return {
         ext: 'png',
@@ -136,4 +143,12 @@ export async function exportAs(
   })
   if (path) ws.lastExport = { path, options: o }
   return path
+}
+
+/** Copia la imagen actual (render completo, escala 1) al portapapeles del sistema como mapa de bits. */
+export async function copyImageToClipboard(ws: Workspace): Promise<void> {
+  const png = encodePng(render(ws, ws.session.image))
+  await navigator.clipboard.write([
+    new ClipboardItem({ 'image/png': new Blob([png as BlobPart], { type: 'image/png' }) })
+  ])
 }

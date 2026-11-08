@@ -107,6 +107,7 @@ export interface SavedViewer {
   imageId?: string
   pixelGrid?: boolean
   showPaths?: boolean
+  showGuides?: boolean
   onion?: boolean
   tiled?: 'none' | 'both' | 'h' | 'v'
   sync?: boolean
@@ -180,7 +181,7 @@ export function sanitizeViewers(raw: unknown): SavedViewers | undefined {
       if (!v || typeof v['id'] !== 'string' || !seen.has(v['id'])) continue
       const out: SavedViewer = { id: v['id'] }
       if (typeof v['imageId'] === 'string') out.imageId = v['imageId']
-      for (const k of ['pixelGrid', 'showPaths', 'onion', 'sync'] as const)
+      for (const k of ['pixelGrid', 'showPaths', 'showGuides', 'onion', 'sync'] as const)
         if (typeof v[k] === 'boolean') out[k] = v[k]
       const num = (k: string): number | undefined =>
         typeof v[k] === 'number' && Number.isFinite(v[k]) ? (v[k] as number) : undefined

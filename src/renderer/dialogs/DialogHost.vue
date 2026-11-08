@@ -1,12 +1,20 @@
 <script setup lang="ts">
 // Diálogos modales de F1: Nuevo documento, Exportar PNG y Recuperar documentos; más el aviso breve.
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { RecoveryEntry } from '@shared/ipc'
-import { MAX_SIZE, resizeCanvas, resizeImage, type CanvasAnchor } from '@core/index'
+import {
+  Bitmap,
+  MAX_SIZE,
+  composeImage,
+  evalExpr,
+  resizeCanvas,
+  resizeImage,
+  type CanvasAnchor
+} from '@core/index'
 import PtIcon from '@/components/PtIcon.vue'
 import { discardRecovery, listRecovery, newDocument, recover } from '@/app/documentOps'
 import { UI_SCALES, type ThemeId } from '@shared/ipc'
-import { exportAs } from '@/app/exportOps'
+import { exportAs, ICO_MAX_SIZE } from '@/app/exportOps'
 import { confirmSheetImport, sheetCellCount } from '@/app/importOps'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
@@ -23,33 +31,115 @@ const scale = computed({
   get: () => opts.scale,
   set: (v: number) => (opts.scale = v)
 })
-/** Al elegir un formato se propone el alcance natural: animados e iconos → toda la animación. */
+/** Al elegir un formato multi-imagen se propone «Seleccionar imágenes» con las de la animación. */
 function onFormat(): void {
-  opts.scope = opts.format === 'png' ? 'current' : 'animation'
+  if (opts.format === 'png') {
+    opts.scope = 'current'
+    return
+  }
+  opts.scope = 'selected'
+  ensureSelection()
 }
-const exportCount = computed(() => {
+const exportImages = computed(() => {
   void docs.rev
   const s = docs.session
-  if (!s) return 0
-  if (opts.scope === 'current') return 1
-  return opts.scope === 'all'
-    ? s.doc.images.length
-    : s.doc.images.filter((i) => i.includeInAnimation).length
+  if (!s) return []
+  return s.doc.images.map((img, i) => ({
+    id: img.id,
+    n: i + 1,
+    name: img.name,
+    w: img.width,
+    h: img.height,
+    // el ICO no admite imágenes mayores de 256 × 256: se muestran pero no se pueden elegir
+    disabled: opts.format === 'ico' && (img.width > ICO_MAX_SIZE || img.height > ICO_MAX_SIZE)
+  }))
 })
+const selectedSet = computed(() => new Set(opts.selected))
+const exportCount = computed(() =>
+  opts.scope === 'current'
+    ? 1
+    : exportImages.value.filter((i) => !i.disabled && selectedSet.value.has(i.id)).length
+)
+function toggleImage(id: string): void {
+  if (exportImages.value.find((i) => i.id === id)?.disabled) return
+  opts.selected = selectedSet.value.has(id)
+    ? opts.selected.filter((x) => x !== id)
+    : [...opts.selected, id]
+}
+function selectAllImages(): void {
+  opts.selected = exportImages.value.filter((i) => !i.disabled).map((i) => i.id)
+}
+function selectNoImages(): void {
+  opts.selected = []
+}
+/**
+ * Descarta ids que ya no existen o no son compatibles con el formato y, si queda vacía, propone
+ * las imágenes de la animación (solo las compatibles).
+ */
+function ensureSelection(): void {
+  const s = docs.session
+  if (!s) return
+  const ok = new Set(exportImages.value.filter((i) => !i.disabled).map((i) => i.id))
+  const kept = opts.selected.filter((id) => ok.has(id))
+  if (kept.length) opts.selected = kept
+  else {
+    const anim = s.doc.images
+      .filter((i) => i.includeInAnimation && ok.has(i.id))
+      .map((i) => i.id)
+    opts.selected = anim.length ? anim : ok.has(s.image.id) ? [s.image.id] : [...ok].slice(0, 1)
+  }
+}
+// Miniaturas de la grilla: se componen con el mismo render que el lienzo.
+const thumbs = new Map<string, HTMLCanvasElement>()
+function setThumb(id: string, el: unknown): void {
+  if (el instanceof HTMLCanvasElement) thumbs.set(id, el)
+  else thumbs.delete(id)
+}
+function drawExportThumbs(): void {
+  const s = docs.session
+  if (!s) return
+  for (const img of s.doc.images) {
+    const el = thumbs.get(img.id)
+    if (!el) continue
+    const bmp = new Bitmap(img.width, img.height)
+    composeImage(img, s.rasters, bmp, undefined, { palettes: s.doc.palettes })
+    el.width = img.width
+    el.height = img.height
+    el.getContext('2d')!.putImageData(
+      new ImageData(new Uint8ClampedArray(bmp.data), img.width, img.height),
+      0,
+      0
+    )
+  }
+}
 const recovery = ref<RecoveryEntry[]>([])
-const cw = ref(32)
-const ch = ref(32)
+// Ancho/alto aceptan expresiones: 200%, 256*2, 256+100 (el % es relativo al tamaño actual del eje).
+const cwText = ref('32')
+const chText = ref('32')
+function evalSize(text: string, base: number): number {
+  const v = evalExpr(text, base)
+  return v === null ? Number.NaN : Math.round(v)
+}
+const cw = computed(() => evalSize(cwText.value, currentSize.value.w))
+const ch = computed(() => evalSize(chText.value, currentSize.value.h))
+const inRange = (n: number): boolean => Number.isInteger(n) && n >= 1 && n <= MAX_SIZE
+const validW = computed(() => inRange(cw.value))
+const validH = computed(() => inRange(ch.value))
+// Último valor válido: al perder el foco con una entrada inválida se restablece a él.
+let lastW = '32'
+let lastH = '32'
+/** Al perder el foco la expresión se sustituye por su resultado; si no es válida, se restablece. */
+function commitW(): void {
+  if (validW.value) lastW = cwText.value = String(cw.value)
+  else cwText.value = lastW
+}
+function commitH(): void {
+  if (validH.value) lastH = chText.value = String(ch.value)
+  else chText.value = lastH
+}
 const anchor = ref<CanvasAnchor>({ x: 1, y: 1 })
 const ANCHORS = [0, 1, 2] as const
-const validCanvas = computed(
-  () =>
-    Number.isInteger(cw.value) &&
-    Number.isInteger(ch.value) &&
-    cw.value >= 1 &&
-    ch.value >= 1 &&
-    cw.value <= MAX_SIZE &&
-    ch.value <= MAX_SIZE
-)
+const validCanvas = computed(() => validW.value && validH.value)
 const currentSize = computed(() => {
   void docs.rev
   return { w: docs.session?.image.width ?? 0, h: docs.session?.image.height ?? 0 }
@@ -63,11 +153,13 @@ function openShortcuts(): void {
 const keepRatio = ref(true)
 function onImgW(): void {
   const { w, h } = currentSize.value
-  if (keepRatio.value && w > 0) ch.value = Math.max(1, Math.round((cw.value * h) / w))
+  if (keepRatio.value && w > 0 && Number.isFinite(cw.value))
+    chText.value = String(Math.max(1, Math.round((cw.value * h) / w)))
 }
 function onImgH(): void {
   const { w, h } = currentSize.value
-  if (keepRatio.value && h > 0) cw.value = Math.max(1, Math.round((ch.value * w) / h))
+  if (keepRatio.value && h > 0 && Number.isFinite(ch.value))
+    cwText.value = String(Math.max(1, Math.round((ch.value * w) / h)))
 }
 function doImageSize(): void {
   const s = docs.session
@@ -106,9 +198,15 @@ function create(): void {
 }
 async function doExport(): Promise<void> {
   const ws = docs.active
-  if (!ws) return
+  if (!ws || (opts.scope === 'selected' && !exportCount.value)) return
   close()
-  await exportAs(ws, { ...opts })
+  try {
+    const usable = new Set(exportImages.value.filter((i) => !i.disabled).map((i) => i.id))
+    await exportAs(ws, { ...opts, selected: opts.selected.filter((id) => usable.has(id)) })
+  } catch (e) {
+    // sin esto un fallo (p. ej. ICO con una imagen > 256 px) parecía «no hacer nada»
+    ui.toast = e instanceof Error ? e.message : String(e)
+  }
 }
 const sheetCount = computed(() => (ui.sheetImport ? sheetCellCount(ui.sheetImport) : 0))
 function doSheet(): void {
@@ -135,14 +233,22 @@ watch(
   () => ui.dialog,
   async (d) => {
     if ((d === 'canvas' || d === 'imageSize') && docs.session) {
-      cw.value = docs.session.image.width
-      ch.value = docs.session.image.height
+      lastW = cwText.value = String(docs.session.image.width)
+      lastH = chText.value = String(docs.session.image.height)
       anchor.value = { x: 1, y: 1 }
     }
     if (d === 'about' && !appVersion.value) appVersion.value = await window.pixeltor.getAppVersion()
     if (d === 'recovery') recovery.value = await listRecovery()
+    if (d === 'export' && opts.scope === 'selected') ensureSelection()
   },
   { immediate: true }
+)
+watch(
+  () => [ui.dialog === 'export' && opts.scope === 'selected', exportImages.value.length],
+  ([show]) => {
+    if (show) void nextTick(drawExportThumbs)
+  },
+  { immediate: true, flush: 'post' }
 )
 
 function onKey(e: KeyboardEvent): void {
@@ -362,13 +468,15 @@ watch(
             <span class="pt-numbox">
               <input
                 id="iw"
-                v-model.number="cw"
+                v-model="cwText"
+                :class="{ 'is-error': !validW }"
                 class="pt-input"
-                type="number"
-                min="1"
-                :max="MAX_SIZE"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
                 autofocus
                 @input="onImgW"
+                @blur="commitW"
               />
               <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
             </span>
@@ -378,12 +486,14 @@ watch(
             <span class="pt-numbox">
               <input
                 id="ih"
-                v-model.number="ch"
+                v-model="chText"
+                :class="{ 'is-error': !validH }"
                 class="pt-input"
-                type="number"
-                min="1"
-                :max="MAX_SIZE"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
                 @input="onImgH"
+                @blur="commitH"
               />
               <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
             </span>
@@ -393,7 +503,6 @@ watch(
             {{ t('dialogs.imageSize.keepRatio') }}
           </label>
           <p class="pt-hint">{{ t('dialogs.imageSize.hint') }}</p>
-          <p v-if="!validCanvas" class="pt-errmsg">{{ t('dialogs.canvas.limit') }}</p>
         </div>
       </div>
       <div class="pt-dialog__foot">
@@ -427,12 +536,14 @@ watch(
             <span class="pt-numbox">
               <input
                 id="cw"
-                v-model.number="cw"
+                v-model="cwText"
+                :class="{ 'is-error': !validW }"
                 class="pt-input"
-                type="number"
-                min="1"
-                :max="MAX_SIZE"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
                 autofocus
+                @blur="commitW"
               />
               <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
             </span>
@@ -442,11 +553,13 @@ watch(
             <span class="pt-numbox">
               <input
                 id="ch"
-                v-model.number="ch"
+                v-model="chText"
+                :class="{ 'is-error': !validH }"
                 class="pt-input"
-                type="number"
-                min="1"
-                :max="MAX_SIZE"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                @blur="commitH"
               />
               <span class="pt-unit">{{ t('dialogs.canvas.px') }}</span>
             </span>
@@ -468,7 +581,6 @@ watch(
               </template>
             </span>
           </div>
-          <p v-if="!validCanvas" class="pt-errmsg">{{ t('dialogs.canvas.limit') }}</p>
         </div>
       </div>
       <div class="pt-dialog__foot">
@@ -483,7 +595,7 @@ watch(
 
     <form
       v-else-if="ui.dialog === 'export'"
-      class="pt-dialog box"
+      class="pt-dialog box box--wide"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dlg-exp"
@@ -512,13 +624,57 @@ watch(
               </option>
             </select>
           </div>
-          <div v-if="opts.format !== 'png'" class="pt-formrow">
-            <label for="eo">{{ t('dialogs.export.scope') }}</label>
-            <select id="eo" v-model="opts.scope" class="pt-select">
-              <option value="current">{{ t('dialogs.export.scopes.current') }}</option>
-              <option value="animation">{{ t('dialogs.export.scopes.animation') }}</option>
-              <option value="all">{{ t('dialogs.export.scopes.all') }}</option>
-            </select>
+          <div class="expscope" role="radiogroup" :aria-label="t('dialogs.export.scope')">
+            <label class="pt-check-label">
+              <input v-model="opts.scope" type="radio" value="current" />
+              {{ t('dialogs.export.scopes.current') }}
+            </label>
+            <label class="pt-check-label">
+              <input
+                v-model="opts.scope"
+                type="radio"
+                value="selected"
+                @change="ensureSelection"
+              />
+              {{ t('dialogs.export.scopes.selected') }}
+            </label>
+          </div>
+          <div v-if="opts.scope === 'selected'" class="expgrid-wrap">
+            <div class="expgrid-bar">
+              <button type="button" class="pt-btn pt-btn--secondary" @click="selectAllImages">
+                {{ t('dialogs.export.selectAll') }}
+              </button>
+              <button type="button" class="pt-btn pt-btn--secondary" @click="selectNoImages">
+                {{ t('dialogs.export.selectNone') }}
+              </button>
+              <span class="pt-hint">
+                {{
+                  t('dialogs.export.selectedCount', {
+                    n: exportCount,
+                    total: exportImages.length
+                  })
+                }}
+              </span>
+            </div>
+            <div class="expgrid">
+              <button
+                v-for="im in exportImages"
+                :key="im.id"
+                type="button"
+                class="expcell"
+                :class="{ 'is-on': selectedSet.has(im.id) && !im.disabled }"
+                role="checkbox"
+                :disabled="im.disabled"
+                :aria-checked="selectedSet.has(im.id) && !im.disabled"
+                :title="im.disabled ? t('dialogs.export.icoTooBig') : im.name"
+                @click="toggleImage(im.id)"
+              >
+                <canvas :ref="(el) => setThumb(im.id, el)" class="expcell__thumb" />
+                <span class="expcell__name">{{ im.n }}. {{ im.name }}</span>
+                <span class="expcell__size">{{ im.w }} × {{ im.h }}</span>
+              </button>
+            </div>
+            <p v-if="!exportCount" class="pt-errmsg">{{ t('dialogs.export.noneSelected') }}</p>
           </div>
           <template v-if="opts.format === 'sheet'">
             <div class="pt-formrow">
@@ -564,7 +720,11 @@ watch(
         <button type="button" class="pt-btn pt-btn--secondary pt-btn--lg" @click="close">
           {{ t('dialogs.export.cancel') }}
         </button>
-        <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg">
+        <button
+          type="submit"
+          class="pt-btn pt-btn--primary pt-btn--lg"
+          :disabled="!exportCount"
+        >
           {{ t('dialogs.export.export') }}
         </button>
       </div>
@@ -699,6 +859,85 @@ watch(
 .box {
   width: 420px;
   max-width: calc(100vw - 32px);
+}
+.box--wide {
+  width: 520px;
+}
+.expscope,
+.expgrid-bar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.expscope {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.expscope .pt-check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  line-height: 1.3;
+}
+.expscope .pt-check-label input {
+  margin: 0;
+  flex: none;
+}
+.expgrid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.expgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--space-2);
+  max-height: 240px;
+  overflow: auto;
+  padding: var(--space-1);
+}
+.expcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 2px solid var(--border-input, var(--border));
+  border-radius: var(--radius-sm, 2px);
+  background: var(--bg-input, transparent);
+  color: inherit;
+  min-width: 0;
+}
+.expcell:hover {
+  background: var(--bg-hover);
+}
+.expcell.is-on {
+  border-color: var(--accent);
+}
+.expcell:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.expcell:disabled:hover {
+  background: var(--bg-input, transparent);
+}
+.expcell__size {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.expcell__thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.expcell__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
 }
 .col {
   flex-direction: column;

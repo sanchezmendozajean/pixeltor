@@ -12,6 +12,31 @@ import { loadShortcutOverrides } from '@/actions/registry'
 import { DEFAULT_EXPORT, type ExportOptions } from '@/app/exportOps'
 import type { SheetImportState } from '@/app/importOps'
 
+export interface DockSize {
+  width: number
+  propsH: number
+  colorH: number
+}
+export const DOCK_LIMITS = {
+  width: [220, 560],
+  propsH: [60, 520],
+  colorH: [120, 640]
+} as const
+const DOCK_KEY = 'pixeltor.dock'
+const clampDock = (k: keyof DockSize, v: number): number =>
+  Math.round(Math.min(DOCK_LIMITS[k][1], Math.max(DOCK_LIMITS[k][0], v)))
+function loadDockSize(): DockSize {
+  const out: DockSize = { width: 260, propsH: 150, colorH: 300 }
+  try {
+    const raw = JSON.parse(localStorage.getItem(DOCK_KEY) ?? '{}') as Partial<DockSize>
+    for (const k of Object.keys(out) as (keyof DockSize)[])
+      if (typeof raw[k] === 'number' && Number.isFinite(raw[k])) out[k] = clampDock(k, raw[k]!)
+  } catch {
+    /* sin almacenamiento: tamaños por defecto */
+  }
+  return out
+}
+
 export type PanelsHidden = 'none' | 'all' | 'keepTools'
 
 export const useUiStore = defineStore('ui', {
@@ -74,8 +99,16 @@ export const useUiStore = defineStore('ui', {
     autoUpdate: true,
     /** Número de anclas seleccionadas con la Selección directa (para habilitar botones). */
     anchorCount: 0,
+    /** Lados (entrada / salida) que admiten tirador en las anclas seleccionadas. */
+    anchorSides: { in: false, out: false },
     /** Diálogo de atajos de teclado abierto. */
     shortcutsDialog: false,
+    /** Punto de referencia de la caja en Propiedades (fracción 0, 0,5 o 1 por eje). */
+    boxOrigin: { fx: 0, fy: 0 },
+    /** Proporcionalidad de An y Al en Propiedades. */
+    boxLock: false,
+    /** Tamaño del dock derecho: ancho y alto del cuerpo de los grupos Propiedades y Color. */
+    dock: loadDockSize(),
     /** Diálogo de posición de una guía (doble clic sobre ella). */
     guideDialog: null as null | { id: string; axis: 'h' | 'v' },
     /** Modo vista previa (sin overlays): guarda qué estaba visible para restaurarlo. */
@@ -102,6 +135,17 @@ export const useUiStore = defineStore('ui', {
     async setAutoUpdate(on: boolean) {
       this.autoUpdate = on
       await window.pixeltor.settings.set({ autoUpdate: on })
+    },
+    /** Cambia el tamaño del dock (se recuerda entre sesiones). */
+    setDockSize(k: keyof DockSize, v: number) {
+      this.dock[k] = clampDock(k, v)
+    },
+    saveDockSize() {
+      try {
+        localStorage.setItem(DOCK_KEY, JSON.stringify(this.dock))
+      } catch {
+        /* sin almacenamiento */
+      }
     },
     async setToolbarColumns(n: 1 | 2) {
       this.toolbarColumns = n

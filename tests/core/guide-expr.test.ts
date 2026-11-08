@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DocumentSession, addGuide, evalGuideExpr, setGuidePos } from '@core/index'
+import { DocumentSession, addGuide, evalExpr, evalGuideExpr, setGuidePos } from '@core/index'
 
 describe('posición de guías por expresión', () => {
   it('números, porcentajes y operaciones; siempre enteros', () => {
@@ -31,5 +31,15 @@ describe('posición de guías por expresión', () => {
     expect(setGuidePos(s, id, 30)).toBe(false)
     s.undo()
     expect(s.image.guides![0]!.pos).toBe(10)
+  })
+})
+
+describe('evalExpr (campos numéricos)', () => {
+  it('evalúa operaciones sin porcentajes', () => {
+    expect(evalExpr('30-5')).toBe(25)
+    expect(evalExpr('(10+4)*2')).toBe(28)
+    expect(evalExpr('100/3')).toBe(33)
+    expect(evalExpr('50%')).toBeNull()
+    expect(evalExpr('abc')).toBeNull()
   })
 })

@@ -49,6 +49,7 @@ export const MENUS: MenuDef[] = [
       act('edit.cut'),
       act('edit.copy'),
       act('edit.paste'),
+      act('edit.copyImage'),
       act('edit.delete'),
       sep,
       act('edit.preferences')
@@ -77,6 +78,8 @@ export const MENUS: MenuDef[] = [
       act('anchor.join'),
       act('anchor.toCorner'),
       act('anchor.toSmooth'),
+      act('anchor.handleIn'),
+      act('anchor.handleOut'),
       sep,
       act('object.compound'),
       act('object.releaseCompound'),

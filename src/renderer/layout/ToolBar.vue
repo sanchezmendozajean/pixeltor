@@ -51,7 +51,7 @@ const MODES = [
   {
     id: 'none',
     label: 'toolbar.none',
-    svg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M5 19 19 5" style="stroke: var(--danger)"/>'
+    svg: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M5 5 19 19" style="stroke: var(--danger)"/>'
   }
 ] as const
 
@@ -157,14 +157,14 @@ const fillBackground = computed(() => {
         <!-- Dibujo del contorno (anillo de color con marco negro y blanco); el botón de abajo sólo recibe los clics. -->
         <span
           class="pt-fswidget__face"
-          :class="{ 'is-top': colors.target === 'stroke' }"
+          :class="{ 'is-top': colors.target === 'stroke', 'is-none': modeOf('stroke') === 'none' }"
           :style="{
             width: `${chip - 2 * ring}px`,
             height: `${chip - 2 * ring}px`,
             left: `${size - chip + ring}px`,
             top: `${size - chip + ring}px`,
             '--ring': `${ring}px`,
-            '--paint': modeOf('stroke') === 'none' ? 'transparent' : colors.stroke
+            '--paint': modeOf('stroke') === 'none' ? '#fff' : colors.stroke
           }"
           aria-hidden="true"
         />

@@ -343,6 +343,20 @@
     "f": ""
   },
   {
+    "name": "copy",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M5.5 5.5h7v8h-7z M3.5 10.5v-8h7",
+    "f": ""
+  },
+  {
+    "name": "paste",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M4 3.5h8v10H4z M6.5 3.5V2.5h3v1 M6 7h4 M6 10h4",
+    "f": ""
+  },
+  {
     "name": "trash",
     "size": 16,
     "group": "interfaz-16",
@@ -623,6 +637,13 @@
     "f": ""
   },
   {
+    "name": "guides",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M2 5.5h12 M10.5 2v12",
+    "f": "M3.5 9.5h2v2h-2z"
+  },
+  {
     "name": "paths",
     "size": 16,
     "group": "interfaz-16",
@@ -894,6 +915,20 @@
     "group": "interfaz-16",
     "d": "M2.5 12.5C4 7 6 5 8 5s4 2 5.5 7.5 M2 5h12 M6.5 3.5h3v3h-3z",
     "f": ""
+  },
+  {
+    "name": "anchorHandleIn",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M6.5 8H4",
+    "f": "M6.5 6.5h3v3h-3z M1.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0z"
+  },
+  {
+    "name": "anchorHandleOut",
+    "size": 16,
+    "group": "interfaz-16",
+    "d": "M9.5 8H12",
+    "f": "M6.5 6.5h3v3h-3z M11.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0z"
   },
   {
     "name": "scissors",

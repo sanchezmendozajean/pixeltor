@@ -276,6 +276,11 @@ function onMove(e: PointerEvent): void {
   const p = info(e)
   lastInfo = p
   if (v().playImageId) return
+  // si se perdió el «pointerup» (p. ej. al soltar con Alt pulsado en Windows), el arrastre termina
+  if (e.buttons === 0 && controller.dragging) {
+    controller.up()
+    schedule()
+  }
   controller.moveTo(p)
   props.ws.syncFrom(v())
   applyCursor(p)
@@ -377,7 +382,10 @@ function setTile(m: TileMode): void {
 }
 const TILE_OPTIONS: TileMode[] = ['none', 'both', 'h', 'v']
 const ZOOMS = [0.5, 1, 2, 4, 8, 12, 16, 32]
-const flag = (k: 'pixelGrid' | 'showPaths' | 'onion' | 'sync'): boolean => (rev.value, v()[k])
+const flag = (k: 'pixelGrid' | 'showPaths' | 'showGuides' | 'onion' | 'sync'): boolean => (
+  rev.value,
+  v()[k]
+)
 const tiledOn = computed(() => (rev.value, v().tiled !== 'none'))
 const zoomLabel = computed(() => (rev.value, `${v().viewport.zoomPercent} %`))
 
@@ -481,6 +489,7 @@ const cursorClass = () =>
       <span class="pt-sep sep" />
       <ActionButton id="view.pixelGrid" :on="flag('pixelGrid')" />
       <ActionButton id="view.hidePaths" :on="flag('showPaths')" />
+      <ActionButton id="view.guides" :on="flag('showGuides')" />
       <ActionButton id="view.onion" :on="flag('onion')" />
       <button
         type="button"

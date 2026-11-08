@@ -68,7 +68,7 @@ import { closeWorkspace, openFile, saveWorkspace } from '@/app/documentOps'
 import { useColorsStore } from '@/stores/colors'
 import { hexToRgba } from '@/stores/colorUtil'
 import { startPlayback, stopPlayback } from '@/session/playback'
-import { exportAs } from '@/app/exportOps'
+import { copyImageToClipboard, exportAs } from '@/app/exportOps'
 import { importSequence, startSheetImport } from '@/app/importOps'
 import { EFFECT_LIST as EFFECT_DEFS } from '@core/effects/registry'
 import { useDocumentsStore } from '@/stores/documents'
@@ -80,6 +80,8 @@ import { type ThemeId, UI_SCALES } from '@shared/ipc'
 let clipboard: { bitmap: Bitmap; x: number; y: number } | null = null
 /** Formas copiadas (vectores); alternativa al portapapeles de píxeles. */
 let shapeClipboard: Shape[] | null = null
+
+const ANCHOR_TOOLS = new Set(['dsel', 'pen', 'addAnchor', 'delAnchor', 'convAnchor'])
 
 export function registerAppActions(): void {
   const tools = useToolsStore()
@@ -122,7 +124,7 @@ export function registerAppActions(): void {
   registerHandler('window.hidePanels', { run: () => ui.togglePanels('all') })
   registerHandler('window.hidePanelsKeepTools', { run: () => ui.togglePanels('keepTools') })
   // Estos ajustes son de cada visor; la interfaz refleja los del visor activo (ui.*).
-  const viewerFlag = (k: 'pixelGrid' | 'showPaths' | 'onion') => () => {
+  const viewerFlag = (k: 'pixelGrid' | 'showPaths' | 'showGuides' | 'onion') => () => {
     const w = docs.active
     if (!w) return
     w.activeViewer[k] = !w.activeViewer[k]
@@ -147,19 +149,19 @@ export function registerAppActions(): void {
     run: () => {
       const w = docs.active
       if (!w) return
-      const set = (k: 'pixelGrid' | 'showPaths', on: boolean): void => {
+      const set = (k: 'pixelGrid' | 'showPaths' | 'showGuides', on: boolean): void => {
         if (w.activeViewer[k] !== on) w.activeViewer[k] = on
       }
       if (ui.preview) {
         set('showPaths', ui.preview.paths)
         set('pixelGrid', ui.preview.grid)
-        ui.showGuides = ui.preview.guides
+        set('showGuides', ui.preview.guides)
         ui.preview = null
       } else {
         ui.preview = { paths: ui.showPaths, grid: ui.pixelGrid, guides: ui.showGuides }
         set('showPaths', false)
         set('pixelGrid', false)
-        ui.showGuides = false
+        set('showGuides', false)
       }
       mirrorViewerFlags(w)
       w.refreshView()
@@ -180,7 +182,7 @@ export function registerAppActions(): void {
     checked: () => ui.showMirrorLines
   })
   registerHandler('view.guides', {
-    run: () => (ui.showGuides = !ui.showGuides),
+    run: viewerFlag('showGuides'),
     checked: () => ui.showGuides
   })
   registerHandler('view.smartGuides', {
@@ -254,11 +256,16 @@ export function registerAppActions(): void {
       else if (clipboard) pasteFloating(ses(), clipboard.bitmap, clipboard.x, clipboard.y)
     }
   })
+  registerHandler('edit.copyImage', {
+    enabled: has,
+    run: () => void copyImageToClipboard(ws())
+  })
   registerHandler('edit.delete', {
     enabled: has,
     run: () => {
-      // con anclas seleccionadas (Selección directa) Supr elimina las anclas, no la forma
-      if (activeController?.shapes.deleteSelectedAnchors()) return
+      // con anclas seleccionadas (Selección directa o herramientas de trazados) Supr elimina las
+      // anclas, no la forma; con otra herramienta (p. ej. Selección) elimina las formas
+      if (ANCHOR_TOOLS.has(tools.active) && activeController?.shapes.deleteSelectedAnchors()) return
       if (ses().selectedShapes.length) removeShapes(ses(), ses().selectedShapes)
       else deletePixels(ses())
     }
@@ -409,6 +416,14 @@ export function registerAppActions(): void {
   registerHandler('anchor.toSmooth', {
     enabled: anchorsReady,
     run: () => void activeController?.shapes.convertSelectedAnchors(true)
+  })
+  registerHandler('anchor.handleIn', {
+    enabled: () => anchorsReady() && ui.anchorSides.in,
+    run: () => void activeController?.shapes.singleHandleSelected('in')
+  })
+  registerHandler('anchor.handleOut', {
+    enabled: () => anchorsReady() && ui.anchorSides.out,
+    run: () => void activeController?.shapes.singleHandleSelected('out')
   })
   registerHandler('object.centerAnchors', {
     enabled: shapesSelected,

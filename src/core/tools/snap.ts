@@ -197,6 +197,11 @@ export class GuideDrag {
  * entero. Devuelve null si la expresión no es válida.
  */
 export function evalGuideExpr(text: string, size: number): number | null {
+  return evalExpr(text, size)
+}
+
+/** Como `evalGuideExpr`, pero el `%` solo es válido si se da `percentOf` (campos numéricos de los paneles). */
+export function evalExpr(text: string, percentOf?: number): number | null {
   const src = text.trim().toLowerCase().replace(/,/g, '.')
   if (!src) return null
   let i = 0
@@ -211,7 +216,8 @@ export function evalGuideExpr(text: string, size: number): number | null {
     ws()
     if (src[i] === '%') {
       i++
-      v = (v * size) / 100
+      if (percentOf === undefined) return null
+      v = (v * percentOf) / 100
     } else if (src.startsWith('px', i)) i += 2
     return v
   }

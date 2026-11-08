@@ -122,7 +122,7 @@ export class CanvasController {
           ? { ...this.tools.symmetry }
           : undefined,
       onion: this.onionFrames(ws),
-      guides: useUiStore().showGuides ? (s.image.guides ?? []) : [],
+      guides: ws.ctx.showGuides ? (s.image.guides ?? []) : [],
       mirror: this.visibleMirror(ws),
       mask: s.selection.mask,
       marquee: m ? marqueeRect(m) : this.shapes.anchorMarqueeRect,
@@ -455,7 +455,7 @@ export class CanvasController {
 
   /** Guía a menos de 4 px de pantalla del puntero, si las guías son visibles. */
   private guideAt(ws: Workspace, sx: number, sy: number): { id: string; axis: 'h' | 'v' } | null {
-    if (!useUiStore().showGuides) return null
+    if (!ws.ctx.showGuides) return null
     const vp = ws.viewport
     for (const g of ws.session.image.guides ?? []) {
       const d =
@@ -465,6 +465,19 @@ export class CanvasController {
       if (d < 4) return { id: g.id, axis: g.axis }
     }
     return null
+  }
+
+  /** ¿Hay un arrastre o trazo en curso (puntero pulsado)? */
+  get dragging(): boolean {
+    return !!(
+      this.guideDrag ||
+      this.mirrorDrag ||
+      this.shapeActive ||
+      this.panning ||
+      this.stroke ||
+      this.marquee ||
+      this.move
+    )
   }
 
   cancelInteraction(): void {

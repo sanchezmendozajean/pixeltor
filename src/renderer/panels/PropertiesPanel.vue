@@ -12,6 +12,7 @@ import {
 } from '@core/index'
 import { useDocumentsStore } from '@/stores/documents'
 import { hexToRgba, rgbaToHex } from '@/stores/colorUtil'
+import BoxFields from '@/components/BoxFields.vue'
 import ColorButton from '@/components/ColorButton.vue'
 import { t } from '@/i18n'
 
@@ -117,6 +118,7 @@ function setOpacity(e: Event): void {
 <template>
   <div v-if="shape" class="props">
     <div class="pt-sectitle">{{ shape.name }}</div>
+    <BoxFields />
     <template v-if="shape.kind !== 'group'">
       <div class="row">
         <label class="chk">
@@ -189,7 +191,10 @@ function setOpacity(e: Event): void {
       />
     </div>
   </div>
-  <p v-else-if="count > 1" class="pt-sec2 empty">{{ t('properties.many', { n: count }) }}</p>
+  <div v-else-if="count > 1" class="props">
+    <div class="pt-sectitle">{{ t('properties.many', { n: count }) }}</div>
+    <BoxFields />
+  </div>
   <p v-else class="pt-sec2 empty">{{ t('panels.emptyProperties') }}</p>
 </template>
 

@@ -13,6 +13,7 @@ export class ViewerState {
   imageId: string | null = null
   pixelGrid = true
   showPaths = true
+  showGuides = true
   onion = false
   tiled: TileMode = 'none'
   /** Si está activo, comparte zoom y centro con los demás visores sincronizados. */
@@ -66,6 +67,7 @@ export class ViewerState {
   inherit(from: ViewerState): void {
     this.pixelGrid = from.pixelGrid
     this.showPaths = from.showPaths
+    this.showGuides = from.showGuides
     this.onion = from.onion
     this.tiled = from.tiled
     this.imageId = from.imageId
@@ -89,5 +91,6 @@ export function mirrorViewerFlags(ws: { activeViewer: ViewerState }): void {
   const v = ws.activeViewer
   ui.pixelGrid = v.pixelGrid
   ui.showPaths = v.showPaths
+  ui.showGuides = v.showGuides
   ui.onion.enabled = v.onion
 }

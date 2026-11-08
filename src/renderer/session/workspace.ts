@@ -131,6 +131,7 @@ export class Workspace {
           ...(x.imageId ? { imageId: x.imageId } : {}),
           pixelGrid: x.pixelGrid,
           showPaths: x.showPaths,
+          showGuides: x.showGuides,
           onion: x.onion,
           tiled: x.tiled,
           sync: x.sync,
@@ -156,6 +157,7 @@ export class Workspace {
         s.imageId && this.session.doc.images.some((i) => i.id === s.imageId) ? s.imageId : null
       v.pixelGrid = s.pixelGrid ?? true
       v.showPaths = s.showPaths ?? true
+      v.showGuides = s.showGuides ?? true
       v.onion = s.onion ?? false
       v.tiled = s.tiled ?? 'none'
       v.sync = s.sync ?? false

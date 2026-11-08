@@ -16,6 +16,36 @@ import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
 
 const ui = useUiStore()
+
+/** Arrastre de un divisor: `sign` indica hacia dónde crece la medida al mover el puntero. */
+function drag(
+  e: PointerEvent,
+  key: 'width' | 'propsH' | 'colorH',
+  axis: 'x' | 'y',
+  sign: 1 | -1
+): void {
+  const el = e.currentTarget as HTMLElement
+  const start = axis === 'x' ? e.clientX : e.clientY
+  const base = ui.dock[key]
+  try {
+    el.setPointerCapture(e.pointerId)
+  } catch {
+    /* puntero sintético */
+  }
+  const move = (ev: PointerEvent): void => {
+    const d = ((axis === 'x' ? ev.clientX : ev.clientY) - start) * sign
+    ui.setDockSize(key, base + d)
+  }
+  const up = (): void => {
+    el.removeEventListener('pointermove', move)
+    el.removeEventListener('pointerup', up)
+    el.removeEventListener('pointercancel', up)
+    ui.saveDockSize()
+  }
+  el.addEventListener('pointermove', move)
+  el.addEventListener('pointerup', up)
+  el.addEventListener('pointercancel', up)
+}
 /** Pestañas visibles según el espacio de trabajo; un grupo sin pestañas no se dibuja. */
 const shown = (tabs: PanelTab[]): PanelTab[] =>
   tabs.filter((x) => ui.panelsVisible.includes(x.id as never))
@@ -39,12 +69,23 @@ const color: PanelTab[] = [
 </script>
 
 <template>
-  <aside class="pt-dock" :aria-label="t('dock.label')">
-    <Panel v-if="shown(properties).length" :tabs="shown(properties)" :body-height="150">
+  <aside class="pt-dock" :style="{ width: `${ui.dock.width}px` }" :aria-label="t('dock.label')">
+    <div
+      class="pt-dock__edge"
+      data-testid="dock-edge"
+      @pointerdown.prevent="drag($event, 'width', 'x', -1)"
+    />
+    <Panel v-if="shown(properties).length" :tabs="shown(properties)" :body-height="ui.dock.propsH">
       <template #properties><PropertiesPanel /></template>
       <template #navigator><NavigatorPanel /></template>
       <template #history><HistoryPanel /></template>
     </Panel>
+    <div
+      v-if="shown(properties).length && shown(layers).length"
+      class="pt-dock__split"
+      data-testid="dock-split-props"
+      @pointerdown.prevent="drag($event, 'propsH', 'y', 1)"
+    />
     <Panel v-if="shown(layers).length" :tabs="shown(layers)">
       <template #layers><LayersPanel /></template>
       <template #appearance><AppearancePanel /></template>
@@ -60,7 +101,13 @@ const color: PanelTab[] = [
         </div>
       </template>
     </Panel>
-    <Panel v-if="shown(color).length" :tabs="shown(color)" :body-height="300">
+    <div
+      v-if="shown(color).length && (shown(layers).length || shown(properties).length)"
+      class="pt-dock__split"
+      data-testid="dock-split-color"
+      @pointerdown.prevent="drag($event, 'colorH', 'y', -1)"
+    />
+    <Panel v-if="shown(color).length" :tabs="shown(color)" :body-height="ui.dock.colorH">
       <template #color><ColorPanel /></template>
       <template #swatches><SwatchesPanel /></template>
       <template #gradient><GradientPanel /></template>

@@ -16,9 +16,11 @@ const ui = useUiStore()
 
 const usesSize = computed(() => tools.active === 'brush' || tools.active === 'eraser')
 const usesShape = usesSize
-const CONVERT_BUTTONS = [
+const CONVERT_BUTTONS: { id: string; icon: string; side?: 'in' | 'out' }[] = [
   { id: 'anchor.toCorner', icon: 'anchorCorner' },
-  { id: 'anchor.toSmooth', icon: 'anchorSmooth' }
+  { id: 'anchor.toSmooth', icon: 'anchorSmooth' },
+  { id: 'anchor.handleIn', icon: 'anchorHandleIn', side: 'in' },
+  { id: 'anchor.handleOut', icon: 'anchorHandleOut', side: 'out' }
 ]
 const ANCHOR_BUTTONS = [
   { id: 'object.addAnchors', icon: 'addAnchor', needsAnchors: false },
@@ -85,7 +87,7 @@ function onTolerance(e: Event): void {
         :key="b.id"
         type="button"
         class="pt-iconbtn pt-iconbtn--20"
-        :disabled="!ui.anchorCount"
+        :disabled="!ui.anchorCount || (b.side !== undefined && !ui.anchorSides[b.side])"
         :data-tip="actionLabel(b.id)"
         :aria-label="actionLabel(b.id)"
         @click="execute(b.id)"

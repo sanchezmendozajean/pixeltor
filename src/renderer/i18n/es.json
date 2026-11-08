@@ -41,6 +41,7 @@
       "cut": "Cortar",
       "copy": "Copiar",
       "paste": "Pegar",
+      "copyImage": "Copiar como imagen al portapapeles",
       "delete": "Borrar",
       "preferences": "Preferencias…"
     },
@@ -261,6 +262,8 @@
       "delete": "Eliminar anclas",
       "toCorner": "Anclas en esquina",
       "toSmooth": "Anclas suaves",
+      "handleIn": "Solo tirador de entrada (lado del ancla anterior)",
+      "handleOut": "Solo tirador de salida (lado del ancla siguiente)",
       "cut": "Cortar en las anclas",
       "join": "Unir anclas"
     }
@@ -513,10 +516,14 @@
       },
       "scope": "Imágenes",
       "scopes": {
-        "current": "Imagen actual",
-        "animation": "Las de la animación",
-        "all": "Todas"
+        "current": "Exportar la imagen actual",
+        "selected": "Seleccionar imágenes"
       },
+      "selectAll": "Seleccionar todas",
+      "selectNone": "Ninguna",
+      "selectedCount": "{n} de {total} seleccionadas",
+      "noneSelected": "Selecciona al menos una imagen.",
+      "icoTooBig": "El ICO admite como máximo 256 × 256 px",
       "layout": "Disposición",
       "layouts": {
         "horizontal": "Horizontal",
@@ -650,7 +657,17 @@
     "alignOutside": "Fuera",
     "radius": "Radio",
     "opacity": "Opacidad",
-    "many": "{n} formas seleccionadas"
+    "many": "{n} formas seleccionadas",
+    "origin": "Punto de referencia",
+    "lock": "Mantener proporción",
+    "x": "X",
+    "y": "Y",
+    "w": "An",
+    "h": "Al",
+    "posX": "Posición X",
+    "posY": "Posición Y",
+    "boxW": "Ancho",
+    "boxH": "Alto"
   },
   "appearance": {
     "edit": "Editar apariencia",

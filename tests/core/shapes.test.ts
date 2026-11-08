@@ -10,6 +10,13 @@ import {
   shapePaintsTarget,
   shapeTouchesRect,
   shapesColor,
+  shapesBox,
+  setSingleHandle,
+  anchorSides,
+  getShape,
+  type PathShape,
+  setShapesBox,
+  resolveShape,
   pasteShapes,
   removeShapes,
   color,
@@ -324,5 +331,95 @@ describe('selección por marco', () => {
     expect(shapeTouchesRect(s, id, { x0: 8, y0: 8, x1: 18, y1: 14 })).toBe(false)
     expect(shapeTouchesRect(s, id, { x0: 0, y0: 10, x1: 5, y1: 14 })).toBe(true)
     expect(shapeTouchesRect(s, id, { x0: 28, y0: 28, x1: 31, y1: 31 })).toBe(false)
+  })
+})
+
+describe('posición y tamaño de la selección', () => {
+  it('fija x, y, ancho y alto en un único paso deshacible', () => {
+    const s = DocumentSession.create(64, 64)
+    addShape(s, makeRect(4, 6, 10, 8, makeAppearance(RED, null)))
+    const id = s.selectedShapes[0]!
+    expect(setShapesBox(s, [id], { w: 20, h: 16 })).toBe(true)
+    expect(shapesBox(s, [id])).toEqual({ x: 4, y: 6, w: 20, h: 16 })
+    expect(setShapesBox(s, [id], { x: 30, y: 2 })).toBe(true)
+    expect(shapesBox(s, [id])).toEqual({ x: 30, y: 2, w: 20, h: 16 })
+    expect(count(renderShape(resolveShape(s, id)!, 64, 64))).toBe(320)
+    expect(setShapesBox(s, [id], { x: 30 })).toBe(false)
+    expect(setShapesBox(s, [id], { w: 0 })).toBe(false)
+    s.undo()
+    expect(shapesBox(s, [id])).toEqual({ x: 4, y: 6, w: 20, h: 16 })
+  })
+  it('mover un trazado no cambia su tamaño', () => {
+    const s = DocumentSession.create(64, 64)
+    addShape(
+      s,
+      makePath(
+        [{ anchors: [corner(10, 10), corner(30, 12), corner(20, 30)], closed: true }],
+        makeAppearance(RED, null)
+      )
+    )
+    const id = s.selectedShapes[0]!
+    const b = shapesBox(s, [id])!
+    setShapesBox(s, [id], { x: b.x + 5, y: b.y + 7 })
+    expect(shapesBox(s, [id])).toEqual({ ...b, x: b.x + 5, y: b.y + 7 })
+  })
+})
+
+describe('un solo tirador', () => {
+  const setup = (closed: boolean) => {
+    const s = DocumentSession.create(64, 64)
+    addShape(
+      s,
+      makePath(
+        [{ anchors: [corner(10, 10), corner(30, 12), corner(20, 30)], closed }],
+        makeAppearance(RED, null)
+      )
+    )
+    const id = s.selectedShapes[0]!
+    const anchor = (i: number) => (getShape(s, id) as PathShape).subpaths[0]!.anchors[i]!
+    return { s, id, anchor }
+  }
+  it('deja solo el tirador de salida o de entrada y es deshacible', () => {
+    const { s, id, anchor } = setup(true)
+    const ref = { shapeId: id, subpath: 0, index: 1 }
+    expect(setSingleHandle(s, [ref], 'out')).toBe(true)
+    expect(anchor(1).in).toBeNull()
+    expect(anchor(1).out).toBeTruthy()
+    expect(anchor(1).type).toBe('corner')
+    expect(setSingleHandle(s, [ref], 'in')).toBe(true)
+    expect(anchor(1).out).toBeNull()
+    expect(anchor(1).in).toBeTruthy()
+    s.undo()
+    expect(anchor(1).out).toBeTruthy()
+  })
+  it('en los extremos de un trazado abierto no aplica el lado que no existe', () => {
+    const { s, id, anchor } = setup(false)
+    const first = { shapeId: id, subpath: 0, index: 0 }
+    const last = { shapeId: id, subpath: 0, index: 2 }
+    expect(anchorSides(s, [first])).toEqual({ in: false, out: true })
+    expect(anchorSides(s, [last])).toEqual({ in: true, out: false })
+    expect(anchorSides(s, [first, last])).toEqual({ in: true, out: true })
+    expect(setSingleHandle(s, [first], 'in')).toBe(false)
+    expect(setSingleHandle(s, [last], 'out')).toBe(false)
+    expect(setSingleHandle(s, [first], 'out')).toBe(true)
+    expect(anchor(0).out).toBeTruthy()
+    expect(anchor(0).in).toBeNull()
+  })
+})
+
+describe('punto de referencia de la caja', () => {
+  it('X/Y se refieren al punto y el tamaño lo deja fijo', () => {
+    const s = DocumentSession.create(64, 64)
+    addShape(s, makeRect(10, 10, 20, 10, makeAppearance(RED, null)))
+    const id = s.selectedShapes[0]!
+    // centro: el centro (20, 15) pasa a (40, 30)
+    setShapesBox(s, [id], { x: 40, y: 30 }, { fx: 0.5, fy: 0.5 })
+    expect(shapesBox(s, [id])).toEqual({ x: 30, y: 25, w: 20, h: 10 })
+    // esquina inferior derecha fija (50, 35) al ensanchar
+    setShapesBox(s, [id], { w: 30, h: 20 }, { fx: 1, fy: 1 })
+    expect(shapesBox(s, [id])).toEqual({ x: 20, y: 15, w: 30, h: 20 })
+    // centro fijo al cambiar el tamaño
+    setShapesBox(s, [id], { w: 10 }, { fx: 0.5, fy: 0.5 })
+    expect(shapesBox(s, [id])).toEqual({ x: 30, y: 15, w: 10, h: 20 })
   })
 })

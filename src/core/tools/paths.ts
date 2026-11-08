@@ -14,7 +14,7 @@ import {
 import type { ID } from '../model/types'
 import { isPixelCentered, shapeLines } from '../render/shape'
 import type { DocumentSession } from '../session'
-import { findShape, layersOf } from './shapes'
+import { findShape, layersOf, translateMat } from './shapes'
 
 const K = 0.5522847498 // constante de Bézier para cuartos de círculo
 
@@ -551,6 +551,72 @@ export function deleteAnchor(s: DocumentSession, ref: AnchorRef): boolean {
   return true
 }
 
+/**
+ * ¿Qué lados admiten tirador en las anclas dadas? En un trazado abierto el primer ancla no tiene
+ * segmento de entrada y el último no tiene de salida.
+ */
+export function anchorSides(s: DocumentSession, refs: AnchorRef[]): { in: boolean; out: boolean } {
+  const out = { in: false, out: false }
+  for (const r of refs) {
+    const f = findShape(s, r.shapeId)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    const path = f.shape.kind === 'path' ? f.shape : toEditablePath(f.shape)
+    const sp = path.subpaths[r.subpath]
+    if (!sp) continue
+    if (sp.closed || r.index > 0) out.in = true
+    if (sp.closed || r.index < sp.anchors.length - 1) out.out = true
+  }
+  return out
+}
+
+/**
+ * Deja las anclas con un solo tirador: el de entrada (hacia el ancla anterior) o el de salida.
+ * El ancla pasa a esquina. Las anclas sin ese lado (extremos de un trazado abierto) no cambian.
+ */
+export function setSingleHandle(
+  s: DocumentSession,
+  refs: AnchorRef[],
+  side: 'in' | 'out'
+): boolean {
+  if (!refs.length) return false
+  const tx = s.begin(side === 'in' ? 'Tirador de entrada' : 'Tirador de salida')
+  let any = false
+  for (const r of refs) {
+    const f = findShape(s, r.shapeId)
+    if (!f || f.shape.kind === 'group' || f.layer.locked) continue
+    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
+    const sh = f.list[f.index] as PathShape
+    const sp = sh.subpaths[r.subpath]
+    const a = sp?.anchors[r.index]
+    if (!sp || !a) continue
+    const n = sp.anchors.length
+    const hasPrev = sp.closed || r.index > 0
+    const hasNext = sp.closed || r.index < n - 1
+    if (side === 'in' ? !hasPrev : !hasNext) continue
+    const prev = hasPrev ? sp.anchors[(r.index - 1 + n) % n]! : null
+    const next = hasNext ? sp.anchors[(r.index + 1) % n]! : null
+    // dirección de la tangente (como en un ancla suave) y largo según los vecinos
+    const dx = (next ?? a).p.x - (prev ?? a).p.x
+    const dy = (next ?? a).p.y - (prev ?? a).p.y
+    const len = Math.hypot(dx, dy) || 1
+    const d1 = prev ? Math.hypot(a.p.x - prev.p.x, a.p.y - prev.p.y) : 0
+    const d2 = next ? Math.hypot(next.p.x - a.p.x, next.p.y - a.p.y) : 0
+    const k = prev && next ? (d1 + d2) / 6 : (d1 + d2) / 3
+    if (side === 'out') {
+      a.out = { x: a.p.x + (dx / len) * k, y: a.p.y + (dy / len) * k }
+      a.in = null
+    } else {
+      a.in = { x: a.p.x - (dx / len) * k, y: a.p.y - (dy / len) * k }
+      a.out = null
+    }
+    a.type = 'corner'
+    any = true
+  }
+  if (!any) return false
+  tx.commit({ model: true })
+  return true
+}
+
 /** Convierte un ancla en esquina (sin tiradores) o en suave (tiradores según los vecinos). */
 export function convertAnchor(s: DocumentSession, ref: AnchorRef, smooth: boolean): boolean {
   const f = findShape(s, ref.shapeId)
@@ -703,6 +769,53 @@ export class ShapeScale {
   end(): boolean {
     return this.tx.commit({ model: true })
   }
+}
+
+/**
+ * Fija posición (x, y de la esquina superior izquierda) y/o tamaño (w, h) de la caja de la selección
+ * (panel Propiedades). Valores enteros; el escalado parte de la esquina superior izquierda. Un único
+ * paso de historial. Devuelve false si no cambia nada.
+ */
+export function setShapesBox(
+  s: DocumentSession,
+  ids: ID[],
+  t: { x?: number; y?: number; w?: number; h?: number },
+  /** Punto de referencia de la caja (0, 0,5 o 1 en cada eje): `x`, `y` se refieren a él y no se mueve al cambiar el tamaño. */
+  origin: { fx: number; fy: number } = { fx: 0, fy: 0 }
+): boolean {
+  const box = shapesBox(s, ids)
+  if (!box) return false
+  const w = Math.round(t.w ?? box.w)
+  const h = Math.round(t.h ?? box.h)
+  const x =
+    t.x === undefined && w === Math.round(box.w)
+      ? box.x
+      : Math.round((t.x ?? box.x + origin.fx * box.w) - origin.fx * w)
+  const y =
+    t.y === undefined && h === Math.round(box.h)
+      ? box.y
+      : Math.round((t.y ?? box.y + origin.fy * box.h) - origin.fy * h)
+  if (w < 1 || h < 1) return false
+  const dx = x - box.x
+  const dy = y - box.y
+  const sx = w / box.w
+  const sy = h / box.h
+  if (dx === 0 && dy === 0 && sx === 1 && sy === 1) return false
+  const sc = new ShapeScale(s, ids, box)
+  if (sx !== 1 || sy !== 1) sc.scaleBy({ x: box.x, y: box.y }, sx, sy)
+  if (dx !== 0 || dy !== 0) {
+    for (const id of ids) {
+      const f = findShape(s, id)
+      if (f) f.shape.transform = translateMat(f.shape.transform, dx, dy)
+    }
+    s.emit({
+      imageId: s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(s, ids)
+    })
+  }
+  return sc.end()
 }
 
 /** Rotación interactiva de la selección alrededor del centro de su caja. */

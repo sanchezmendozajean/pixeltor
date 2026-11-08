@@ -46,6 +46,8 @@ import {
   addShape,
   apply,
   convertAnchors,
+  anchorSides,
+  setSingleHandle,
   convertToPath,
   deleteAnchor,
   deleteAnchors,
@@ -255,11 +257,18 @@ export class ShapeTools {
   private pull: { ref: AnchorSel; sx: number; sy: number; pu: AnchorPull | null } | null = null
 
   private get anchorSel(): AnchorSel[] {
+    // las anclas de formas que ya no están seleccionadas se descartan (no deben recibir Supr, etc.)
+    const sel = this.getWs()?.session.selectedShapes ?? []
+    if (this.anchorList.some((a) => !sel.includes(a.shapeId)))
+      this.anchorSel = this.anchorList.filter((a) => sel.includes(a.shapeId))
     return this.anchorList
   }
   private set anchorSel(v: AnchorSel[]) {
     this.anchorList = v
-    useUiStore().anchorCount = v.length
+    const ui = useUiStore()
+    ui.anchorCount = v.length
+    const ws = this.getWs()
+    ui.anchorSides = ws ? anchorSides(ws.session, v) : { in: false, out: false }
   }
   /** Marco de selección de anclas (Selección directa en vacío). */
   /** Marco de selección de formas (herramienta V sobre el fondo), en px de imagen con decimales. */
@@ -316,6 +325,12 @@ export class ShapeTools {
   convertSelectedAnchors(smooth: boolean): boolean {
     const ws = this.getWs()
     return !!ws && convertAnchors(ws.session, this.anchorSel, smooth)
+  }
+
+  /** Deja un solo tirador (entrada o salida) en las anclas seleccionadas. */
+  singleHandleSelected(side: 'in' | 'out'): boolean {
+    const ws = this.getWs()
+    return !!ws && setSingleHandle(ws.session, this.anchorSel, side)
   }
 
   /** Corta los trazados en las anclas seleccionadas (tijeras). */
@@ -1328,7 +1343,11 @@ export class ShapeTools {
               const isSel = this.isAnchorSelected(sh.id, si, i)
               ;(isSel ? entry.selectedAnchors : entry.anchors).push(pt)
               // tiradores de las anclas seleccionadas y de sus vecinas
-              if (direct && (isSel || this.neighbourSelected(sh.id, si, i, sp.anchors.length)))
+              // (también con la Pluma, que edita anclas con Alt y al pulsarlas)
+              if (
+                (direct || tool === 'pen') &&
+                (isSel || this.neighbourSelected(sh.id, si, i, sp.anchors.length))
+              )
                 for (const part of ['in', 'out'] as const) {
                   const hp = a[part]
                   if (hp) entry.handles.push({ a: pt, b: apply(path.transform, hp) })
