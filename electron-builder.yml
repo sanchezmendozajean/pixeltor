@@ -45,4 +45,5 @@ linux:
     - target: deb
       arch: x64
   category: Graphics
+  maintainer: Pixeltor <jp.sanchez.6383@gmail.com>
   artifactName: ${productName}-${version}.${ext}
