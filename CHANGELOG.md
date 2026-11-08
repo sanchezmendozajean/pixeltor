@@ -4,8 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 ## [Sin publicar]
 
+## [0.8.1] — 2026-11-08
+
 ### Añadido
 
+- **Nuevo icono de la aplicación**: ICO y PNG en la ventana, los instaladores, la barra de título y el favicon de la web.
+- **Documentación**: captura de la interfaz en la sección «La interfaz» y logo de la cabecera de la web a su tamaño real (48 px, sin escalado borroso).
 - **Tamaño de lienzo** (Imagen › Tamaño de lienzo…): ancho, alto y ancla 3×3; recorta o amplía los rásters de todas las capas de la imagen activa y desplaza formas y guías. **Recortar a la selección** usa el mismo comando. Un solo paso deshacible.
 - **Tamaño de imagen** (Imagen › Tamaño de imagen…): escala la imagen por vecino más cercano, con opción de mantener la proporción; las formas se escalan con ella. Los grosores de contorno y los efectos conservan sus valores en píxeles.
 - **Combinar capas** (Capa › Combinar hacia abajo, Combinar visibles y Aplanar imagen): se compone con el mismo código que el visor, así que el render no cambia (hay pruebas); la capa resultante conserva el nombre de la base.
