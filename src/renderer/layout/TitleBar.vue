@@ -6,6 +6,8 @@ import { actionLabel, actionShortcut, execute, isEnabled } from '@/actions/regis
 import { switchWorkspace, workspaceEntries, workspaceName } from '@/app/workspaces'
 import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
+import icon16 from '@/assets/icon-16.png'
+import icon32 from '@/assets/icon-32.png'
 
 const ui = useUiStore()
 const menu = ref<{ x: number; y: number } | null>(null)
@@ -47,13 +49,14 @@ onBeforeUnmount(() => {
 <template>
   <header class="pt-titlebar pt-drag bar">
     <div class="pt-logo">
-      <svg width="16" height="16" viewBox="0 0 16 16" role="img" :aria-label="t('app.name')">
-        <path
-          class="px"
-          d="M3 2h2v12H3z M5 2h6v2H5z M11 3h2v1h-2z M12 4h1v4h-1z M11 4h1v5h-1z M5 7h6v2H5z"
-        />
-        <path class="vec" d="M2.5 14.5C7 14.5 13.5 12.5 14 2.5" />
-      </svg>
+      <img
+        class="logo"
+        :src="icon16"
+        :srcset="`${icon32} 2x`"
+        width="16"
+        height="16"
+        :alt="t('app.name')"
+      />
     </div>
     <MenuBar class="pt-nodrag" />
     <div class="pt-spacer" />
@@ -113,15 +116,9 @@ onBeforeUnmount(() => {
   /* Deja libre el área de los controles de ventana nativos (titleBarOverlay). */
   padding-right: calc(100% - env(titlebar-area-width, 100%) - env(titlebar-area-x, 0px));
 }
-.px {
-  fill: var(--accent);
-  shape-rendering: crispEdges;
-}
-.vec {
-  fill: none;
-  stroke: var(--brand-warm);
-  stroke-width: 1.5;
-  stroke-linecap: round;
+.logo {
+  display: block;
+  image-rendering: pixelated;
 }
 .workspace {
   width: 118px;
@@ -144,6 +141,14 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 10px;
   width: 14px;
+}
+.workspace,
+.search {
+  line-height: 1;
+}
+.workspace span,
+.search span {
+  line-height: 20px;
 }
 .grow {
   flex: 1;

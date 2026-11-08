@@ -1,9 +1,16 @@
-import { BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import { join, dirname } from 'node:path'
 import { TITLEBAR_HEIGHT, TITLEBAR_OVERLAY, type ThemeId } from '@shared/ipc'
 
 const here = dirname(fileURLToPath(import.meta.url))
+
+// En Windows se pasa el .ico para que el sistema elija el tamaño nítido (barra de tareas, Alt+Tab).
+// Empaquetado: extraResources copia los iconos junto a la app; en desarrollo se leen de resources/.
+const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+const icon = app.isPackaged
+  ? join(process.resourcesPath, iconFile)
+  : join(here, '../../resources', iconFile)
 
 const BACKGROUND: Record<ThemeId, string> = {
   oscuro: '#1F1F1F',
@@ -19,6 +26,7 @@ export function createMainWindow(theme: ThemeId): BrowserWindow {
     minHeight: 600,
     show: false,
     title: 'Pixeltor',
+    icon,
     backgroundColor: BACKGROUND[theme],
     titleBarStyle: 'hidden',
     titleBarOverlay: { ...TITLEBAR_OVERLAY[theme], height: TITLEBAR_HEIGHT },

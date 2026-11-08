@@ -9,6 +9,10 @@ files:
 extraResources:
   - from: resources/licenses
     to: licenses
+  - from: resources/icon.png
+    to: icon.png
+  - from: resources/icon.ico
+    to: icon.ico
 # Las versiones se publican como «releases» de GitHub; electron-updater lee latest*.yml de ahí.
 publish:
   provider: github
@@ -21,6 +25,7 @@ fileAssociations:
     description: Documento de Pixeltor
     role: Editor
 win:
+  icon: resources/icon.ico
   target:
     - target: nsis
       arch: x64
@@ -33,6 +38,7 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 linux:
+  icon: resources/icon.png
   target:
     - target: AppImage
       arch: x64
