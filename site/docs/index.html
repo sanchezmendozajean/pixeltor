@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentación — Pixeltor</title>
+<meta name="description" content="Guía de uso de Pixeltor: capas inteligentes, herramientas, efectos, animación, visores, exportación, formato .pixeltor y atajos de teclado.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../assets/icon.png" alt="" width="28" height="28">Pixeltor</a>
+    <nav class="nav" aria-label="Principal">
+      <a href="../#caracteristicas">Características</a>
+      <a href="./" aria-current="page" class="keep">Documentación</a>
+      <a class="btn primary" href="../#descargas">Descargar</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap docs">
+  <nav class="toc" aria-label="Índice de la documentación">
+    <input type="search" placeholder="Filtrar secciones…" aria-label="Filtrar secciones">
+    <h4>Empezar</h4>
+    <a href="#instalacion">Instalación</a>
+    <a href="#inicio-rapido">Inicio rápido</a>
+    <h4>Conceptos</h4>
+    <a href="#conceptos">Capas inteligentes</a>
+    <a href="#interfaz">La interfaz</a>
+    <h4>Herramientas</h4>
+    <a href="#herramientas">Herramientas</a>
+    <a href="#formas">Formas y trazados</a>
+    <a href="#color">Color y paletas</a>
+    <a href="#espejo">Espejo de capa</a>
+    <h4>Efectos</h4>
+    <a href="#efectos">Efectos no destructivos</a>
+    <a href="#estampar">Estampar y rasterizar</a>
+    <h4>Animación y vistas</h4>
+    <a href="#animacion">Animación</a>
+    <a href="#visores">Visores divididos</a>
+    <h4>Archivos</h4>
+    <a href="#exportar">Exportar</a>
+    <a href="#formato">Formato .pixeltor</a>
+    <a href="#historial">Historial y autoguardado</a>
+    <h4>Referencia</h4>
+    <a href="#atajos">Atajos de teclado</a>
+    <a href="#limites">Límites y novedades</a>
+  </nav>
+
+  <article id="contenido">
+    <h1>Documentación</h1>
+    <p>Guía de uso de Pixeltor, un editor de pixel art para Windows y Linux con capas inteligentes. Los atajos se muestran para Windows y Linux; todos se pueden cambiar en <em>Ayuda › Atajos de teclado…</em>.</p>
+
+    <h2 id="instalacion">Instalación</h2>
+    <p>Descarga la última versión desde la <a href="../#descargas">sección de descargas</a> o desde las <a href="https://github.com/sanchezmendozajean/pixeltor/releases">releases de GitHub</a>.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Plataforma</th><th>Formato</th><th>Cómo usarlo</th></tr>
+      <tr><td>Windows</td><td>Instalador <code>-setup.exe</code></td><td>Ejecútalo y elige la carpeta de instalación. Registra la extensión <code>.pixeltor</code> (doble clic para abrir) y se actualiza solo.</td></tr>
+      <tr><td>Windows</td><td>Portable <code>-portable.exe</code></td><td>No requiere instalación: ejecútalo directamente.</td></tr>
+      <tr><td>Linux</td><td><code>.AppImage</code></td><td><code>chmod +x Pixeltor-*.AppImage</code> y ejecútalo.</td></tr>
+      <tr><td>Linux (Debian/Ubuntu)</td><td><code>.deb</code></td><td><code>sudo apt install ./Pixeltor-*.deb</code></td></tr>
+    </table></div>
+    <p>En <em>Edición › Preferencias…</em> puedes activar o desactivar la actualización automática, elegir el tema (oscuro, gris o claro) y la escala de la interfaz.</p>
+
+    <h2 id="inicio-rapido">Inicio rápido</h2>
+    <ol>
+      <li>En la pantalla de bienvenida pulsa <strong>Nuevo</strong> (<kbd>Ctrl</kbd>+<kbd>N</kbd>) y elige un tamaño, por ejemplo 32×32 px, o abre un reciente.</li>
+      <li>Selecciona el <strong>Lápiz</strong> (<kbd>N</kbd>) y pinta sobre el lienzo. Amplía con <kbd>Ctrl</kbd>+<kbd>+</kbd> o con la rueda.</li>
+      <li>Dibuja una forma con <strong>Rectángulo</strong> (<kbd>M</kbd>) o <strong>Elipse</strong> (<kbd>L</kbd>) y cambia su relleno y contorno en el panel <em>Apariencia</em>.</li>
+      <li>Añade un efecto, por ejemplo una <em>Sombra paralela</em>, desde el menú <em>Efecto</em>.</li>
+      <li>Guarda con <kbd>Ctrl</kbd>+<kbd>S</kbd> y exporta con <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>.</li>
+    </ol>
+
+    <h2 id="conceptos">Capas inteligentes</h2>
+    <p>Un <strong>documento</strong> (<code>.pixeltor</code>) contiene una o más <strong>imágenes</strong>. Cada imagen es un lienzo de W×H px con una pila de <strong>capas</strong>. Cada capa tiene tres partes:</p>
+    <div class="tablewrap"><table>
+      <tr><th>Parte</th><th>Qué es</th></tr>
+      <tr><td><strong>Ráster base</strong></td><td>El mapa de bits RGBA de la capa. Aquí actúan lápiz, pincel, borrador y bote de pintura.</td></tr>
+      <tr><td><strong>Formas</strong></td><td>Objetos vectoriales (rectángulo, elipse, línea, polígono, estrella, trazado) que se rasterizan en vivo, siempre pixel-perfect, sin suavizado. Mantienen su trazado editable.</td></tr>
+      <tr><td><strong>Efectos</strong></td><td>Transformaciones no destructivas sobre una forma o sobre toda la capa.</td></tr>
+    </table></div>
+    <p>El orden de composición dentro de una capa es: <strong>ráster base (abajo) → formas en su orden z → efectos de capa</strong>. Pintar con el pincel afecta siempre al ráster base, que queda debajo de las formas de esa misma capa; para pintar encima de una forma usa una capa superior.</p>
+    <div class="callout"><p><strong>Principio clave:</strong> lo que ves en el lienzo es exactamente lo que se exporta, y el resultado es determinista: el mismo documento produce los mismos bytes en cualquier plataforma.</p></div>
+
+    <h2 id="interfaz">La interfaz</h2>
+    <ul>
+      <li><strong>Barra de herramientas</strong> (izquierda): herramientas agrupadas con flyouts; el número de columnas es configurable.</li>
+      <li><strong>Barra de control</strong> (arriba): opciones contextuales de la herramienta activa.</li>
+      <li><strong>Paneles acoplables</strong> (derecha): Capas, Apariencia, Color, Paletas, Navegador, Efectos, etc. Se pueden reorganizar y guardar como <em>espacios de trabajo</em>.</li>
+      <li><strong>Panel Imágenes / Animación</strong> (abajo): tira de imágenes con duración en ms y controles de reproducción.</li>
+      <li><strong>Pestañas de documento</strong> y <strong>barra de estado</strong> con zoom, tamaño de imagen y ajuste a cuadrícula.</li>
+      <li><strong>Guías</strong>: arrástralas desde las reglas; doble clic en una guía abre un diálogo de posición que admite expresiones como <code>100%</code> o <code>100% - 10</code>.</li>
+      <li><strong>Vista previa</strong> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd>): oculta trazados, cuadrícula y guías para ver el resultado limpio.</li>
+    </ul>
+
+    <h2 id="herramientas">Herramientas</h2>
+    <div class="tablewrap"><table>
+      <tr><th>Grupo</th><th>Herramienta</th><th>Atajo</th></tr>
+      <tr><td rowspan="3">Selección</td><td>Selección (mover/escalar formas y capas)</td><td><kbd>V</kbd></td></tr>
+      <tr><td>Selección directa (anclas y tiradores)</td><td><kbd>A</kbd></td></tr>
+      <tr><td>Selección de grupo</td><td>—</td></tr>
+      <tr><td rowspan="4">Selección de píxeles</td><td>Marco rectangular / elíptico</td><td><kbd>S</kbd> / <kbd>Shift</kbd>+<kbd>S</kbd></td></tr>
+      <tr><td>Lazo y lazo poligonal</td><td><kbd>Q</kbd></td></tr>
+      <tr><td>Varita mágica (tolerancia, contigua, todas las capas)</td><td><kbd>W</kbd></td></tr>
+      <tr><td>Recortar a la selección</td><td>menú Imagen</td></tr>
+      <tr><td rowspan="6">Pintura</td><td>Lápiz (1 px, pixel-perfect)</td><td><kbd>N</kbd></td></tr>
+      <tr><td>Pincel (tamaño, forma, opacidad, tramado)</td><td><kbd>B</kbd></td></tr>
+      <tr><td>Borrador</td><td><kbd>E</kbd></td></tr>
+      <tr><td>Bote de pintura</td><td><kbd>K</kbd></td></tr>
+      <tr><td>Reemplazar color</td><td><kbd>Shift</kbd>+<kbd>K</kbd></td></tr>
+      <tr><td>Sombreado (aclara/oscurece por la rampa de la paleta)</td><td><kbd>Shift</kbd>+<kbd>B</kbd></td></tr>
+      <tr><td rowspan="7">Vectores</td><td>Pluma (+ añadir / eliminar / convertir ancla)</td><td><kbd>P</kbd>, <kbd>+</kbd>, <kbd>-</kbd>, <kbd>Shift</kbd>+<kbd>C</kbd></td></tr>
+      <tr><td>Línea</td><td><kbd>\</kbd></td></tr>
+      <tr><td>Rectángulo (y redondeado)</td><td><kbd>M</kbd></td></tr>
+      <tr><td>Elipse</td><td><kbd>L</kbd></td></tr>
+      <tr><td>Polígono, Estrella</td><td>flyout</td></tr>
+      <tr><td>Lápiz vectorial (mano alzada simplificada)</td><td><kbd>Shift</kbd>+<kbd>N</kbd></td></tr>
+      <tr><td>Degradado (edición en el lienzo)</td><td><kbd>G</kbd></td></tr>
+      <tr><td>Color</td><td>Cuentagotas (capa actual o composición)</td><td><kbd>I</kbd></td></tr>
+      <tr><td rowspan="2">Navegación</td><td>Mano</td><td><kbd>H</kbd> o <kbd>Espacio</kbd></td></tr>
+      <tr><td>Zoom</td><td><kbd>Z</kbd></td></tr>
+    </table></div>
+
+    <h3>Operaciones de imagen y capa</h3>
+    <ul>
+      <li><strong>Tamaño de lienzo</strong> (Imagen › Tamaño de lienzo…): ancho, alto y ancla 3×3; recorta o amplía todas las capas.</li>
+      <li><strong>Tamaño de imagen</strong>: escala por vecino más cercano con opción de mantener proporción.</li>
+      <li><strong>Combinar</strong> hacia abajo, combinar visibles y aplanar imagen: usan el mismo código de composición que el visor, así que el render no cambia.</li>
+      <li><strong>Grupos de capas</strong> (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>): componen a sus miembros en un búfer propio.</li>
+    </ul>
+
+    <h2 id="formas">Formas y trazados</h2>
+    <p>Las formas son vectores que se muestran pixelados. Cada una tiene una <strong>Apariencia</strong>: una pila ordenada de <strong>rellenos</strong> y <strong>contornos</strong> (varios de cada uno), como el panel Apariencia de Illustrator, con degradados y tramado.</p>
+    <ul>
+      <li><strong>Anclas y tiradores</strong>: con Selección directa (<kbd>A</kbd>) mueve anclas y curvas. Las anclas y los tiradores caen siempre en el <em>centro de un píxel</em>, de modo que el contorno y lo pintado coinciden.</li>
+      <li><strong>Convertir en trazado</strong>: transforma una forma paramétrica en trazado editable. <em>Objeto › Centrar anclas en los píxeles</em> corrige formas antiguas.</li>
+      <li><strong>Buscatrazos</strong> (Objeto › Buscatrazos): unir, restar la forma frontal, intersecar y excluir, en un solo paso deshacible.</li>
+      <li><strong>Agrupar</strong> (<kbd>Ctrl</kbd>+<kbd>G</kbd>), ordenar (<kbd>Ctrl</kbd>+<kbd>]</kbd> / <kbd>[</kbd>), duplicar con <kbd>Alt</kbd>+arrastrar y alinear.</li>
+      <li><strong>Ajuste</strong>: <em>Ajustar al píxel</em> (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>'</kbd>) y guías inteligentes (<kbd>Ctrl</kbd>+<kbd>U</kbd>).</li>
+    </ul>
+
+    <h2 id="color">Color y paletas</h2>
+    <p>El color se trabaja en RGBA de 8 bits. Los paneles Color y Paletas permiten guardar y organizar colores; el Sombreado recorre la rampa de la paleta. Los degradados admiten <strong>tramado (dithering)</strong> para mantener el aspecto pixelado, y el efecto <em>Reducir a paleta</em> cuantiza el resultado a una paleta con o sin tramado.</p>
+
+    <h2 id="espejo">Espejo de capa</h2>
+    <p>El modificador <strong>Espejo</strong> de una capa refleja lo que pintas según un eje <em>vertical, horizontal o diagonal</em>. Los ejes son arrastrables en el lienzo y <em>Ver líneas espejo</em> los muestra u oculta. Es ideal para sprites simétricos.</p>
+
+    <h2 id="efectos">Efectos no destructivos</h2>
+    <p>Los efectos se aplican a una forma o a una capa completa. Nunca modifican el ráster base: puedes reordenarlos, ajustarlos o quitarlos en cualquier momento. Todas las distancias son enteras en píxeles.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Categoría</th><th>Efectos</th></tr>
+      <tr><td>Sombras e iluminación</td><td>Sombra paralela, sombra interior, sombra larga, resplandor exterior e interior, iluminación direccional (sombreado automático por bordes), bisel</td></tr>
+      <tr><td>Contornos</td><td>Contorno de píxel (grosor 1–8, exterior/interior, conectividad 4 u 8)</td></tr>
+      <tr><td>Desenfoque</td><td>Gaussiano, de caja, de movimiento</td></tr>
+      <tr><td>Distorsión</td><td>Onda, ondulación, torsión, desplazamiento (con envolver para tiles), pixelar/mosaico</td></tr>
+      <tr><td>Color</td><td>Tono/Saturación/Luminosidad, brillo/contraste, mapa de degradado, reemplazar colores (variantes de paleta), posterizar/reducir a paleta, invertir, superposición de color</td></tr>
+    </table></div>
+    <p>Las distorsiones muestrean por vecino más cercano. Un efecto de <strong>capa</strong> se calcula sobre <em>ráster base + formas</em>, que siguen siendo editables.</p>
+
+    <h2 id="estampar">Estampar y rasterizar</h2>
+    <p>Son las operaciones destructivas, siempre explícitas y deshacibles. <strong>Estampar</strong> convierte una forma (con su apariencia y efectos) en píxeles del ráster base y elimina el vector.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Comando</th><th>Atajo</th></tr>
+      <tr><td>Estampar formas seleccionadas</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td></tr>
+      <tr><td>Estampar todas las formas de la capa</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td></tr>
+      <tr><td>Rasterizar efectos de capa</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>E</kbd></td></tr>
+    </table></div>
+    <div class="callout"><p>Estampar o rasterizar <strong>no cambia cómo se ve la imagen</strong>: el render antes y después es idéntico. Solo cambia lo que sigue siendo editable.</p></div>
+
+    <h2 id="animacion">Animación</h2>
+    <p>Un documento puede tener varias imágenes; cada una tiene una <strong>duración en milisegundos</strong>. En orden forman una animación, o simplemente una colección (por ejemplo iconos de 16, 32 y 48 px; las imágenes pueden tener tamaños distintos).</p>
+    <ul>
+      <li><strong>Nueva imagen</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd>. Navega con <kbd>,</kbd> y <kbd>.</kbd>.</li>
+      <li><strong>Tira de imágenes</strong>: miniaturas con duración editable; arrastra para reordenar y <kbd>Alt</kbd>+arrastrar para duplicar. Selección múltiple con <kbd>Shift</kbd>/<kbd>Ctrl</kbd>.</li>
+      <li><strong>Reproducción</strong>: bucle, ping-pong o una vez; velocidades de 0,25× a 2×. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> reproduce o pausa.</li>
+      <li><strong>Papel cebolla</strong> (<kbd>O</kbd>): muestra imágenes anteriores y siguientes semitransparentes, con tinte rojo/azul. Es solo una ayuda visual; nunca se exporta.</li>
+    </ul>
+
+    <h2 id="visores">Visores divididos</h2>
+    <p>Como en Blender, el área de trabajo se puede dividir en hasta <strong>4 visores</strong> del mismo documento. Cada uno tiene su propio zoom y <strong>edición completa</strong>; el resultado aparece en todos al instante.</p>
+    <ul>
+      <li>Dividir vertical: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd> · horizontal: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd>. Arrastra los separadores; doble clic los iguala.</li>
+      <li>La cabecera de cada visor permite <strong>fijar una imagen</strong>, ajustar zoom, cuadrícula de píxeles, trazados, papel cebolla y reproducir solo ahí.</li>
+      <li><strong>Modo mosaico</strong>: repite la imagen 3×3 para comprobar que un tile encaja; puedes editar en cualquier copia.</li>
+    </ul>
+    <p>Caso típico: un visor al 1200 % para pintar y otro al 100 % para ver el resultado real.</p>
+
+    <h2 id="exportar">Exportar</h2>
+    <p><em>Archivo › Exportar como…</em> (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>) muestra una vista previa y las opciones. <em>Exportar de nuevo</em> (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) repite la última configuración. Exportar no modifica el documento.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Formato</th><th>Notas</th></tr>
+      <tr><td>PNG</td><td>RGBA de 8 bits, o indexado si hay 256 colores o menos.</td></tr>
+      <tr><td>Secuencia PNG</td><td>Un archivo por imagen.</td></tr>
+      <tr><td>Hoja de sprites</td><td>Horizontal, vertical, rejilla o empaquetada; relleno y extrusión; JSON de metadatos compatible con TexturePacker/Aseprite.</td></tr>
+      <tr><td>GIF animado</td><td>Duración por imagen (redondeada a 10 ms, con aviso), bucle y umbral de transparencia.</td></tr>
+      <tr><td>APNG</td><td>Animación con alfa completo.</td></tr>
+      <tr><td>ICO</td><td>Combina imágenes de varios tamaños (hasta 256 px) en un solo icono.</td></tr>
+    </table></div>
+    <p>Opciones comunes: qué imágenes exportar, <strong>escala</strong> entera (×1 a ×16, siempre vecino más cercano, con varios tamaños a la vez), recorte al contenido, fondo transparente o de color y plantilla de nombre <code>{doc}_{image}_{index}{scale}</code>.</p>
+    <h3>Importar</h3>
+    <p>Abre imágenes PNG y otros formatos de mapa de bits como capas o documentos nuevos, y los documentos <code>.pixeltor</code> con doble clic.</p>
+
+    <h2 id="formato">Formato .pixeltor</h2>
+    <p>Es un archivo <strong>ZIP</strong> con JSON y PNG, versionado y abierto, de modo que puedes inspeccionarlo o procesarlo con otras herramientas.</p>
+<pre><code>mi-sprite.pixeltor
+├─ mimetype          application/x-pixeltor
+├─ manifest.json     versión del formato, app, recursos, checksums
+├─ document.json     modelo completo (sin buffers de píxeles)
+├─ rasters/          un PNG RGBA sin pérdidas por cada ráster base
+├─ thumbnails/       miniaturas del documento y de cada imagen
+└─ ui.json           (opcional) visores, zoom, imagen activa</code></pre>
+    <p>Los rásters totalmente transparentes no se guardan. Los archivos antiguos se migran al abrirlos.</p>
+
+    <h2 id="historial">Historial y autoguardado</h2>
+    <ul>
+      <li><strong>Deshacer / rehacer</strong>: <kbd>Ctrl</kbd>+<kbd>Z</kbd> y <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>. Todo cambio al documento es un comando deshacible.</li>
+      <li><strong>Recientes</strong> en la pantalla de bienvenida; el diálogo Abrir recuerda la última carpeta.</li>
+      <li><strong>Preferencias</strong> y atajos personalizados se guardan en los ajustes de la aplicación.</li>
+    </ul>
+
+    <h2 id="atajos">Atajos de teclado</h2>
+    <p>Los atajos de herramientas están en la <a href="#herramientas">tabla de herramientas</a>. Comandos generales:</p>
+    <div class="tablewrap"><table>
+      <tr><th>Comando</th><th>Atajo</th></tr>
+      <tr><td>Nuevo / Abrir / Guardar / Guardar como</td><td><kbd>Ctrl</kbd>+<kbd>N</kbd> / <kbd>O</kbd> / <kbd>S</kbd> / <kbd>Shift</kbd>+<kbd>S</kbd></td></tr>
+      <tr><td>Deshacer / Rehacer</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> (o <kbd>Ctrl</kbd>+<kbd>Y</kbd>)</td></tr>
+      <tr><td>Duplicar capa</td><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td></tr>
+      <tr><td>Nueva capa</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd></td></tr>
+      <tr><td>Agrupar / desagrupar formas</td><td><kbd>Ctrl</kbd>+<kbd>G</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
+      <tr><td>Traer adelante / al frente</td><td><kbd>Ctrl</kbd>+<kbd>]</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>]</kbd></td></tr>
+      <tr><td>Enviar atrás / al fondo</td><td><kbd>Ctrl</kbd>+<kbd>[</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>[</kbd></td></tr>
+      <tr><td>Cuadrícula de píxeles</td><td><kbd>Ctrl</kbd>+<kbd>'</kbd></td></tr>
+      <tr><td>Mostrar/ocultar guías</td><td><kbd>Ctrl</kbd>+<kbd>;</kbd></td></tr>
+      <tr><td>Ocultar trazados</td><td><kbd>Ctrl</kbd>+<kbd>H</kbd></td></tr>
+      <tr><td>Zoom 100 % / Encajar / Acercar / Alejar</td><td><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>0</kbd> / <kbd>+</kbd> / <kbd>-</kbd></td></tr>
+      <tr><td>Papel cebolla</td><td><kbd>O</kbd></td></tr>
+    </table></div>
+
+    <h2 id="limites">Límites y novedades</h2>
+    <ul>
+      <li>Tamaño máximo de imagen: <strong>2048×2048 px</strong> (fluido hasta 1024×1024).</li>
+      <li>Hasta 4 visores por documento.</li>
+    </ul>
+    <div class="callout warn"><p><strong>Todavía no disponible:</strong> rotación de la vista y exportación a WebP animado están planificadas pero diferidas. Tampoco hay texto con fuentes TrueType, interpolación de formas ni colaboración en tiempo real.</p></div>
+    <p>El historial completo de cambios está en el <a href="https://github.com/sanchezmendozajean/pixeltor/blob/master/CHANGELOG.md">CHANGELOG</a>. ¿Encontraste un error? <a href="https://github.com/sanchezmendozajean/pixeltor/issues">Abre una incidencia</a>.</p>
+  </article>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© Pixeltor</span>
+    <span><a href="../">Inicio</a> · <a href="https://github.com/sanchezmendozajean/pixeltor">GitHub</a></span>
+  </div>
+</footer>
+<script src="../js/site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixeltor — Editor de pixel art con capas inteligentes</title>
+<meta name="description" content="Editor de pixel art para Windows y Linux: capas con formas vectoriales pixel-perfect, efectos no destructivos, animación y visores divididos.">
+<link rel="icon" href="favicon.ico">
+<link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/icon.png" alt="" width="28" height="28">Pixeltor</a>
+    <nav class="nav" aria-label="Principal">
+      <a href="#caracteristicas">Características</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="docs/" class="keep">Documentación</a>
+      <a class="btn primary" href="#descargas">Descargar</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Windows · Linux · <span data-version>v0.8</span></span>
+        <h1>Pixel art con capas que piensan.</h1>
+        <p class="lead">Pinta píxel a píxel, dibuja formas vectoriales que siempre se ven nítidas y añade sombras, resplandores y distorsiones sin destruir nada. Lo que ves en el lienzo es exactamente lo que se exporta.</p>
+        <div class="cta">
+          <a class="btn primary lg" href="#descargas">Descargar Pixeltor</a>
+          <a class="btn lg" href="docs/">Leer la documentación</a>
+        </div>
+        <p class="meta">Gratis · Instalador, versión portable, AppImage y .deb</p>
+      </div>
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar"><i></i><i></i><i></i><span style="margin-left:8px">gema.pixeltor — Pixeltor</span></div>
+        <div class="mock-body">
+          <div class="mock-tools"><b class="on"></b><b></b><b></b><b></b><b></b><b></b></div>
+          <div class="mock-canvas"><span data-pixelart style="display:contents"></span></div>
+          <div class="mock-panel">
+            <h6>Capas</h6>
+            <div class="row sel"><span class="sw"></span>Gema</div>
+            <div class="row"><span class="sw"></span>Brillo</div>
+            <div class="row"><span class="sw"></span>Fondo</div>
+            <h6>Efectos</h6>
+            <div class="row">Sombra paralela</div>
+            <div class="row">Contorno de píxel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="caracteristicas">
+    <div class="wrap">
+      <h2>Todo lo que un editor de pixel art necesita, y un poco más</h2>
+      <p class="sub">Pixeltor une el flujo de los editores de pixel art con la flexibilidad de las herramientas vectoriales, sin los bordes suavizados.</p>
+      <div class="grid">
+        <div class="card"><div class="ico">▦</div><h3>Capas inteligentes</h3><p>Cada capa combina un ráster pintable, formas vectoriales y efectos. Las formas se rasterizan en vivo, pixel-perfect, y siguen siendo editables.</p></div>
+        <div class="card"><div class="ico">✒</div><h3>Formas y trazados</h3><p>Pluma, rectángulos, elipses, polígonos, estrellas, anclas y tiradores. Rellenos y contornos múltiples, degradados con tramado y Buscatrazos.</p></div>
+        <div class="card"><div class="ico">fx</div><h3>Efectos no destructivos</h3><p>Sombras, resplandores, contornos de píxel, desenfoques, ondas, mosaico y ajustes de color que nunca tocan tu ráster original.</p></div>
+        <div class="card"><div class="ico">▶</div><h3>Animación</h3><p>Varias imágenes por archivo con duración en milisegundos, papel cebolla y exportación a GIF, APNG, hojas de sprites y secuencias PNG.</p></div>
+        <div class="card"><div class="ico">◫</div><h3>Visores divididos</h3><p>Edita al 1200 % en un visor y comprueba el resultado al 100 % en otro. Cada visor permite edición completa, con modo mosaico para tiles.</p></div>
+        <div class="card"><div class="ico">⇋</div><h3>Espejo de capa</h3><p>Reflejo vertical, horizontal y diagonal con ejes arrastrables para dibujar sprites simétricos en la mitad de tiempo.</p></div>
+        <div class="card"><div class="ico">⌨</div><h3>Teclado primero</h3><p>Atajos para todo, personalizables y compatibles con la ergonomía de Illustrator, más paleta de comandos.</p></div>
+        <div class="card"><div class="ico">⬒</div><h3>Exporta como quieras</h3><p>PNG, ICO multitamaño, GIF, APNG y hojas de sprites con metadatos, a escalas ×1 a ×16 con vecino más cercano.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="como-funciona">
+    <div class="wrap">
+      <h2>Cómo funciona</h2>
+      <p class="sub">Una idea sencilla: lo vivo se queda vivo hasta que tú decides convertirlo en píxeles.</p>
+      <ol class="steps">
+        <li><strong>Pinta o dibuja</strong><span>Usa lápiz, pincel y cubo sobre el ráster, o crea formas vectoriales que se ven como píxeles nítidos.</span></li>
+        <li><strong>Añade efectos</strong><span>Aplica sombra, contorno o resplandor a una forma o a toda la capa. Cambia el sprite y el efecto se recalcula solo.</span></li>
+        <li><strong>Estampa cuando quieras</strong><span>Estampar convierte formas y efectos en píxeles del ráster. Es la única operación destructiva y siempre se puede deshacer.</span></li>
+        <li><strong>Exporta</strong><span>El resultado exportado es idéntico, byte a byte, a lo que se ve en el lienzo.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="descargas">
+    <div class="wrap">
+      <h2>Descargar <span data-version></span></h2>
+      <p class="sub">Elige tu plataforma. Las descargas salen de la última versión publicada en GitHub.</p>
+      <div class="dl">
+        <div class="card"><h3>Windows · Instalador</h3><p>Instalador NSIS con asociación de archivos <code>.pixeltor</code> y actualización automática.</p><span class="tag" data-size>Pixeltor-setup.exe</span><a class="btn primary" data-asset="setup\.exe$" href="https://github.com/sanchezmendozajean/pixeltor/releases/latest">Descargar .exe</a></div>
+        <div class="card"><h3>Windows · Portable</h3><p>Un solo ejecutable, sin instalación. Ideal para llevar en una memoria USB.</p><span class="tag" data-size>Pixeltor-portable.exe</span><a class="btn" data-asset="portable\.exe$" href="https://github.com/sanchezmendozajean/pixeltor/releases/latest">Descargar portable</a></div>
+        <div class="card"><h3>Linux · AppImage</h3><p>Funciona en la mayoría de distribuciones. Dale permisos de ejecución y ábrelo.</p><span class="tag" data-size>Pixeltor.AppImage</span><a class="btn" data-asset="\.AppImage$" href="https://github.com/sanchezmendozajean/pixeltor/releases/latest">Descargar AppImage</a></div>
+        <div class="card"><h3>Linux · .deb</h3><p>Paquete para Debian, Ubuntu y derivadas.</p><span class="tag" data-size>Pixeltor.deb</span><a class="btn" data-asset="\.deb$" href="https://github.com/sanchezmendozajean/pixeltor/releases/latest">Descargar .deb</a></div>
+      </div>
+      <p class="note">¿Otra versión? Consulta <a href="https://github.com/sanchezmendozajean/pixeltor/releases">todas las versiones</a>. Instrucciones de instalación en la <a href="docs/#instalacion">documentación</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© Pixeltor · Interfaz en español</span>
+    <span><a href="docs/">Documentación</a> · <a href="https://github.com/sanchezmendozajean/pixeltor">GitHub</a> · <a href="https://github.com/sanchezmendozajean/pixeltor/releases">Versiones</a></span>
+  </div>
+</footer>
+<script src="js/site.js" defer></script>
+</body>
+</html>
