@@ -31,7 +31,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # electron-builder crea la release como borrador con el nombre de la etiqueta como texto;
-  # aquí se sustituye por la sección de esa versión del CHANGELOG.
+  # aquí se sustituye por la sección de esa versión del CHANGELOG y se publica (draft=false), ya
+  # con los instaladores de Windows y Linux adjuntos.
   notes:
     needs: publish
     runs-on: ubuntu-latest
@@ -44,4 +45,4 @@ jobs:
         run: |
           node scripts/release-notes.mjs "$TAG" > notes.md
           id=$(gh api "repos/${{ github.repository }}/releases?per_page=20" --jq ".[] | select(.tag_name==\"$TAG\") | .id" | head -n1)
-          gh api -X PATCH "repos/${{ github.repository }}/releases/$id" -F body=@notes.md
+          gh api -X PATCH "repos/${{ github.repository }}/releases/$id" -F body=@notes.md -F draft=false
