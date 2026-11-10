@@ -547,6 +547,10 @@ export class ShapeTools {
           if (addAnchorAt(s, id, p.fx, p.fy, 6 / vp.zoom + 1)) return
       }
       const pt = { x: p.x + 0.5, y: p.y + 0.5 }
+      // Cada ancla se imanta a guías/lienzo/objetos (por eje); si no hay imán, centro de píxel.
+      const q = this.snapPt(pt.x, pt.y, [])
+      pt.x = q.x
+      pt.y = q.y
       this.pen ??= { anchors: [], dragging: false, base: 0 }
       const first = this.pen.anchors[0]
       if (first && this.pen.anchors.length >= 3 && near(first.p)) {
@@ -1275,9 +1279,13 @@ export class ShapeTools {
 
   hover(x: number, y: number, tool: string): void {
     const ws = this.getWs()
-    if (ws && tool === 'pen' && this.pen?.anchors.length && !this.pen.dragging) {
-      this.penHover = { x: x + 0.5, y: y + 0.5 }
-      this.setPreview(ws, this.penShape())
+    if (ws && tool === 'pen' && !this.pen?.dragging) {
+      // También antes de la primera ancla: las líneas de ajuste muestran dónde caerá
+      const q = this.snapPt(x + 0.5, y + 0.5, [])
+      if (this.pen?.anchors.length) {
+        this.penHover = q
+        this.setPreview(ws, this.penShape())
+      }
     }
     this.hoverId =
       ws && ['sel', 'dsel', 'pen', 'addAnchor'].includes(tool) ? hitShape(ws.session, x, y) : null
