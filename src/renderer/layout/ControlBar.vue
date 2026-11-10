@@ -1,6 +1,9 @@
 <script setup lang="ts">
 // Barra de control contextual: opciones de la herramienta activa, colores y opacidad de la capa.
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { activePalette, colorHex } from '@core/index'
+import { openColorDialog } from '@/app/colorDialog'
+import { setWorkingColor } from '@/app/colorOps'
 import PtIcon from '@/components/PtIcon.vue'
 import { actionIcon, actionLabel, execute } from '@/actions/registry'
 import { useColorsStore } from '@/stores/colors'
@@ -41,6 +44,51 @@ const usesSample = computed(() => usesFill.value || tools.active === 'eyedrop')
 
 const layer = computed(() => docs.layers.find((l) => l.active))
 const opacityPct = computed(() => Math.round((layer.value?.opacity ?? 1) * 100))
+
+// Desplegable de muestras bajo los indicadores de relleno y contorno
+const swOpen = ref<'fill' | 'stroke' | null>(null)
+const swPos = ref({ left: 0, top: 0 })
+const swatches = computed(() => {
+  void docs.rev
+  return docs.session ? [...activePalette(docs.session).swatches] : []
+})
+const swHex = (c: { r: number; g: number; b: number }): string =>
+  `#${colorHex({ ...c, a: 255 })}`.toUpperCase()
+function closeSw(): void {
+  swOpen.value = null
+  window.removeEventListener('pointerdown', onOutside, true)
+  window.removeEventListener('keydown', onKey, true)
+}
+function onOutside(e: Event): void {
+  if (!(e.target as HTMLElement).closest?.('.cb-swpop, .cb-swbtn')) closeSw()
+}
+function onKey(e: KeyboardEvent): void {
+  if (e.key === 'Escape') closeSw()
+}
+function toggleSw(which: 'fill' | 'stroke', e: MouseEvent): void {
+  colors.target = which
+  if (swOpen.value === which) return closeSw()
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  swPos.value = { left: Math.max(4, Math.min(r.left, window.innerWidth - 244)), top: r.bottom + 4 }
+  swOpen.value = which
+  window.addEventListener('pointerdown', onOutside, true)
+  window.addEventListener('keydown', onKey, true)
+}
+/** Doble clic: selector de color completo junto al indicador. */
+function pickWorking(which: 'fill' | 'stroke', e: MouseEvent): void {
+  closeSw()
+  const before = colors[which]
+  openColorDialog(e.currentTarget as Element, before, {
+    onChange: (hex) => setWorkingColor(which, hex),
+    onRevert: () => {
+      colors[which] = before
+    }
+  })
+}
+function pickSwatch(c: { r: number; g: number; b: number }): void {
+  setWorkingColor(swOpen.value ?? colors.target, swHex(c))
+}
+onBeforeUnmount(closeSw)
 
 function num(e: Event): number {
   return Number.parseInt((e.target as HTMLInputElement).value, 10)
@@ -217,9 +265,11 @@ function onTolerance(e: Event): void {
       <span class="pt-ctl__lbl">{{ t('controlbar.fill') }}</span>
       <button
         type="button"
-        class="pt-swbtn"
+        class="pt-swbtn cb-swbtn"
         :aria-label="t('controlbar.fill')"
-        @click="colors.target = 'fill'"
+        :aria-expanded="swOpen === 'fill'"
+        @click="toggleSw('fill', $event)"
+        @dblclick="pickWorking('fill', $event)"
       >
         <span class="pt-sw" :style="{ background: colors.fill }" />
         <PtIcon name="chevDown" />
@@ -229,13 +279,34 @@ function onTolerance(e: Event): void {
       <span class="pt-ctl__lbl">{{ t('controlbar.stroke') }}</span>
       <button
         type="button"
-        class="pt-swbtn"
+        class="pt-swbtn cb-swbtn"
         :aria-label="t('controlbar.stroke')"
-        @click="colors.target = 'stroke'"
+        :aria-expanded="swOpen === 'stroke'"
+        @click="toggleSw('stroke', $event)"
+        @dblclick="pickWorking('stroke', $event)"
       >
         <span class="pt-sw pt-sw--stroke" :style="{ borderColor: colors.stroke }" />
         <PtIcon name="chevDown" />
       </button>
+    </div>
+    <div
+      v-if="swOpen"
+      class="pt-popover cb-swpop"
+      :style="{ left: swPos.left + 'px', top: swPos.top + 'px' }"
+    >
+      <div class="pt-swgrid">
+        <button
+          v-for="s in swatches"
+          :key="s.id"
+          type="button"
+          class="pt-swcell"
+          :style="{ background: swHex(s.color) }"
+          :title="s.name ?? swHex(s.color)"
+          :aria-label="t('swatches.apply', { hex: swHex(s.color) })"
+          @click="pickSwatch(s.color)"
+        />
+      </div>
+      <p v-if="!swatches.length" class="cb-swnone">{{ t('panels.emptySwatches') }}</p>
     </div>
     <span class="pt-sep pt-sep--inset" />
     <label class="pt-num opacity">
@@ -256,6 +327,16 @@ function onTolerance(e: Event): void {
 </template>
 
 <style scoped>
+.cb-swpop {
+  position: fixed;
+  z-index: 1000;
+  width: 240px;
+  padding: 8px;
+}
+.cb-swnone {
+  margin: 0;
+  color: var(--text-secondary);
+}
 .opacity {
   width: 112px;
 }
