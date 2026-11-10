@@ -335,7 +335,7 @@ function onKeyUp(e: KeyboardEvent): void {
 }
 
 // ---- cabecera: menús del visor ----
-type MenuKind = 'image' | 'zoom' | 'tile' | 'more'
+type MenuKind = 'zoom' | 'tile' | 'more'
 const menu = ref<{ kind: MenuKind; x: number; y: number } | null>(null)
 function openMenu(kind: MenuKind, e: MouseEvent): void {
   const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -352,21 +352,6 @@ function run(fn: () => void): void {
   fn()
   rev.value++
   schedule()
-}
-const images = computed(() => (docs.rev, rev.value, props.ws.session.doc.images))
-const imageLabel = computed(() => {
-  void rev.value
-  void docs.rev
-  const id = v().imageId
-  const img = id ? props.ws.session.doc.images.find((i) => i.id === id) : null
-  return img ? img.name : t('viewer.followsActive')
-})
-const pinned = (id: string | null): boolean => (rev.value, v().imageId === id)
-function pin(id: string | null): void {
-  run(() => {
-    v().imageId = id
-    props.ws.refreshView()
-  })
 }
 function setZoom(z: number | 'fit'): void {
   run(() => {
@@ -466,17 +451,6 @@ const cursorClass = () =>
     @pointerdown.capture="activate"
   >
     <div class="pt-vhead pt-vhead--overlay">
-      <span class="pt-vhead__lbl">{{ t('viewer.image') }}</span>
-      <button
-        type="button"
-        class="pt-select image"
-        :aria-label="`${t('viewer.image')}: ${imageLabel}`"
-        @click="openMenu('image', $event)"
-      >
-        <span>{{ imageLabel }}</span>
-        <PtIcon name="chevDown" />
-      </button>
-      <span class="pt-sep sep" />
       <button
         type="button"
         class="pt-select zoom"
@@ -574,24 +548,7 @@ const cursorClass = () =>
         role="menu"
         :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
       >
-        <template v-if="menu.kind === 'image'">
-          <div class="pt-mi" role="menuitem" @click="pin(null)">
-            <span class="chk">{{ pinned(null) ? '✓' : '' }}</span>
-            {{ t('viewer.followsActive') }}
-          </div>
-          <div class="pt-msep" />
-          <div
-            v-for="img in images"
-            :key="img.id"
-            class="pt-mi"
-            role="menuitem"
-            @click="pin(img.id)"
-          >
-            <span class="chk">{{ pinned(img.id) ? '✓' : '' }}</span>
-            {{ img.name }}
-          </div>
-        </template>
-        <template v-else-if="menu.kind === 'zoom'">
+        <template v-if="menu.kind === 'zoom'">
           <div v-for="z in ZOOMS" :key="z" class="pt-mi" role="menuitem" @click="setZoom(z)">
             {{ Math.round(z * 100) }} %
           </div>
@@ -625,9 +582,6 @@ const cursorClass = () =>
 </template>
 
 <style scoped>
-.image {
-  width: 150px;
-}
 .zoom {
   width: 74px;
 }

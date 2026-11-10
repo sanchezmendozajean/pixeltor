@@ -53,23 +53,9 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
 
 <template>
   <footer class="pt-status" :aria-label="t('status.label')">
-    <div class="pt-seg first">
-      <button
-        type="button"
-        class="pt-zoomfield"
-        :aria-label="`${t('status.zoom')} ${docs.zoomPercent} %`"
-      >
-        <PtIcon name="zoomPx" />
-        <span class="pt-mono zoom">{{ docs.zoomPercent }} %</span>
-        <PtIcon name="chevDown" />
-      </button>
-    </div>
-    <div class="pt-seg" :data-tip="t('status.size')">
+    <div class="pt-seg first" :data-tip="t('status.size')">
       <span class="pt-mono small"
-        ><b
-          >{{ imageSize?.w ?? t('status.none') }} ×
-          {{ imageSize?.h ?? t('status.none') }}</b
-        >
+        ><b>{{ imageSize?.w ?? t('status.none') }} × {{ imageSize?.h ?? t('status.none') }}</b>
         px</span
       >
     </div>
@@ -138,11 +124,6 @@ const SNAPS: { key: SnapKey; icon: string; label: I18nKey }[] = [
 <style scoped>
 .first {
   padding-left: var(--space-3);
-}
-.zoom {
-  font-size: 10.5px;
-  min-width: 40px;
-  text-align: right;
 }
 .small {
   font-size: 10.5px;
