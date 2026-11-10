@@ -1,6 +1,6 @@
 {
   "name": "pixeltor",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Editor de pixel art con capas inteligentes",
   "private": true,
   "type": "module",

@@ -4,6 +4,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 ## [Sin publicar]
 
+## [0.8.2] — 2026-11-09
+
+### Añadido
+
+- **Pluma**: cada ancla nueva se imanta a guías, lienzo y objetos (con las opciones de ajuste activas) y las líneas de ajuste se ven ya antes de colocar la primera ancla.
+- **Panel Capas**: las formas se reordenan arrastrándolas (línea de destino encima/debajo); también entre capas. Un solo paso deshacible.
+- **Barra de control**: pulsar el indicador de relleno o contorno abre las muestras de la paleta; doble clic abre el selector de color.
+
+### Corregido
+
+- Extremos y uniones redondas: ya no sobresale un píxel de más cuando el ancla cae en el centro de un píxel.
+- Selección: una forma pequeña junto a un contorno fino ya se puede elegir (el píxel exacto bajo el cursor gana al margen de tolerancia).
+
+### Cambiado
+
+- Se quita el indicador de zoom de la barra de estado y el menú «Imagen» de la cabecera de los visores.
+
 ## [0.8.1] — 2026-11-08
 
 ### Añadido
