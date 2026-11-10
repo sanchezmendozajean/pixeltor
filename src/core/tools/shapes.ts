@@ -556,6 +556,13 @@ function overlaps(
 
 /** Forma más alta bajo el píxel (x, y); con `reach` px de tolerancia para contornos finos. */
 export function hitShape(s: DocumentSession, x: number, y: number, reach = 1): ID | null {
+  // Primero solo el píxel exacto (cualquier forma); la tolerancia de los contornos finos solo se
+  // usa si no hay ninguna bajo el cursor, para que un contorno no tape una forma pequeña vecina.
+  const exact = hitShapeAt(s, x, y, 0)
+  return exact ?? (reach > 0 ? hitShapeAt(s, x, y, reach) : null)
+}
+
+function hitShapeAt(s: DocumentSession, x: number, y: number, reach: number): ID | null {
   const { width: w, height: h } = s.image
   const test = (sh: Shape): boolean => {
     if (!sh.visible || sh.locked) return false
