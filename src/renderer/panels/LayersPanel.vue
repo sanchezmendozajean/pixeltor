@@ -7,6 +7,7 @@ import {
   type BlendMode,
   MIRROR_TYPES,
   moveShapesToLayer,
+  reorderShapes,
   selectShapes,
   setLayerMirrorEnabled,
   updateShape
@@ -27,6 +28,26 @@ const dragId = ref<string | null>(null)
 /** Forma arrastrada hacia otra capa. */
 const dragShape = ref<string | null>(null)
 const dropIndex = ref<number | null>(null)
+/** Fila de forma sobre la que se suelta otra forma, y en qué mitad (encima/debajo en la lista). */
+const dropShape = ref<{ id: string; pos: 'above' | 'below' } | null>(null)
+
+function onShapeOver(id: string, e: DragEvent): void {
+  if (!dragShape.value) return
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  // la lista muestra arriba lo que está encima en la pila
+  dropShape.value = { id, pos: e.clientY < r.top + r.height / 2 ? 'above' : 'below' }
+}
+function onShapeDrop(id: string): void {
+  const s = docs.session
+  const drag = dragShape.value
+  const pos = dropShape.value?.id === id ? dropShape.value.pos : 'above'
+  dragShape.value = null
+  dropShape.value = null
+  dropIndex.value = null
+  if (!s || !drag) return
+  const ids = s.selectedShapes.includes(drag) ? s.selectedShapes : [drag]
+  reorderShapes(s, ids, id, pos)
+}
 
 const active = computed(() => docs.layers.find((l) => l.active))
 /** Grupos plegados: sus miembros no se listan. */
@@ -240,11 +261,7 @@ onBeforeUnmount(() => {
             'is-hidden': !l.visible,
             'is-drop': dropIndex === i && dragId !== null && dragId !== l.id && !dropAfter(i),
             'is-drop-after':
-              dropIndex === i &&
-              dragId !== null &&
-              dragId !== l.id &&
-              dropAfter(i) &&
-              !hasKids(l),
+              dropIndex === i && dragId !== null && dragId !== l.id && dropAfter(i) && !hasKids(l),
             'is-drop-into': dropIndex === i && dragShape !== null
           }"
           :aria-current="l.active || undefined"
@@ -333,19 +350,21 @@ onBeforeUnmount(() => {
           :class="{
             'is-selected': sh.selected,
             'is-hidden': !sh.visible,
+            'is-drop': dropShape?.id === sh.id && dropShape.pos === 'above',
             'is-drop-after':
-              si === l.shapes.length - 1 &&
-              dropIndex === i &&
-              dragId !== null &&
-              dragId !== l.id &&
-              dropAfter(i)
+              (dropShape?.id === sh.id && dropShape.pos === 'below') ||
+              (si === l.shapes.length - 1 &&
+                dropIndex === i &&
+                dragId !== null &&
+                dragId !== l.id &&
+                dropAfter(i))
           }"
           draggable="true"
           @dragstart.stop="dragShape = sh.id"
-          @dragover.prevent="dragId && (dropIndex = i)"
-          @dragleave="dragId && (dropIndex = null)"
-          @drop.prevent="dragId && onDrop(i)"
-          @dragend="((dragShape = null), (dropIndex = null))"
+          @dragover.prevent="dragShape ? onShapeOver(sh.id, $event) : dragId && (dropIndex = i)"
+          @dragleave="dragShape ? (dropShape = null) : dragId && (dropIndex = null)"
+          @drop.prevent="dragShape ? onShapeDrop(sh.id) : dragId && onDrop(i)"
+          @dragend="((dragShape = null), (dropShape = null), (dropIndex = null))"
           @click="onShapeClick(l.id, sh.id, $event)"
         >
           <button

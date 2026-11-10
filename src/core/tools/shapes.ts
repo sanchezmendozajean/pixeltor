@@ -197,6 +197,45 @@ export function arrangeShapes(s: DocumentSession, ids: ID[], how: Arrange): void
   tx.commit({ model: true })
 }
 
+/**
+ * Reordena formas junto a `targetId` (panel Capas): `above` las deja justo encima de él en la
+ * pila, `below` justo debajo. Admite formas de la misma lista (capa o grupo) y, si el destino no
+ * está dentro de un grupo, de otras capas (las de grupos pierden el grupo).
+ */
+export function reorderShapes(
+  s: DocumentSession,
+  ids: ID[],
+  targetId: ID,
+  position: 'above' | 'below'
+): boolean {
+  const target = findShape(s, targetId)
+  if (!target || target.layer.locked) return false
+  const movers: { shape: Shape; list: Shape[]; index: number }[] = []
+  for (const id of ids) {
+    if (id === targetId) continue
+    const f = findShape(s, id)
+    if (!f || f.layer.locked) continue
+    if (f.list === target.list) movers.push({ shape: f.shape, list: f.list, index: f.index })
+    else if (f.layer !== target.layer && !target.parent)
+      movers.push({
+        shape: f.parent ? resolveShape(s, id)! : f.shape,
+        list: f.list,
+        index: f.index
+      })
+  }
+  if (!movers.length) return false
+  const tx = s.begin(movers.length === 1 ? 'Reordenar forma' : 'Reordenar formas')
+  const order = [...movers].sort((a, b) => a.index - b.index)
+  const keep = order.map((m) => m.shape)
+  const byList = new Map<Shape[], number[]>()
+  for (const m of movers) byList.set(m.list, [...(byList.get(m.list) ?? []), m.index])
+  for (const [list, idx] of byList) for (const i of idx.sort((a, b) => b - a)) list.splice(i, 1)
+  const at = target.list.indexOf(target.shape)
+  target.list.splice(position === 'above' ? at + 1 : at, 0, ...keep)
+  tx.commit({ model: true })
+  return true
+}
+
 /** Mueve formas a otra capa (quedan encima de las que ya tenga). Las de grupos pierden el grupo. */
 export function moveShapesToLayer(s: DocumentSession, ids: ID[], layerId: ID): boolean {
   const target = s.image.layers.find((l) => l.id === layerId)
