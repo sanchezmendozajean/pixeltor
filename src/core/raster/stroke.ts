@@ -70,8 +70,11 @@ export function thinStroke(lines: Polyline[], perfect: boolean, w: number, h: nu
   return cov
 }
 
-function circle(c: Vec2, r: number): Vec2[] {
-  const n = Math.max(8, Math.ceil(r * 6))
+function circle(c: Vec2, r0: number): Vec2[] {
+  // Un pelo menos que el radio: con un ancla en el centro de un píxel, el vértice del polígono cae
+  // justo sobre el centro del píxel vecino y lo marcaba, dejando un píxel de más en el extremo.
+  const r = Math.max(0, r0 - 1e-3)
+  const n = Math.max(8, Math.ceil(r0 * 6))
   const out: Vec2[] = []
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2
