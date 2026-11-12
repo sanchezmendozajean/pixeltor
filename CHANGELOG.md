@@ -4,6 +4,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 ## [Sin publicar]
 
+## [0.8.3] — 2026-11-12
+
+### Añadido
+
+- **Selección**: cursores de redimensión sobre los tiradores de la caja; botones de voltear horizontal y vertical en Propiedades.
+- **Selección directa**: el marco y Mayús+clic eligen anclas de varios objetos y se mueven juntas.
+- **Pluma**: Mayús alinea segmentos y tiradores a 0°, 45° y 90°.
+
+### Corregido
+
+- Contornos dentro/fuera: las puntas ya no salen achaflanadas, y las puntas verticales de trazados pintan su píxel.
+- Tirador único (Convertir): conserva el tirador existente del lado elegido y solo quita el del lado contrario.
+- Selección directa: las anclas seleccionadas ya no reaparecen al volver a seleccionar una forma tras deseleccionarla.
+
 ## [0.8.2] — 2026-11-09
 
 ### Añadido
