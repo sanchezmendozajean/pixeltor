@@ -5,7 +5,8 @@ import { newId } from '../model/ids'
 import type { Shape } from '../model/shapes'
 import type { Guide, ID } from '../model/types'
 import type { DocumentSession } from '../session'
-import { type Bounds, shapeBounds } from './align'
+import type { Bounds } from './align'
+import { shapesBox } from './paths'
 
 export interface SnapOptions {
   canvas: boolean
@@ -59,7 +60,8 @@ function collectTargets(
         if (sh.kind === 'group') visit(sh.children)
         if (exclude.has(sh.id) || !sh.visible) continue
         // los grupos cuentan como una unidad; sus hijos también por si se está aislando
-        const b = shapeBounds(s, sh.id)
+        // caja geométrica (la de los tiradores): un contorno invisible no cuenta como borde
+        const b = shapesBox(s, [sh.id])
         if (!b) continue
         for (const x of [b.x, b.x + b.w / 2, b.x + b.w])
           xs.push({ pos: x, kind: 'object', span: [b.y, b.y + b.h] })

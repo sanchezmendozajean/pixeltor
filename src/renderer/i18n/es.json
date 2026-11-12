@@ -660,6 +660,8 @@
     "many": "{n} formas seleccionadas",
     "origin": "Punto de referencia",
     "lock": "Mantener proporción",
+    "flipH": "Voltear horizontalmente",
+    "flipV": "Voltear verticalmente",
     "x": "X",
     "y": "Y",
     "w": "An",

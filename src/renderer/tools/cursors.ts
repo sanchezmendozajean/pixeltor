@@ -12,6 +12,18 @@ export type CursorKind =
   | 'rotate-tr'
   | 'rotate-br'
   | 'rotate-bl'
+  | 'resize-ew'
+  | 'resize-ns'
+  | 'resize-nwse'
+  | 'resize-nesw'
+
+/** Cursores nativos del sistema para redimensionar con los tiradores de la caja. */
+const NATIVE = {
+  'resize-ew': 'ew-resize',
+  'resize-ns': 'ns-resize',
+  'resize-nwse': 'nwse-resize',
+  'resize-nesw': 'nesw-resize'
+} as const satisfies Partial<Record<CursorKind, string>>
 
 /** Flecha de selección directa: contorno negro con relleno blanco (hueca), como en Illustrator. */
 const ARROW = '<path d="M4 2 L4 19 L8.5 15 L11.5 21.5 L14.5 20 L11.5 13.8 L17.5 13.8 Z"'
@@ -48,7 +60,7 @@ const rotate = (deg: number): { svg: string; x: number; y: number } => {
   }
 }
 
-const BODY: Record<CursorKind, { svg: string; x: number; y: number }> = {
+const BODY: Record<Exclude<CursorKind, keyof typeof NATIVE>, { svg: string; x: number; y: number }> = {
   pen: { svg: svg(NIB), x: 4, y: 3 },
   'pen-plus': {
     svg: svg(NIB + badge('<path d="M2 4.5 H7 M4.5 2 V7" stroke="#000" stroke-width="1.4"/>')),
@@ -97,7 +109,8 @@ const BODY: Record<CursorKind, { svg: string; x: number; y: number }> = {
 
 /** Valor CSS de `cursor` para el tipo indicado. */
 export function cursorCss(kind: CursorKind): string {
-  const c = BODY[kind]
+  if (kind in NATIVE) return NATIVE[kind as keyof typeof NATIVE]
+  const c = BODY[kind as keyof typeof BODY]
   const fallback = kind.startsWith('pen')
     ? 'crosshair'
     : kind.startsWith('rotate')

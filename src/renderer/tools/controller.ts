@@ -303,7 +303,7 @@ export class CanvasController {
       this.guideDrag.gd.moveTo(this.guideDrag.axis === 'v' ? pt.x : pt.y)
       return
     }
-    this.shapes.hover(x, y, this.tools.active)
+    this.shapes.hover(x, y, this.tools.active, p.shift)
     useDocumentsStore().cursor = { x, y }
 
     if (this.panning) {

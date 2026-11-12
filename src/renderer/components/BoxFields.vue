@@ -3,7 +3,7 @@
 // X e Y se refieren a ese punto y el tamaño se cambia manteniéndolo fijo. Los campos aceptan
 // operaciones (30-5, 100/2…).
 import { computed } from 'vue'
-import { evalExpr, setShapesBox, shapesBox } from '@core/index'
+import { evalExpr, flipShapes, setShapesBox, shapesBox } from '@core/index'
 import { useDocumentsStore } from '@/stores/documents'
 import { useUiStore } from '@/stores/ui'
 import PtIcon from '@/components/PtIcon.vue'
@@ -46,6 +46,11 @@ function setBox(key: 'x' | 'y' | 'w' | 'h', e: Event): void {
   }
   // si no se aplicó (texto inválido, tamaño 0), el campo vuelve al valor real
   if (shown.value) input.value = String(shown.value[key])
+}
+
+function flip(axis: 'h' | 'v'): void {
+  const s = docs.session
+  if (s && s.selectedShapes.length) flipShapes(s, s.selectedShapes, axis)
 }
 
 const STEPS = [0, 0.5, 1] as const
@@ -126,6 +131,20 @@ const rows = ['arriba', 'centro', 'abajo']
       data-testid="prop-h"
       @change="(e) => setBox('h', e)"
     />
+    <span class="flips">
+      <button
+        v-for="axis in ['h', 'v'] as const"
+        :key="axis"
+        type="button"
+        class="pt-iconbtn pt-iconbtn--20"
+        :data-tip="t(axis === 'h' ? 'properties.flipH' : 'properties.flipV')"
+        :aria-label="t(axis === 'h' ? 'properties.flipH' : 'properties.flipV')"
+        :data-testid="`prop-flip-${axis}`"
+        @click="flip(axis)"
+      >
+        <PtIcon :name="axis === 'h' ? 'flipH' : 'flipV'" />
+      </button>
+    </span>
   </div>
 </template>
 
@@ -137,6 +156,11 @@ const rows = ['arriba', 'centro', 'abajo']
   gap: var(--space-2);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--border-subtle);
+}
+.flips {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-2);
 }
 .boxfields input {
   min-width: 0;

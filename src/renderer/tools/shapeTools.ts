@@ -551,6 +551,14 @@ export class ShapeTools {
       const q = this.snapPt(pt.x, pt.y, [])
       pt.x = q.x
       pt.y = q.y
+      const prev = this.pen?.anchors[this.pen.anchors.length - 1]
+      if (mods.shift && prev) {
+        // Mayús: el segmento nuevo sale a 0°, 45° o 90° del ancla anterior (sin imán)
+        const c = this.constrain45(prev.p, { x: p.x + 0.5, y: p.y + 0.5 })
+        pt.x = c.x
+        pt.y = c.y
+        this.snapLines = []
+      }
       this.pen ??= { anchors: [], dragging: false, base: 0 }
       const first = this.pen.anchors[0]
       if (first && this.pen.anchors.length >= 3 && near(first.p)) {
@@ -655,18 +663,8 @@ export class ShapeTools {
   private selectionBounds(): { x: number; y: number; w: number; h: number } | null {
     const ws = this.getWs()
     if (!ws) return null
-    const list = ws.session.selectedShapes
-      .map((id) => shapeBounds(ws.session, id))
-      .filter((b): b is NonNullable<typeof b> => !!b)
-    if (!list.length) return null
-    const x0 = Math.min(...list.map((b) => b.x))
-    const y0 = Math.min(...list.map((b) => b.y))
-    return {
-      x: x0,
-      y: y0,
-      w: Math.max(...list.map((b) => b.x + b.w)) - x0,
-      h: Math.max(...list.map((b) => b.y + b.h)) - y0
-    }
+    // misma caja que los tiradores (sin el contorno invisible), para que el ajuste coincida con lo que se ve
+    return shapesBox(ws.session, ws.session.selectedShapes)
   }
 
   /** Ajuste del desplazamiento (dx, dy) según los interruptores de la barra de estado. */
@@ -858,7 +856,11 @@ export class ShapeTools {
       return
     }
     if (hit) {
-      if (!s.selectedShapes.includes(hit.shapeId)) selectShapes(s, [hit.shapeId])
+      // Mayús suma la forma a la selección: se pueden elegir anclas de varios objetos
+      if (!s.selectedShapes.includes(hit.shapeId)) {
+        const add = mods.shift && hit.part === 'p'
+        selectShapes(s, add ? [...s.selectedShapes, hit.shapeId] : [hit.shapeId])
+      }
       if (hit.part === 'p') {
         if (mods.shift && this.isAnchorSelected(hit.shapeId, hit.subpath, hit.index))
           this.anchorSel = this.anchorSel.filter(
@@ -871,9 +873,12 @@ export class ShapeTools {
       }
       const targets =
         hit.part === 'p'
-          ? this.anchorSel
-              .filter((a) => a.shapeId === hit.shapeId)
-              .map((a) => ({ subpath: a.subpath, index: a.index, part: 'p' as const }))
+          ? this.anchorSel.map((a) => ({
+              shapeId: a.shapeId,
+              subpath: a.subpath,
+              index: a.index,
+              part: 'p' as const
+            }))
           : [{ subpath: hit.subpath, index: hit.index, part: hit.part }]
       this.anchorDrag = {
         // Alt sobre un tirador: se mueve solo, sin arrastrar al opuesto
@@ -941,17 +946,32 @@ export class ShapeTools {
         let dy = p.y - m.y0
         m.mv.setCopy(!!mods.alt)
         if (mods.shift) {
-          // Mayús: restringe a X, Y o diagonal de 45° (sin ajuste magnético)
+          // Mayús: restringe a X, Y o diagonal de 45°; en X o Y el ajuste sigue activo en el eje libre
           const ax = Math.abs(dx)
           const ay = Math.abs(dy)
-          if (ax > ay * 2.414) dy = 0
-          else if (ay > ax * 2.414) dx = 0
-          else {
+          let lock: 'x' | 'y' | null = null
+          if (ax > ay * 2.414) {
+            dy = 0
+            lock = 'y'
+          } else if (ay > ax * 2.414) {
+            dx = 0
+            lock = 'x'
+          } else {
             const d = Math.round((ax + ay) / 2)
             dx = Math.sign(dx) * d
             dy = Math.sign(dy) * d
           }
-          this.snapLines = []
+          if (lock) {
+            const sn = this.snapMove(dx, dy)
+            // el eje bloqueado no se ajusta (ni se dibujan sus líneas)
+            if (lock === 'x') {
+              dy += sn.dy
+              this.snapLines = sn.lines.filter((l) => l.axis === 'h')
+            } else {
+              dx += sn.dx
+              this.snapLines = sn.lines.filter((l) => l.axis === 'v')
+            }
+          } else this.snapLines = []
         } else {
           const sn = this.snapMove(dx, dy)
           dx += sn.dx
@@ -1007,7 +1027,7 @@ export class ShapeTools {
         } else if (a.pt0) {
           // el ancla acaba en el centro de un píxel (lo garantiza AnchorDrag); el ajuste a guías y objetos parte de ahí
           const q = this.snapPt(Math.floor(a.pt0.x + dx) + 0.5, Math.floor(a.pt0.y + dy) + 0.5, [
-            a.shapeId
+            ...new Set([a.shapeId, ...this.anchorSel.map((r) => r.shapeId)])
           ])
           dx = q.x - a.pt0.x
           dy = q.y - a.pt0.y
@@ -1018,7 +1038,9 @@ export class ShapeTools {
     }
     if (this.pen?.dragging) {
       const a = this.pen.anchors[this.pen.anchors.length - 1]!
-      const out = { x: p.x + 0.5, y: p.y + 0.5 }
+      let out = { x: p.x + 0.5, y: p.y + 0.5 }
+      // Mayús: el tirador se alinea a 0°, 45° o 90° respecto al ancla
+      if (mods.shift) out = this.constrain45(a.p, out)
       if (Math.hypot(out.x - a.p.x, out.y - a.p.y) >= 1) {
         a.out = out
         // Alt rompe la simetría: el tirador de entrada queda donde estaba, como en Illustrator.
@@ -1142,9 +1164,8 @@ export class ShapeTools {
       const y0 = Math.min(m.y0, m.y1)
       const y1 = Math.max(m.y0, m.y1) + 1
       const s = ws.session
-      const scope = s.selectedShapes.length
-        ? s.selectedShapes
-        : s.activeLayer.shapes.filter((x) => x.visible && !x.locked).map((x) => x.id)
+      // el marco toma las anclas de cualquier objeto de la capa, esté seleccionado o no
+      const scope = s.activeLayer.shapes.filter((x) => x.visible && !x.locked).map((x) => x.id)
       const inside = this.anchorsOf(scope).filter(
         ({ pt }) => pt.x >= x0 && pt.x <= x1 && pt.y >= y0 && pt.y <= y1
       )
@@ -1152,8 +1173,8 @@ export class ShapeTools {
       this.anchorSel = m.add ? [...this.anchorSel, ...picked] : picked
       // el marco sobre formas no seleccionadas las selecciona
       const owners = [...new Set(picked.map((r) => r.shapeId))]
-      if (owners.length && !owners.every((id) => s.selectedShapes.includes(id)))
-        selectShapes(s, owners)
+      if (owners.length)
+        selectShapes(s, m.add ? [...new Set([...s.selectedShapes, ...owners])] : owners)
       else if (!owners.length && !m.add && s.selectedShapes.length) selectShapes(s, [])
       return
     }
@@ -1249,7 +1270,14 @@ export class ShapeTools {
     // Selección: cursor de rotación en las zonas de rotación de la caja (y mientras se rota)
     if (tool === 'sel' && !direct) {
       if (this.rotating) return `rotate-${this.rotCorner}`
-      if (!this.hitBoxHandle(p)) {
+      const hh = this.scaling ? { handle: this.scaling.handle } : this.hitBoxHandle(p)
+      if (hh) {
+        const [hx, hy] = hh.handle
+        if (hx === 0.5) return 'resize-ns'
+        if (hy === 0.5) return 'resize-ew'
+        return hx === hy ? 'resize-nwse' : 'resize-nesw'
+      }
+      if (!hh) {
         const rz = this.rotateCorner(p)
         if (rz) {
           this.rotCorner = rz.corner
@@ -1277,11 +1305,32 @@ export class ShapeTools {
     return null
   }
 
-  hover(x: number, y: number, tool: string): void {
+  /** Mayús: lleva `pt` a horizontal, vertical o diagonal de 45° respecto a `origin` (en píxeles enteros). */
+  private constrain45(origin: Vec2, pt: Vec2): Vec2 {
+    let dx = pt.x - origin.x
+    let dy = pt.y - origin.y
+    const ax = Math.abs(dx)
+    const ay = Math.abs(dy)
+    if (ax > ay * 2.414) dy = 0
+    else if (ay > ax * 2.414) dx = 0
+    else {
+      const d = Math.round((ax + ay) / 2)
+      dx = Math.sign(dx) * d
+      dy = Math.sign(dy) * d
+    }
+    return { x: origin.x + Math.round(dx), y: origin.y + Math.round(dy) }
+  }
+
+  hover(x: number, y: number, tool: string, shift = false): void {
     const ws = this.getWs()
     if (ws && tool === 'pen' && !this.pen?.dragging) {
       // También antes de la primera ancla: las líneas de ajuste muestran dónde caerá
-      const q = this.snapPt(x + 0.5, y + 0.5, [])
+      let q = this.snapPt(x + 0.5, y + 0.5, [])
+      const last = this.pen?.anchors[this.pen.anchors.length - 1]
+      if (shift && last) {
+        q = this.constrain45(last.p, { x: x + 0.5, y: y + 0.5 })
+        this.snapLines = []
+      }
       if (this.pen?.anchors.length) {
         this.penHover = q
         this.setPreview(ws, this.penShape())

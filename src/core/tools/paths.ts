@@ -216,55 +216,81 @@ function centerPoint(m: Mat2D, p: Vec2): Vec2 {
   return Math.abs(d.x) < 1e-9 && Math.abs(d.y) < 1e-9 ? p : { x: p.x + d.x, y: p.y + d.y }
 }
 
+interface DragStart {
+  sub: number
+  i: number
+  part: AnchorPart
+  pt: Vec2
+  in?: Vec2 | null
+  out?: Vec2 | null
+}
+
 /** Arrastre de anclas o tiradores: un único paso de historial. Convierte formas paramétricas. */
 export class AnchorDrag {
   private readonly tx
-  private readonly shape: PathShape
-  private readonly start: {
-    sub: number
-    i: number
-    part: AnchorPart
-    pt: Vec2
-    in?: Vec2 | null
-    out?: Vec2 | null
-  }[] = []
+  private readonly groups: { shape: PathShape; start: DragStart[] }[] = []
 
+  /**
+   * `targets` puede incluir anclas de varias formas (`shapeId` propio); las que no lo indican son de
+   * `shapeId`. Todo el arrastre es un único paso de historial.
+   */
   constructor(
     private readonly s: DocumentSession,
     shapeId: ID,
-    targets: { subpath: number; index: number; part: AnchorPart }[],
+    targets: { subpath: number; index: number; part: AnchorPart; shapeId?: ID }[],
     /** Alt: el tirador se mueve solo, sin arrastrar al opuesto (rompe la simetría). */
     private readonly independent = false
   ) {
-    const f = findShape(s, shapeId)
-    if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
+    const ids = [...new Set([shapeId, ...targets.map((t) => t.shapeId ?? shapeId)])]
+    const found = ids.map((id) => ({ id, f: findShape(s, id) }))
+    for (const { f } of found) {
+      if (!f || f.shape.kind === 'group') throw new Error('forma no editable')
+    }
     this.tx = s.begin(targets.length > 1 ? `Mover ${targets.length} anclas` : 'Mover ancla')
-    if (f.shape.kind !== 'path') f.list[f.index] = toEditablePath(f.shape)
-    this.shape = f.list[f.index] as PathShape
-    for (const t of targets) {
-      const a = this.shape.subpaths[t.subpath]?.anchors[t.index]
-      if (!a) continue
-      const pt = t.part === 'p' ? a.p : (a[t.part] ?? a.p)
-      this.start.push({
-        sub: t.subpath,
-        i: t.index,
-        part: t.part,
-        pt: { ...pt },
-        in: a.in ? { ...a.in } : null,
-        out: a.out ? { ...a.out } : null
-      })
+    for (const { id, f } of found) {
+      if (f!.shape.kind !== 'path') f!.list[f!.index] = toEditablePath(f!.shape)
+      const shape = f!.list[f!.index] as PathShape
+      const start: DragStart[] = []
+      for (const t of targets) {
+        if ((t.shapeId ?? shapeId) !== id) continue
+        const a = shape.subpaths[t.subpath]?.anchors[t.index]
+        if (!a) continue
+        const pt = t.part === 'p' ? a.p : (a[t.part] ?? a.p)
+        start.push({
+          sub: t.subpath,
+          i: t.index,
+          part: t.part,
+          pt: { ...pt },
+          in: a.in ? { ...a.in } : null,
+          out: a.out ? { ...a.out } : null
+        })
+      }
+      this.groups.push({ shape, start })
     }
   }
 
   /** Desplazamiento acumulado en coordenadas de imagen. */
   moveBy(dx: number, dy: number): void {
-    const d = localDelta(this.shape.transform, dx, dy)
-    for (const st of this.start) {
-      const a = this.shape.subpaths[st.sub]!.anchors[st.i]!
+    for (const { shape, start } of this.groups) this.moveShape(shape, start, dx, dy)
+    this.s.emit({
+      imageId: this.s.activeImageId,
+      dirty: null,
+      structure: true,
+      layerIds: layersOf(
+        this.s,
+        this.groups.map((g) => g.shape.id)
+      )
+    })
+  }
+
+  private moveShape(shape: PathShape, start: DragStart[], dx: number, dy: number): void {
+    const d = localDelta(shape.transform, dx, dy)
+    for (const st of start) {
+      const a = shape.subpaths[st.sub]!.anchors[st.i]!
       let np = { x: st.pt.x + d.x, y: st.pt.y + d.y }
       if (st.part === 'p') {
         // las anclas se colocan siempre en el centro de un píxel; los tiradores las acompañan
-        const m = this.shape.transform
+        const m = shape.transform
         const from = apply(m, st.pt)
         const to = { x: pixelCenter(from.x + dx), y: pixelCenter(from.y + dy) }
         const dl = localDelta(m, to.x - from.x, to.y - from.y)
@@ -274,7 +300,7 @@ export class AnchorDrag {
         if (st.in) a.in = { x: st.in.x + dl.x, y: st.in.y + dl.y }
         if (st.out) a.out = { x: st.out.x + dl.x, y: st.out.y + dl.y }
       } else {
-        np = centerPoint(this.shape.transform, np)
+        np = centerPoint(shape.transform, np)
         a[st.part] = np
         if (this.independent) a.type = 'corner'
         // suave/simétrico: el tirador opuesto refleja la dirección
@@ -287,19 +313,13 @@ export class AnchorDrag {
               ? Math.hypot(vx, vy)
               : Math.hypot((st[other]?.x ?? a.p.x) - a.p.x, (st[other]?.y ?? a.p.y) - a.p.y)
           const n = Math.hypot(vx, vy) || 1
-          a[other] = centerPoint(this.shape.transform, {
+          a[other] = centerPoint(shape.transform, {
             x: a.p.x + (vx / n) * len,
             y: a.p.y + (vy / n) * len
           })
         }
       }
     }
-    this.s.emit({
-      imageId: this.s.activeImageId,
-      dirty: null,
-      structure: true,
-      layerIds: layersOf(this.s, [this.shape.id])
-    })
   }
 
   end(): boolean {
@@ -681,6 +701,20 @@ export function shapesBox(s: DocumentSession, ids: ID[]): Box | null {
   return x0 === Infinity ? null : { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
 }
 
+/** ¿Todas las anclas del trazado están (en imagen) en esquinas de píxel, es decir, en coordenadas enteras? */
+function isOnPixelCorners(s: PathShape): boolean {
+  const whole = (v: number): boolean => Math.abs(v - Math.round(v)) < 1e-6
+  return (
+    s.subpaths.length > 0 &&
+    s.subpaths.every((sp) =>
+      sp.anchors.every((a) => {
+        const p = apply(s.transform, a.p)
+        return whole(p.x) && whole(p.y)
+      })
+    )
+  )
+}
+
 /** Aplica la escala (sx, sy) respecto a (ox, oy) a una forma, horneándola en los parámetros si puede. */
 function scaleShape(sh: Shape, sx: number, sy: number, ox: number, oy: number): void {
   const m: Mat2D = [sx, 0, 0, sy, ox - sx * ox, oy - sy * oy]
@@ -693,13 +727,27 @@ function scaleShape(sh: Shape, sx: number, sy: number, ox: number, oy: number): 
       sh.h *= Math.abs(sy)
       sh.radius = sh.radius.map((r) => r * Math.min(Math.abs(sx), Math.abs(sy))) as typeof sh.radius
       // la esquina superior izquierda es el origen local: con escala negativa cambia de lado
-      sh.transform = [1, 0, 0, 1, sx < 0 ? c.x - sh.w : c.x, sy < 0 ? c.y - sh.h : c.y]
+      const left = sx < 0 ? c.x - sh.w : c.x
+      const top = sy < 0 ? c.y - sh.h : c.y
+      // los bordes caen en píxeles enteros, no a mitad de píxel
+      const x0 = Math.round(left)
+      const y0 = Math.round(top)
+      sh.w = Math.max(1, Math.round(left + sh.w) - x0)
+      sh.h = Math.max(1, Math.round(top + sh.h) - y0)
+      sh.transform = [1, 0, 0, 1, x0, y0]
       return
     }
     if (sh.kind === 'ellipse') {
       sh.rx *= Math.abs(sx)
       sh.ry *= Math.abs(sy)
-      sh.transform = [1, 0, 0, 1, c.x, c.y]
+      // la caja de la elipse se ajusta a píxeles enteros (centro y radios pueden quedar en .5)
+      const x0 = Math.round(c.x - sh.rx)
+      const y0 = Math.round(c.y - sh.ry)
+      const x1 = Math.max(x0 + 1, Math.round(c.x + sh.rx))
+      const y1 = Math.max(y0 + 1, Math.round(c.y + sh.ry))
+      sh.rx = (x1 - x0) / 2
+      sh.ry = (y1 - y0) / 2
+      sh.transform = [1, 0, 0, 1, (x0 + x1) / 2, (y0 + y1) / 2]
       return
     }
     if (sh.kind === 'line') {
@@ -752,6 +800,19 @@ export class ShapeScale {
       // medio píxel de su dibujo)
       if (copy.kind === 'path' && isPixelCentered(orig as PathShape))
         for (const sp of copy.subpaths) for (const a of sp.anchors) centerAnchor(copy.transform, a)
+      // y uno con las anclas en esquinas de píxel (p. ej. una elipse convertida) las conserva enteras
+      else if (copy.kind === 'path' && isOnPixelCorners(orig as PathShape))
+        for (const sp of copy.subpaths)
+          for (const a of sp.anchors) {
+            const r = (v: Vec2): Vec2 => {
+              const q = apply(copy.transform, v)
+              const d = localDelta(copy.transform, Math.round(q.x) - q.x, Math.round(q.y) - q.y)
+              return { x: v.x + d.x, y: v.y + d.y }
+            }
+            a.p = r(a.p)
+            if (a.in) a.in = r(a.in)
+            if (a.out) a.out = r(a.out)
+          }
       f.list[f.index] = copy
     }
     this.s.emit({
@@ -815,6 +876,22 @@ export function setShapesBox(
       layerIds: layersOf(s, ids)
     })
   }
+  return sc.end()
+}
+
+/**
+ * Voltea la selección en horizontal o vertical respecto al centro de su caja (un único paso de
+ * historial). La caja conserva posición y tamaño. Devuelve false si no hay nada que voltear.
+ */
+export function flipShapes(s: DocumentSession, ids: ID[], axis: 'h' | 'v'): boolean {
+  const box = shapesBox(s, ids)
+  if (!box) return false
+  const sc = new ShapeScale(s, ids, box)
+  sc.scaleBy(
+    { x: box.x + box.w / 2, y: box.y + box.h / 2 },
+    axis === 'h' ? -1 : 1,
+    axis === 'v' ? -1 : 1
+  )
   return sc.end()
 }
 
