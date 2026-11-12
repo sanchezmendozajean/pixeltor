@@ -591,7 +591,8 @@ export function anchorSides(s: DocumentSession, refs: AnchorRef[]): { in: boolea
 
 /**
  * Deja las anclas con un solo tirador: el de entrada (hacia el ancla anterior) o el de salida.
- * El ancla pasa a esquina. Las anclas sin ese lado (extremos de un trazado abierto) no cambian.
+ * El ancla pasa a esquina. Si ya hay tirador en el lado elegido se conserva intacto (sólo se quita
+ * el opuesto); si no, se genera uno. Las anclas sin ese lado (extremos de un trazado abierto) no cambian.
  */
 export function setSingleHandle(
   s: DocumentSession,
@@ -613,6 +614,14 @@ export function setSingleHandle(
     const hasPrev = sp.closed || r.index > 0
     const hasNext = sp.closed || r.index < n - 1
     if (side === 'in' ? !hasPrev : !hasNext) continue
+    // si el tirador de ese lado ya existe, se conserva tal cual; sólo se quita el del otro lado
+    if (side === 'out' ? a.out : a.in) {
+      if (side === 'out') a.in = null
+      else a.out = null
+      a.type = 'corner'
+      any = true
+      continue
+    }
     const prev = hasPrev ? sp.anchors[(r.index - 1 + n) % n]! : null
     const next = hasNext ? sp.anchors[(r.index + 1) % n]! : null
     // dirección de la tangente (como en un ancla suave) y largo según los vecinos

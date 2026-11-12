@@ -1369,6 +1369,9 @@ export class ShapeTools {
       return { shapes: [], selBox: null, radiusWidget: null, gradientBar: null, snapLines: [] }
     const s = ws.session
     const out: ShapeOverlay[] = []
+    // descarta las anclas de formas que ya no están seleccionadas (aunque nadie las consulte):
+    // si no, reaparecen como seleccionadas al volver a seleccionar la forma
+    void this.anchorSel
     const tempDirect = tool === 'sel' && this.ctrlDirect
     const direct =
       tempDirect ||
