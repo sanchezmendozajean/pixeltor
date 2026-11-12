@@ -6,9 +6,9 @@ import { ellipseMasks } from '../raster/ellipse'
 import {
   type Coverage,
   coverageSub,
-  dilate,
+  dilateDisc,
   emptyCoverage,
-  erode,
+  erodeDisc,
   fillPolygons,
   fillPolygonsClosed
 } from '../raster/scan'
@@ -188,8 +188,8 @@ function strokeMask(st: Stroke, lines: Polyline[], m: ShapeMasks, w: number, h: 
   }
   // Anillos de píxeles: erosión hacia dentro / dilatación hacia fuera del relleno.
   if (st.align === 'outside')
-    return coverageSub(dilate(m.fill, w, h, off + width), dilate(m.fill, w, h, off))
-  return coverageSub(erode(m.fill, w, h, off), erode(m.fill, w, h, off + width))
+    return coverageSub(dilateDisc(m.fill, w, h, off + width), dilateDisc(m.fill, w, h, off))
+  return coverageSub(erodeDisc(m.fill, w, h, off), erodeDisc(m.fill, w, h, off + width))
 }
 
 /** Capa de pintura: cada píxel cubierto toma su color (fijo o muestreado en coordenadas de imagen). */

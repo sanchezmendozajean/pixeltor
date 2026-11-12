@@ -36,6 +36,17 @@ export function fillPolygonsClosed(
     )
     for (let i = 0; i < a.length; i++) a[i] = a[i]! | b[i]!
   }
+  // Un vértice en el centro de un píxel que es un extremo vertical (punta arriba o abajo) deja un
+  // tramo de ancho cero en su fila y no pintaba nada: el píxel de la propia ancla se marca aquí.
+  const near = (v: number): boolean => Math.abs(v - Math.floor(v) - 0.5) < TIE
+  for (const poly of polys)
+    if (poly.length >= 3)
+      for (const q of poly)
+        if (near(q.x) && near(q.y)) {
+          const x = Math.floor(q.x)
+          const y = Math.floor(q.y)
+          if (x >= 0 && y >= 0 && x < w && y < h) a[y * w + x] = 255
+        }
   return a
 }
 
@@ -115,6 +126,83 @@ export function dilate(c: Coverage, w: number, h: number, steps: number): Covera
     cur = o
   }
   return cur
+}
+
+const FAR = 1e20
+
+/** Transformada 1D de distancia al cuadrado (Felzenszwalb–Huttenlocher), exacta y determinista. */
+function edt1d(
+  f: Float64Array,
+  n: number,
+  out: Float64Array,
+  v: Int32Array,
+  z: Float64Array
+): void {
+  let k = 0
+  v[0] = 0
+  z[0] = -Infinity
+  z[1] = Infinity
+  for (let q = 1; q < n; q++) {
+    let s: number
+    for (;;) {
+      const p = v[k]!
+      s = (f[q]! + q * q - (f[p]! + p * p)) / (2 * q - 2 * p)
+      if (s <= z[k]!) k--
+      else break
+    }
+    k++
+    v[k] = q
+    z[k] = s
+    z[k + 1] = Infinity
+  }
+  k = 0
+  for (let q = 0; q < n; q++) {
+    while (z[k + 1]! < q) k++
+    const d = q - v[k]!
+    out[q] = d * d + f[v[k]!]!
+  }
+}
+
+/** Distancia euclídea al cuadrado de cada píxel al más cercano con `src[i] != 0` (FAR si no hay). */
+function distanceSq(src: Uint8Array, w: number, h: number, wantSet: boolean): Float64Array {
+  const m = Math.max(w, h)
+  const f = new Float64Array(m)
+  const o = new Float64Array(m)
+  const v = new Int32Array(m)
+  const z = new Float64Array(m + 1)
+  const d = new Float64Array(w * h)
+  for (let i = 0; i < d.length; i++) d[i] = !!src[i] === wantSet ? 0 : FAR
+  for (let x = 0; x < w; x++) {
+    for (let y = 0; y < h; y++) f[y] = d[y * w + x]!
+    edt1d(f, h, o, v, z)
+    for (let y = 0; y < h; y++) d[y * w + x] = o[y]!
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) f[x] = d[y * w + x]!
+    edt1d(f, w, o, v, z)
+    for (let x = 0; x < w; x++) d[y * w + x] = o[x]!
+  }
+  return d
+}
+
+/** Dilatación con un disco de radio `r` (distancia euclídea): el contorno exterior no se achaflana. */
+export function dilateDisc(c: Coverage, w: number, h: number, r: number): Coverage {
+  if (r <= 0) return c
+  const d = distanceSq(c, w, h, true)
+  const o = new Uint8Array(c.length)
+  const r2 = r * r
+  for (let i = 0; i < o.length; i++) if (d[i]! <= r2) o[i] = 255
+  return o
+}
+
+/** Erosión con un disco de radio `r`. Fuera del lienzo cuenta como relleno (como `erode`). */
+export function erodeDisc(c: Coverage, w: number, h: number, r: number): Coverage {
+  if (r <= 0) return c
+  const d = distanceSq(c, w, h, false)
+  const o = new Uint8Array(c.length)
+  const r2 = r * r
+  for (let i = 0; i < o.length; i++) if (c[i] && d[i]! > r2) o[i] = 255
+  return o
 }
 
 export function coverageOr(a: Coverage, b: Coverage): Coverage {
