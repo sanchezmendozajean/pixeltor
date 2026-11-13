@@ -211,12 +211,15 @@ describe('tiradores', () => {
     addShape(s, r)
     convertToPath(s, [r.id])
     const pull = new AnchorPull(s, { shapeId: r.id, subpath: 0, index: 1 })
-    pull.pullTo(35, 12)
+    pull.pullTo(35.3, 12.2)
     pull.end()
     const a = path(s, r.id).subpaths[0]!.anchors[1]!
-    expect(a.out).toEqual({ x: 30.5, y: 7.5 }) // el tirador cae en el centro de un píxel
+    // el tirador es libre (sin ajuste a píxel); la forma tiene origen en (5, 5)
+    expect(a.out!.x).toBeCloseTo(30.3, 9)
+    expect(a.out!.y).toBeCloseTo(7.2, 9)
     // el rectángulo se convierte con las anclas en el centro de sus píxeles (el rectángulo se encoge medio píxel: ancla en x = 19,5)
-    expect(a.in).toEqual({ x: 8.5, y: -6.5 })
+    expect(a.in!.x).toBeCloseTo(8.7, 9)
+    expect(a.in!.y).toBeCloseTo(-6.2, 9)
     expect(hitSegment(s, r.id, 15, 25, 1)).toBe(true)
     expect(hitSegment(s, r.id, 15, 15, 1)).toBe(false)
     s.undo()

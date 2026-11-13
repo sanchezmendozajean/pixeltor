@@ -234,6 +234,9 @@ export class ShapeTools {
     /** Posición de lienzo del ancla arrastrada (null si se arrastra un tirador). */
     pt0: Vec2 | null
     shapeId: ID
+    /** Posición fraccionaria del ratón al pulsar: los tiradores se mueven libres, sin ajuste a píxel. */
+    fx0: number
+    fy0: number
   } | null = null
   private pen: { anchors: Anchor[]; dragging: boolean; base: number } | null = null
   /** Punto bajo el cursor: la pluma dibuja un segmento provisional hasta él (como Illustrator). */
@@ -887,7 +890,9 @@ export class ShapeTools {
         y0: p.y,
         started: false,
         pt0: hit.part === 'p' ? this.anchorWorld(hit) : null,
-        shapeId: hit.shapeId
+        shapeId: hit.shapeId,
+        fx0: p.fx,
+        fy0: p.fy
       }
       return
     }
@@ -1010,9 +1015,13 @@ export class ShapeTools {
       const a = this.anchorDrag
       if (!a.started && (p.x !== a.x0 || p.y !== a.y0)) a.started = true
       if (a.started) {
-        let dx = p.x - a.x0
-        let dy = p.y - a.y0
-        if (mods.shift) {
+        // tirador: desplazamiento fraccionario y sin ajuste; ancla: en píxeles enteros
+        const free = !a.pt0 && !mods.shift
+        let dx = free ? p.fx - a.fx0 : p.x - a.x0
+        let dy = free ? p.fy - a.fy0 : p.y - a.y0
+        if (free) {
+          this.snapLines = []
+        } else if (mods.shift) {
           // Mayús: restringe el desplazamiento a X, Y o diagonal de 45° (sin ajuste magnético)
           const ax = Math.abs(dx)
           const ay = Math.abs(dy)
@@ -1038,7 +1047,8 @@ export class ShapeTools {
     }
     if (this.pen?.dragging) {
       const a = this.pen.anchors[this.pen.anchors.length - 1]!
-      let out = { x: p.x + 0.5, y: p.y + 0.5 }
+      // el tirador sigue al cursor sin ajustarse al píxel
+      let out = { x: p.fx, y: p.fy }
       // Mayús: el tirador se alinea a 0°, 45° o 90° respecto al ancla
       if (mods.shift) out = this.constrain45(a.p, out)
       if (Math.hypot(out.x - a.p.x, out.y - a.p.y) >= 1) {

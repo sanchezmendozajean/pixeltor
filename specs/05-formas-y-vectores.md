@@ -36,7 +36,7 @@ Las nuevas formas toman la **apariencia actual** (relleno/contorno de la barra d
 - Las transformaciones se guardan en `transform`; las formas paramétricas mantienen sus parámetros (un rectángulo rotado sigue siendo rectángulo).
 
 ### Herramienta Selección directa (A)
-- Seleccionar anclas por clic o marco; mover anclas y tiradores; `Shift` limita.
+- Seleccionar anclas por clic o marco; mover anclas y tiradores; `Shift` limita. Las anclas caen en el centro de un píxel; los **tiradores son libres** (posición subpíxel, sin ajuste a píxel ni a guías).
 - Convertir ancla (`Shift+C`): clic = esquina, arrastrar = suave.
 - **Widgets en vivo**: radios de esquina por ancla en trazados (redondear vértices) [F3].
 - Barra de control en modo A: convertir esquina/suave, cortar trazado en ancla, unir dos anclas finales (`Ctrl+J` con dos extremos seleccionados), alinear anclas.

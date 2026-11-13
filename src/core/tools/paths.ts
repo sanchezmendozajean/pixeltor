@@ -204,16 +204,7 @@ export function centerAnchor(m: Mat2D, a: Anchor): void {
     if (a.in) a.in = { x: a.in.x + d.x, y: a.in.y + d.y }
     if (a.out) a.out = { x: a.out.x + d.x, y: a.out.y + d.y }
   }
-  // los tiradores también caen en el centro de un píxel
-  if (a.in) a.in = centerPoint(m, a.in)
-  if (a.out) a.out = centerPoint(m, a.out)
-}
-
-/** Punto local llevado al centro del píxel más cercano (en imagen). */
-function centerPoint(m: Mat2D, p: Vec2): Vec2 {
-  const img = apply(m, p)
-  const d = localDelta(m, pixelCenter(img.x) - img.x, pixelCenter(img.y) - img.y)
-  return Math.abs(d.x) < 1e-9 && Math.abs(d.y) < 1e-9 ? p : { x: p.x + d.x, y: p.y + d.y }
+  // los tiradores no se ajustan: son libres (subpíxel) y solo acompañan al ancla
 }
 
 interface DragStart {
@@ -300,7 +291,7 @@ export class AnchorDrag {
         if (st.in) a.in = { x: st.in.x + dl.x, y: st.in.y + dl.y }
         if (st.out) a.out = { x: st.out.x + dl.x, y: st.out.y + dl.y }
       } else {
-        np = centerPoint(shape.transform, np)
+        // los tiradores se mueven libres (subpíxel): no se ajustan al centro del píxel
         a[st.part] = np
         if (this.independent) a.type = 'corner'
         // suave/simétrico: el tirador opuesto refleja la dirección
@@ -313,10 +304,7 @@ export class AnchorDrag {
               ? Math.hypot(vx, vy)
               : Math.hypot((st[other]?.x ?? a.p.x) - a.p.x, (st[other]?.y ?? a.p.y) - a.p.y)
           const n = Math.hypot(vx, vy) || 1
-          a[other] = centerPoint(shape.transform, {
-            x: a.p.x + (vx / n) * len,
-            y: a.p.y + (vy / n) * len
-          })
+          a[other] = { x: a.p.x + (vx / n) * len, y: a.p.y + (vy / n) * len }
         }
       }
     }
@@ -353,7 +341,7 @@ export class AnchorPull {
   /** (x, y) en coordenadas de imagen. */
   pullTo(x: number, y: number): void {
     const inv = invert(this.shape.transform)
-    const p = centerPoint(this.shape.transform, inv ? apply(inv, { x, y }) : { x, y })
+    const p = inv ? apply(inv, { x, y }) : { x, y }
     const a = this.anchor
     a.out = p
     a.in = { x: 2 * a.p.x - p.x, y: 2 * a.p.y - p.y }
