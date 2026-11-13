@@ -323,6 +323,7 @@
     "new": "Nuevo documento",
     "pixels": "píxeles",
     "custom": "Personalizado",
+    "customHint": "Tamaño a medida",
     "open": "Abrir…",
     "recent": "Recientes",
     "clear": "Vaciar lista",

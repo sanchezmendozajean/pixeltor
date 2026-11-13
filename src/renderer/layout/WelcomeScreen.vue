@@ -1,35 +1,16 @@
 <script setup lang="ts">
-// Pantalla de inicio (sin documentos abiertos): documento nuevo 32×32, 64×64 o de tamaño libre,
-// abrir un archivo y lista de recientes (specs/design/23-pantallas.md §1).
-import { computed, onMounted, ref } from 'vue'
-import { MAX_SIZE } from '@core/index'
+// Pantalla de inicio (sin documentos abiertos): documento nuevo 32×32, 64×64 o de tamaño libre
+// (diálogo «Nuevo»), abrir un archivo y lista de recientes (specs/design/23-pantallas.md §1).
+import { onMounted, ref } from 'vue'
+import PtIcon from '@/components/PtIcon.vue'
 import { newDocument, openFile } from '@/app/documentOps'
+import { useUiStore } from '@/stores/ui'
 import { t } from '@/i18n'
 
 const PRESETS = [32, 64] as const
 
+const ui = useUiStore()
 const recent = ref<string[]>([])
-const width = ref(32)
-const height = ref(32)
-
-const customValid = computed(
-  () =>
-    Number.isInteger(width.value) &&
-    Number.isInteger(height.value) &&
-    width.value >= 1 &&
-    height.value >= 1 &&
-    width.value <= MAX_SIZE &&
-    height.value <= MAX_SIZE
-)
-
-/** Lado mayor de la vista previa de la tarjeta, en px; el resto es proporcional. */
-function previewStyle(w: number, h: number): Record<string, string> {
-  const k = 56 / Math.max(w, h, 1)
-  return {
-    width: `${Math.max(2, Math.round(w * k))}px`,
-    height: `${Math.max(2, Math.round(h * k))}px`
-  }
-}
 
 function baseName(path: string): string {
   return (path.split(/[\\/]/).pop() ?? path).replace(/\.pixeltor$/i, '')
@@ -38,10 +19,6 @@ function baseName(path: string): string {
 function dirName(path: string): string {
   const i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
   return i > 0 ? path.slice(0, i) : ''
-}
-
-function createCustom(): void {
-  if (customValid.value) newDocument(width.value, height.value)
 }
 
 async function reload(): Promise<void> {
@@ -64,10 +41,7 @@ onMounted(reload)
 <template>
   <section class="welcome" :aria-label="t('welcome.title')">
     <div class="inner">
-      <header>
-        <h1>{{ t('welcome.title') }}</h1>
-        <p>{{ t('welcome.subtitle') }}</p>
-      </header>
+      <h1>{{ t('welcome.title') }}</h1>
 
       <h2>{{ t('welcome.new') }}</h2>
       <div class="cards">
@@ -79,42 +53,21 @@ onMounted(reload)
           :data-testid="`welcome-${n}`"
           @click="newDocument(n, n)"
         >
-          <span class="thumb"><span class="shape" :style="previewStyle(n, n)" /></span>
+          <PtIcon name="file" />
           <span class="name">{{ n }} × {{ n }}</span>
           <span class="hint">{{ t('welcome.pixels') }}</span>
         </button>
 
-        <form class="card custom" data-testid="welcome-custom" @submit.prevent="createCustom">
-          <span class="thumb">
-            <span
-              class="shape"
-              :style="previewStyle(customValid ? width : 1, customValid ? height : 1)"
-            />
-          </span>
+        <button
+          type="button"
+          class="card"
+          data-testid="welcome-custom"
+          @click="ui.dialog = 'new'"
+        >
+          <PtIcon name="newDoc" />
           <span class="name">{{ t('welcome.custom') }}</span>
-          <span class="size">
-            <input
-              v-model.number="width"
-              class="pt-input"
-              type="number"
-              min="1"
-              :max="MAX_SIZE"
-              :aria-label="t('dialogs.new.width')"
-            />
-            <span class="x">×</span>
-            <input
-              v-model.number="height"
-              class="pt-input"
-              type="number"
-              min="1"
-              :max="MAX_SIZE"
-              :aria-label="t('dialogs.new.height')"
-            />
-          </span>
-          <button type="submit" class="pt-btn pt-btn--primary pt-btn--lg" :disabled="!customValid">
-            {{ t('dialogs.new.create') }}
-          </button>
-        </form>
+          <span class="hint">{{ t('welcome.customHint') }}</span>
+        </button>
       </div>
 
       <div class="rowhead">
@@ -127,7 +80,8 @@ onMounted(reload)
         >
           {{ t('welcome.clear') }}
         </button>
-        <button type="button" class="pt-btn pt-btn--secondary" @click="openFile()">
+        <button type="button" class="pt-btn pt-btn--secondary open" @click="openFile()">
+          <PtIcon name="folderOpen" />
           {{ t('welcome.open') }}
         </button>
       </div>
@@ -155,21 +109,16 @@ onMounted(reload)
   color: var(--text-primary);
 }
 .inner {
-  width: min(640px, 100%);
-  padding: 48px var(--space-6) var(--space-6);
+  width: min(672px, 100%);
+  padding: 32px var(--space-6) var(--space-6);
 }
 h1 {
-  margin: 0;
+  margin: 0 0 28px;
   font-size: var(--fs-xl);
   font-weight: var(--fw-semibold);
 }
-header p {
-  margin: var(--space-2) 0 28px;
-  color: var(--text-secondary);
-  font-size: var(--fs-md);
-}
 h2 {
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-5);
   font-size: var(--fs-md);
   font-weight: var(--fw-semibold);
   color: var(--text-secondary);
@@ -178,98 +127,77 @@ h2 {
 }
 .cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, 160px);
   gap: var(--space-5);
-  margin-bottom: 28px;
+  margin-bottom: 40px;
 }
 .card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-5);
+  align-items: flex-start;
+  gap: var(--space-2);
+  height: 88px;
+  padding: var(--space-5) var(--space-6);
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   color: inherit;
   font: inherit;
+  text-align: left;
   cursor: default;
 }
-button.card:hover {
+.card :deep(svg) {
+  width: 24px;
+  height: 24px;
+  margin-bottom: var(--space-3);
+  fill: currentColor;
+}
+.card:hover {
   background: var(--bg-hover);
   border-color: var(--border-input-hover);
 }
-button.card:focus-visible,
+.card:focus-visible,
 .entry:focus-visible {
   outline: 1px solid var(--accent);
   outline-offset: 1px;
 }
-.thumb {
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.shape {
-  display: block;
-  background: var(--bg-input);
-  border: 1px solid var(--border-input-hover);
-}
 .name {
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-medium);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
 }
 .hint {
   font-size: var(--fs-sm);
   color: var(--text-secondary);
 }
-.size {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-}
-.x {
-  color: var(--text-secondary);
-}
-.custom .pt-btn {
-  width: 100%;
-}
 .rowhead {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: var(--space-4);
 }
 .rowhead h2 {
   flex: 1;
+  margin-top: var(--space-3);
 }
 .rowhead .pt-btn {
-  height: 20px;
+  gap: var(--space-3);
 }
 .recent {
   list-style: none;
-  margin: 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.recent li + li {
-  border-top: 1px solid var(--border-subtle);
 }
 .entry {
   width: 100%;
   display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  height: var(--row-h);
-  padding: 0 var(--space-5);
-  background: var(--bg-panel);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+  background: transparent;
   border: 0;
+  border-radius: var(--radius-md);
   color: inherit;
   font: inherit;
-  font-size: var(--fs-md);
   text-align: left;
   cursor: default;
 }
@@ -277,15 +205,15 @@ button.card:focus-visible,
   background: var(--bg-hover);
 }
 .fname {
-  flex: none;
-  max-width: 45%;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
 }
 .dir {
-  flex: 1;
-  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

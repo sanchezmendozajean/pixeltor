@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). C
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **Tiradores**: se mueven libres (subpíxel), sin encajarse en los píxeles ni en las guías; las anclas siguen en el centro del píxel.
+- **Bienvenida**: nuevo estilo con tarjetas alineadas a la izquierda, tarjeta Personalizado que abre el diálogo Nuevo y recientes en filas.
+
 ## [0.8.3] — 2026-11-12
 
 ### Añadido
